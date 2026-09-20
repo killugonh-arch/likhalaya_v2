@@ -233,6 +233,12 @@ LOGGING = {
         },
     },
     'loggers': {
+        # print full tracebacks for 500 errors to the console (Render logs)
+        'django.request': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
         'security': {
             'handlers': ['console', 'security_file'],
             'level': 'WARNING',
