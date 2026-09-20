@@ -1,0 +1,86 @@
+{% comment %}
+Reusable compact "ConfirmDeleteCard" — small centered card with a red
+circular icon beside the title, a close (X) link, message text with a
+bolded item name, and Cancel / destructive-action buttons.
+
+Usage:
+  {% include 'partials/confirm_delete_card.html' with
+      icon='fa-circle-exclamation'
+      title='Delete Video'
+      message_prefix='Are you sure you want to delete the video'
+      item_name=video.title
+      message_suffix='from your library? This action cannot be undone.'
+      cancel_url=cancel_url
+      submit_icon='fa-trash'
+      submit_label='Delete' %}
+
+Params:
+  icon            (optional) Font Awesome icon shown in the red circle, defaults to fa-circle-exclamation
+  title           (required) card heading, e.g. "Delete Video" / "Archive Category"
+  message_prefix  (required) text before the bolded item name
+  item_name       (required) bolded subject of the action
+  message_suffix  (required) text after the bolded item name
+  cancel_url      (required) where Cancel / the X go
+  submit_icon     (optional) Font Awesome icon on the action button, defaults to fa-trash
+  submit_label    (required) action button text, e.g. "Delete" / "Archive"
+{% endcomment %}
+<div class="cdc-wrap">
+  <div class="cdc-card">
+    <a href="{{ cancel_url }}" class="cdc-close" aria-label="Close"><i class="fas fa-xmark"></i></a>
+    <div class="cdc-head">
+      <div class="cdc-icon"><i class="fas {{ icon|default:'fa-circle-exclamation' }}"></i></div>
+      <h5 class="cdc-title">{{ title }}</h5>
+    </div>
+    <p class="cdc-msg">{{ message_prefix }} <strong>{{ item_name }}</strong> {{ message_suffix }}</p>
+    <form method="post" class="cdc-actions">
+      {% csrf_token %}
+      <a href="{{ cancel_url }}" class="btn cdc-btn-cancel">Cancel</a>
+      <button type="submit" class="btn cdc-btn-danger"><i class="fas {{ submit_icon|default:'fa-trash' }} me-1"></i>{{ submit_label }}</button>
+    </form>
+  </div>
+</div>
+
+<style>
+.cdc-wrap { display: flex; justify-content: center; padding-top: 8px; }
+.cdc-card {
+  position: relative;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 10px 30px rgba(0,0,0,.08);
+  padding: 22px 24px 20px;
+  max-width: 420px;
+  width: 100%;
+}
+.cdc-close {
+  position: absolute; top: 14px; right: 16px;
+  color: #9CA3AF; font-size: 14px; text-decoration: none;
+}
+.cdc-close:hover { color: #374151; }
+.cdc-head { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.cdc-icon {
+  width: 34px; height: 34px; flex-shrink: 0;
+  border-radius: 50%;
+  background: #fdecec;
+  display: flex; align-items: center; justify-content: center;
+}
+.cdc-icon i { color: #E0362A; font-size: 15px; }
+.cdc-title { font-weight: 800; color: var(--teal); margin: 0; font-size: 18px; }
+.cdc-msg { color: #6B7280; font-size: 13.5px; line-height: 1.55; margin: 0 0 18px; }
+.cdc-msg strong { color: #1F2937; }
+.cdc-actions { display: flex; gap: 10px; justify-content: center; }
+.cdc-btn-cancel {
+  flex: 1; border: 1.5px solid var(--teal); color: var(--teal); background: #fff;
+  border-radius: 10px; font-weight: 700; font-size: 13.5px; padding: 9px 0;
+}
+.cdc-btn-cancel:hover { background: #f0f8f6; color: var(--teal); }
+.cdc-btn-danger {
+  flex: 1; background: #E0362A; color: #fff; border: none;
+  border-radius: 10px; font-weight: 700; font-size: 13.5px; padding: 9px 0;
+}
+.cdc-btn-danger:hover { background: #c92e23; color: #fff; }
+
+body.dark-mode .cdc-card { background: var(--dm-surface); box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+body.dark-mode .cdc-msg { color: var(--dm-text-dim); }
+body.dark-mode .cdc-msg strong { color: var(--dm-text); }
+body.dark-mode .cdc-btn-cancel { background: var(--dm-surface-2); border-color: var(--dm-teal); color: var(--dm-teal); }
+</style>

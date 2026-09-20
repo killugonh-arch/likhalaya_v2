@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Review Your Order – Likhalaya{% endblock %}
+
+{% block extra_css %}
+<style>
+.review-card { background:#fff; border:1px solid #eee; border-radius:16px; padding:18px 20px; }
+.review-card h6 { color:var(--teal); font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+.review-card .change-btn { font-size:12px; font-weight:600; color:var(--teal); text-decoration:underline; background:none; border:none; padding:0; }
+.review-summary-item { display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid #f0ede8; }
+@media (min-width: 992px) {
+  .review-grid { display:grid; grid-template-columns:1.4fr 1fr; gap:24px; align-items:start; }
+  .review-grid .rg-summary { position:sticky; top:90px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+  <a href="{% url 'orders:checkout' %}" class="btn btn-outline-secondary btn-sm rounded-3 mb-3">
+    <i class="fas fa-arrow-left me-1"></i>Back to Order Details
+  </a>
+
+  {% include 'orders/_checkout_stepper.html' with current_step=2 %}
+
+  <div class="review-grid">
+    <div>
+      <h5 class="fw-bold mb-3" style="color:var(--teal);">Review Your Details</h5>
+
+      <div class="review-card mb-3">
+        <h6><i class="fas fa-map-marker-alt" style="color:var(--gold);"></i>Delivery Address</h6>
+        <div class="small text-muted mb-1">Name: <span class="fw-semibold text-dark">{{ form_data.full_name }}</span></div>
+        <div class="small text-muted mb-1">Phone: <span class="fw-semibold text-dark">{{ form_data.phone }}</span></div>
+        <div class="small text-muted mb-2">Address: <span class="fw-semibold text-dark">{{ form_data.address }}, {{ form_data.city }}, {{ form_data.province }} {{ form_data.zip_code }}</span></div>
+        <a href="{% url 'accounts:profile' %}?next={% url 'orders:checkout_review' %}&edit=1" class="change-btn"><i class="fas fa-location-dot me-1"></i>Change Location</a>
+      </div>
+
+      <div class="review-card mb-3">
+        <h6><i class="fas fa-user" style="color:var(--gold);"></i>Contact Details</h6>
+        <div class="small text-muted mb-2">Email: <span class="fw-semibold text-dark">{{ form_data.email }}</span></div>
+        <a href="{% url 'accounts:profile' %}?next={% url 'orders:checkout_review' %}&edit=1" class="change-btn"><i class="fas fa-pen me-1"></i>Edit Profile</a>
+      </div>
+
+      <div class="review-card">
+        <h6><i class="fas fa-shopping-bag" style="color:var(--gold);"></i>Order Items</h6>
+        {% for item in cart %}
+        <div class="review-summary-item">
+          {% if item.design.image %}
+          <img src="{{ item.design.image.url }}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;flex-shrink:0;" alt="">
+          {% elif item.product.image %}
+          <img src="{{ item.product.image.url }}" style="width:56px;height:56px;border-radius:10px;object-fit:cover;flex-shrink:0;" alt="">
+          {% else %}
+          <div style="width:56px;height:56px;border-radius:10px;background:var(--sand);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🎨</div>
+          {% endif %}
+          <div style="flex:1;min-width:0;">
+            <div class="fw-semibold small">
+              {{ item.product.name|truncatechars:30 }}
+              {% if item.size_display %}<span class="badge bg-light text-dark border ms-1" style="font-size:10px;">{{ item.size_display }}</span>{% endif %}
+              {% if item.design_name %}<span class="badge bg-light text-dark border ms-1" style="font-size:10px;">{{ item.design_name }}</span>{% endif %}
+            </div>
+            <div class="text-muted" style="font-size:11px;">x{{ item.quantity }}</div>
+          </div>
+          <div class="fw-bold small" style="color:var(--gold);">₱{{ item.price|floatformat:0|intcomma }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="rg-summary">
+      <div class="card border-0 shadow-sm rounded-4 p-4">
+        <h6 class="fw-bold mb-3">Order Summary</h6>
+        <div class="d-flex justify-content-between mb-2"><span class="text-muted fw-bold small">Subtotal</span><span class="fw-bold small">₱{{ cart_total|floatformat:0|intcomma }}</span></div>
+        <div class="d-flex justify-content-between mb-2">
+          <span class="text-muted fw-bold small">Shipping</span>
+          <span class="fw-bold small {% if shipping_fee == 0 %}text-success{% endif %}">
+            {% if shipping_fee == 0 %}FREE{% else %}₱{{ shipping_fee|floatformat:0 }}{% endif %}
+          </span>
+        </div>
+        <hr>
+        <div class="d-flex justify-content-between fw-bold mb-3">
+          <span>Total</span>
+          <span style="color:var(--gold);font-size:18px;">₱{{ grand_total|floatformat:0|intcomma }}</span>
+        </div>
+        <a href="{% url 'orders:gcash_payment_pending' %}" class="btn btn-gold btn-lg w-100 rounded-3">
+          <i class="fas fa-arrow-right me-2"></i>Continue to GCash Payment
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

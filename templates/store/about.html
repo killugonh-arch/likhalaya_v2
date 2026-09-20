@@ -1,0 +1,171 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}About Us – Likhalaya{% endblock %}
+{% block nav_about %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+.mission-card { background: #fff; border-radius: 16px; padding: 32px; border-left: 4px solid var(--gold); box-shadow: 0 4px 16px rgba(0,0,0,.06); height: 100%; }
+.person-card { background: #fff; border-radius: 14px; overflow: hidden; box-shadow: 0 4px 16px rgba(0,0,0,.06); text-align: center; padding: 28px 20px; transition: transform .2s; }
+.person-card:hover { transform: translateY(-4px); }
+.person-avatar { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid var(--gold); margin: 0 auto 12px; }
+.person-initials { width: 80px; height: 80px; border-radius: 50%; background: var(--teal); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 28px; font-weight: 700; margin: 0 auto 12px; border: 3px solid var(--gold); }
+.stat-number { font-family: 'Playfair Display', serif; font-size: 40px; font-weight: 700; color: var(--gold); }
+
+/* Livelihood video gallery */
+.video-card {
+  background: #fff; border-radius: 14px; overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,.06); height: 100%;
+  transition: transform .2s, box-shadow .2s;
+}
+.video-card:hover { transform: translateY(-4px); box-shadow: 0 12px 32px rgba(0,0,0,.1); }
+.video-card .video-frame { position: relative; width: 100%; aspect-ratio: 16/9; background: #000; }
+.video-card .video-frame video,
+.video-card .video-frame iframe { width: 100%; height: 100%; border: 0; display: block; }
+.video-card .video-body { padding: 18px 20px; }
+
+@media (max-width: 767.98px) {
+  .mission-card { padding: 22px 18px; border-radius: 14px; }
+  .mission-card h5 { font-size: 15px; }
+  .mission-card p { font-size: 13px; line-height: 1.7 !important; }
+  h3.fw-bold { font-size: clamp(19px, 5vw, 24px) !important; }
+  .person-card { padding: 20px 14px; }
+  .person-avatar, .person-initials { width: 64px; height: 64px; font-size: 22px; }
+  .stat-number { font-size: 30px; }
+  .video-card .video-body { padding: 12px 14px; }
+  .video-card .video-body h6 { font-size: 13px; }
+  .row.g-3 .overflow-hidden.rounded-4 { height: 110px !important; }
+}
+
+/* ===== Compact phone spacing ===== */
+@media (max-width: 575.98px) {
+  .mission-card { padding: 16px; border-radius: 14px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Header -->
+{% include 'partials/compact_page_header.html' with eyebrow='About Us' eyebrow_icon='fa-circle-info' title='About Likhalaya' subtitle='Discover the story, purpose, and people behind Likhalaya.' %}
+
+<!-- Mission & Vision -->
+<div class="container pt-4 pb-5">
+  <div class="row g-4 mb-5 align-items-stretch">
+    <div class="col-md-6">
+      <div class="mission-card">
+        <div style="font-size:32px;margin-bottom:12px;"></div>
+        <h5 class="fw-bold mb-3" style="color:var(--teal);">Our Mission</h5>
+        <p class="text-muted mb-0" style="line-height:1.8;">
+           To give Persons Deprived of Liberty (PDLs) a chance to earn income by providing an online marketplace where they can sell their handmade products. Through LIKHALAYA, we hope to give PDLs more opportunities, promote second chances, and make a positive impact in their lives and the community.
+        </p>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="mission-card">
+        <div style="font-size:32px;margin-bottom:12px;"></div>
+        <h5 class="fw-bold mb-3" style="color:var(--teal);">Our Vision</h5>
+        <p class="text-muted mb-0" style="line-height:1.8;">
+         To create a future where Persons Deprived of Liberty (PDLs) have equal opportunities to share their talents and improve their lives through honest work. We want LIKHALAYA to be a platform that promotes hope, supports rehabilitation, and inspires people to believe in second chances.
+        </p>
+      </div>
+    </div>
+  </div>
+
+
+
+  <!-- About the Jail -->
+  <div class="row align-items-center g-5 mb-5">
+    <div class="col-lg-6">
+      <h3 class="fw-bold mb-3" style="font-family:'Playfair Display',serif;color:var(--teal);">Handcrafted with Heart and Purpose</h3>
+      <p class="text-muted mb-3" style="line-height:1.8;">
+        Carigara District Jail, under the Bureau of Jail Management and Penology (BJMP) in Leyte, provides livelihood programs that help Persons Deprived of Liberty (PDLs) learn valuable skills and create quality handmade products. These include woven crafts, woodwork, metal crafts, and other locally made items that reflect their creativity, hard work, and dedication.
+      </p>
+      <p class="text-muted" style="line-height:1.8;">
+       LIKHALAYA comes from the Filipino word "likha," which means to create. It represents the creativity, hope, and determination of PDL artisans as they turn their skills into meaningful products. Through this platform, every handcrafted item becomes more than just a product—it becomes a symbol of growth, rehabilitation, and the opportunity for a better future.
+      </p>
+      <a href="{% url 'store:shop' %}" class="btn btn-gold px-4 rounded-3 mt-2"><i class="fas fa-store me-2"></i>Shop Our Products</a>
+    </div>
+    <div class="col-lg-6">
+      <div class="row g-3">
+        <div class="col-6">
+          <div class="overflow-hidden rounded-4" style="height:160px;background:#f7f3e8;">
+            <img src="{% static 'imgs/pic01.jpg' %}" alt="Image 1" style="width:100%;height:100%;object-fit:cover;">
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="overflow-hidden rounded-4" style="height:160px;background:#eafaf1;">
+            <img src="{% static 'imgs/pic02.jpg' %}" alt="Image 2" style="width:100%;height:100%;object-fit:cover;">
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="overflow-hidden rounded-4" style="height:160px;background:#ebf5fb;">
+            <img src="{% static 'imgs/pic03.jpg' %}" alt="Image 3" style="width:100%;height:100%;object-fit:cover;">
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="overflow-hidden rounded-4" style="height:160px;background:#f5eef8;">
+            <img src="{% static 'imgs/pic04.jpg' %}" alt="Image 4" style="width:100%;height:100%;object-fit:cover;">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Personnel -->
+  {% if personnel %}
+  <div class="text-center mb-4">
+    <div class="section-title">Our Team</div>
+    <div class="divider mx-auto"></div>
+  </div>
+  <div class="row g-4 justify-content-center">
+    {% for person in personnel %}
+    <div class="col-sm-6 col-md-4 col-lg-3">
+      <div class="person-card">
+        {% if person.image %}
+        <img src="{{ person.image.url }}" alt="{{ person.name }}" class="person-avatar">
+        {% else %}
+        <div class="person-initials">{{ person.name|first|upper }}</div>
+        {% endif %}
+        <h6 class="fw-bold mb-1">{{ person.name }}</h6>
+        <div class="text-muted small mb-2">{{ person.position }}</div>
+        {% if person.bio %}<p class="text-muted" style="font-size:12px;">{{ person.bio|truncatechars:80 }}</p>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <!-- Livelihood Program Videos -->
+  {% if videos %}
+  <div id="programs" class="text-center mb-4 mt-5">
+    <div class="section-title">Other Livelihood Programs by BJMP</div>
+    <div class="divider mx-auto"></div>
+    <p class="text-muted mx-auto mt-2" style="max-width:560px;">
+      Beyond Likhalaya, BJMP-Carigara runs several other programs that give PDLs
+      the chance to build new skills and a fresh start.
+    </p>
+  </div>
+  <div class="row g-4">
+    {% for video in videos %}
+    <div class="col-md-6 col-lg-4">
+      <div class="video-card">
+        <div class="video-frame">
+          {% if video.video_url %}
+          <iframe src="{{ video.embed_url }}" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+          {% elif video.video_file %}
+          <video autoplay muted loop playsinline {% if video.thumbnail %}poster="{{ video.thumbnail.url }}"{% endif %}>
+            <source src="{{ video.video_file.url }}" type="video/mp4">
+          </video>
+          {% endif %}
+        </div>
+        <div class="video-body">
+          <h6 class="fw-bold mb-1">{{ video.title }}</h6>
+          {% if video.description %}<p class="text-muted mb-0" style="font-size:12.5px;">{{ video.description }}</p>{% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

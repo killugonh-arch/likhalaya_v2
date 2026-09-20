@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+{% block title %}Login – Likhalaya{% endblock %}
+
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% load static %}
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&display=swap" rel="stylesheet">
+<style>
+/* ============ Page ============ */
+.auth-page {
+  min-height: 100vh; min-height: 100dvh;
+  display: flex; align-items: center; justify-content: center;
+  padding: clamp(16px, 4vw, 36px) clamp(12px, 4vw, 24px);
+  background: #EEEEE9;
+}
+
+/* ============ Card ============ */
+.auth-split-card {
+  display: flex; width: 100%; max-width: 1000px;
+  background: #fff; border-radius: 20px; overflow: hidden;
+  box-shadow: 0 10px 40px rgba(20, 60, 50, .10);
+  animation: auth-fade-up .5s ease both;
+}
+@keyframes auth-fade-up { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+
+/* ============ Left brand panel ============ */
+.auth-brand-panel {
+  flex: 0 0 42%; position: relative; overflow: hidden;
+  padding: 40px 38px; display: flex; flex-direction: column; justify-content: center;
+  background: linear-gradient(160deg, #0F4A3D 0%, #16624F 100%); color: #fff;
+}
+.auth-brand-panel::before {
+  content: ''; position: absolute; inset: 0;
+  background: url("{% static 'imgs/likhalaya_bg.png' %}") center/cover no-repeat; opacity: .10;
+}
+.auth-brand-content { position: relative; z-index: 2; }
+.auth-brand-logos { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 26px; }
+.auth-brand-logos .logo-chip { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 50%; padding: 8px; }
+.auth-brand-logos .logo-chip img { width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 3px 8px rgba(0,0,0,.25)); }
+.auth-brand-logos .logo-divider { width: 1px; height: 40px; background: rgba(255,255,255,.28); }
+.auth-brand-heading {
+  font-family: 'Fraunces', serif; font-weight: 800;
+  font-size: clamp(28px, 2.6vw, 38px); line-height: 1.12; letter-spacing: -.3px;
+  margin-bottom: 14px; text-align: left;
+}
+.auth-brand-sub { font-size: 13.5px; color: rgba(255,255,255,.8); line-height: 1.6; max-width: 300px; margin-bottom: 26px; }
+.auth-feature-list { list-style: none; padding: 0; margin: 0; }
+.auth-feature-list li { display: flex; align-items: center; gap: 12px; padding: 7px 0; font-size: 13px; font-weight: 600; color: rgba(255,255,255,.92); }
+.auth-feature-list li i {
+  width: 32px; height: 32px; border-radius: 9px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(232,168,42,.16); color: #E8A82A; font-size: 13px;
+}
+
+/* Compact brand mark (phones only) */
+.auth-mobile-brand { display: none; align-items: center; justify-content: center; gap: 14px; }
+.auth-mobile-brand .logo-chip { display: flex; align-items: center; justify-content: center; width: 46px; height: 46px; }
+.auth-mobile-brand .logo-chip img { width: 100%; height: 100%; object-fit: contain; }
+.auth-mobile-brand .logo-divider { width: 1px; height: 30px; background: #e0e0e0; }
+
+/* ============ Right form panel ============ */
+.auth-form-panel { flex: 1; padding: 36px 44px; display: flex; flex-direction: column; justify-content: center; background: #fff; }
+.auth-form-inner { width: 100%; }
+.auth-form-heading { font-family: 'Fraunces', serif; font-weight: 700; font-size: 22px; line-height: 1.2; color: #14584A; margin-bottom: 4px; }
+.auth-form-sub { font-size: 13px; color: #8b9490; margin-bottom: 20px; }
+
+.auth-input-group { margin-bottom: 14px; }
+.auth-input-label { display: block; font-size: 12px; font-weight: 600; color: #3f4a46; margin-bottom: 6px; }
+.auth-input-wrap { position: relative; }
+.auth-input-wrap .auth-input-icon {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  font-size: 13px; color: #a8b0ad; pointer-events: none; transition: color .18s ease;
+}
+.auth-input-wrap:focus-within .auth-input-icon { color: #1E5F5A; }
+.auth-input {
+  width: 100%; height: 44px; padding: 0 18px 0 40px;
+  border: 1.5px solid #E3E3DD; border-radius: 10px;
+  font-size: 13.5px; color: #1a2420; background: #fff;
+  transition: border-color .18s ease, box-shadow .18s ease;
+}
+.auth-input::placeholder { color: #b5bcb9; }
+.auth-input:focus { outline: none; border-color: var(--teal); box-shadow: 0 0 0 4px rgba(30,95,90,.10); }
+.auth-input-toggle {
+  position: absolute; right: 16px; top: 50%; transform: translateY(-50%); z-index: 5;
+  background: none; border: none; padding: 4px; color: #a8b0ad; font-size: 14px; cursor: pointer; transition: color .15s ease;
+}
+.auth-input-toggle:hover { color: var(--teal); }
+.auth-field-error { display: flex; align-items: center; gap: 5px; margin-top: 6px; font-size: 12px; color: #c0392b; }
+.auth-field-error i { font-size: 11px; }
+
+/* Remember me + Forgot password */
+.auth-remember { display: flex; align-items: center; justify-content: space-between; margin: 4px 0 18px; }
+.auth-remember-left { display: flex; align-items: center; gap: 8px; }
+.auth-remember .form-check-input { width: 18px; height: 18px; margin: 0; border-radius: 5px; border: 1.5px solid #cfd4d1; cursor: pointer; }
+.auth-remember .form-check-input:checked { background-color: var(--teal); border-color: var(--teal); }
+.auth-remember label { font-size: 12.5px; color: #5b6663; cursor: pointer; margin: 0; }
+.auth-forgot { font-size: 12.5px; font-weight: 600; color: #14584A; text-decoration: underline; }
+.auth-forgot:hover { color: #0F3D39; }
+
+/* Sign In button */
+.btn-auth {
+  width: 100%; height: 46px; border: none; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: #C9841A; color: #fff; font-size: 14px; font-weight: 700;
+  transition: transform .18s ease, box-shadow .18s ease, background .18s ease, opacity .18s ease;
+}
+.btn-auth:hover { background: #B5740F; color: #fff; transform: translateY(-2px); box-shadow: 0 6px 16px rgba(201,132,26,.28); }
+.btn-auth:active { transform: none; }
+.btn-auth:focus-visible { outline: 2px solid #0F3D39; outline-offset: 2px; }
+.btn-auth:disabled { opacity: 1; transform: none; box-shadow: none; cursor: not-allowed; }
+
+.auth-divider { position: relative; text-align: center; margin: 16px 0; color: #c6ccc9; font-size: 12px; }
+.auth-divider::before, .auth-divider::after { content: ''; position: absolute; top: 50%; width: 42%; height: 1px; background: #eee; }
+.auth-divider::before { left: 0; } .auth-divider::after { right: 0; }
+.auth-footer-links { text-align: center; margin-top: 16px; }
+.auth-footer-links .auth-muted { font-size: 12.5px; color: #8b9490; }
+.auth-footer-links .auth-link { font-size: 12.5px; font-weight: 700; color: #14584A; text-decoration: underline; margin-left: 4px; }
+.auth-back-link { display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 14px; font-size: 12.5px; font-weight: 600; color: #8b9490; text-decoration: none; transition: color .18s ease; }
+.auth-back-link:hover { color: var(--teal); }
+.auth-alert { border-radius: 10px; font-size: 13px; }
+
+/* ============ Responsive ============ */
+@media (max-width: 899px) {
+  .auth-split-card { max-width: 640px; }
+  .auth-brand-panel { flex: 0 0 38%; padding: 30px 24px; }
+  .auth-brand-logos .logo-chip { width: 52px; height: 52px; }
+  .auth-feature-list li { font-size: 12.5px; }
+  .auth-form-panel { padding: 30px 26px; }
+}
+@media (max-width: 599px) {
+  .auth-split-card { max-width: 480px; border-radius: 18px; }
+  .auth-brand-panel { display: none; }
+  .auth-mobile-brand { display: flex; padding: clamp(20px, 6vw, 28px) 0 0; }
+  .auth-form-panel { padding: 8px clamp(16px, 5vw, 24px) 28px; }
+  .auth-form-heading { font-size: 20px; text-align: center; }
+  .auth-form-sub { font-size: 12.5px; text-align: center; }
+  .auth-input { font-size: 16px; } /* stops iOS zoom on focus */
+}
+@media (max-width: 380px) {
+  .auth-mobile-brand .logo-chip { width: 38px; height: 38px; }
+  .auth-form-heading { font-size: 20px; }
+  .auth-input { height: 48px; }
+}
+@media (orientation: landscape) and (max-height: 500px) {
+  .auth-page { align-items: flex-start; }
+  .auth-feature-list { display: none; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-split-card">
+
+    <!-- LEFT BRAND PANEL -->
+    <div class="auth-brand-panel">
+      <div class="auth-brand-content">
+        <div class="auth-brand-logos">
+          <span class="logo-chip"><img src="{% static 'imgs/likhalaya.png' %}" alt="Likhalaya" onerror="this.parentElement.style.display='none'"></span>
+          <span class="logo-divider"></span>
+          <span class="logo-chip"><img src="{% static 'imgs/c_logo.png' %}" alt="BJMP" onerror="this.parentElement.style.display='none'"></span>
+        </div>
+        <h2 class="auth-brand-heading">Welcome Back</h2>
+        <p class="auth-brand-sub">Sign in to your Likhalaya account and continue supporting PDL artisans.</p>
+        <ul class="auth-feature-list">
+          <li><i class="fas fa-hands"></i> Handcrafted Products</li>
+          <li><i class="fas fa-shield-halved"></i> Secure Shopping</li>
+          <li><i class="fas fa-seedling"></i> Support Rehabilitation</li>
+          <li><i class="fas fa-people-group"></i> Community Marketplace</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- RIGHT LOGIN PANEL -->
+    <div class="auth-form-panel">
+      <div class="auth-mobile-brand">
+        <span class="logo-chip"><img src="{% static 'imgs/likhalaya.png' %}" alt="Likhalaya" onerror="this.parentElement.style.display='none'"></span>
+        <span class="logo-divider"></span>
+        <span class="logo-chip"><img src="{% static 'imgs/c_logo.png' %}" alt="BJMP" onerror="this.parentElement.style.display='none'"></span>
+      </div>
+      <div class="auth-form-inner">
+        <div class="auth-title-row">
+          <h1 class="auth-form-heading">Login to Your Account</h1>
+        </div>
+        <p class="auth-form-sub">Sign in to your Likhalaya account</p>
+
+        {% if messages %}
+        {% for msg in messages %}
+        <div class="alert alert-{{ msg.tags }} alert-dismissible fade show auth-alert py-2 mb-3">
+          {{ msg }}<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <form method="post" novalidate id="loginForm" autocomplete="on">
+          {% csrf_token %}
+          <div style="position:absolute; left:-9999px; top:-9999px;" aria-hidden="true">
+            <label for="website">Leave this field empty</label>
+            <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
+          </div>
+
+          <!-- Email -->
+          <div class="auth-input-group">
+            <label for="id_username" class="auth-input-label">Email</label>
+            <div class="auth-input-wrap">
+              <i class="fas fa-envelope auth-input-icon"></i>
+              <input type="email" name="username" id="id_username"
+                     class="auth-input"
+                     placeholder="Enter your email"
+                     autofocus autocapitalize="none" autocomplete="email"
+                     value="{{ form.username.value|default:'' }}">
+            </div>
+            {% if form.username.errors %}
+            <div class="auth-field-error"><i class="fas fa-circle-exclamation"></i>{{ form.username.errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <!-- Password -->
+          <div class="auth-input-group">
+            <label for="id_password" class="auth-input-label">Password</label>
+            <div class="auth-input-wrap">
+              <i class="fas fa-lock auth-input-icon"></i>
+              <input type="password" name="password" id="id_password"
+                     class="auth-input"
+                     placeholder="Enter your password"
+                     style="padding-right:76px;"
+                     autocomplete="current-password">
+              <button type="button" class="auth-input-toggle" id="togglePw" aria-label="Toggle password visibility">
+                <i class="fas fa-eye" id="eyeIcon"></i>
+              </button>
+            </div>
+            {% if form.non_field_errors %}
+            <div class="auth-field-error"><i class="fas fa-circle-exclamation"></i>{{ form.non_field_errors.0 }}</div>
+            {% endif %}
+          </div>
+
+          <div class="auth-remember">
+            <div class="auth-remember-left">
+              <input type="checkbox" name="remember_me" class="form-check-input" id="rememberMe">
+              <label for="rememberMe">Remember me</label>
+            </div>
+            <a href="{% url 'accounts:password_reset' %}" class="auth-forgot">Forgot password?</a>
+          </div>
+
+          <button type="submit" class="btn-auth" id="loginSubmitBtn" disabled>
+            <i class="fas fa-sign-in-alt" id="loginBtnIcon"></i>
+            <span id="loginBtnText">Sign In</span>
+          </button>
+        </form>
+
+        <div class="auth-divider">or</div>
+
+        <div class="auth-footer-links">
+          <span class="auth-muted">Don't have an account?</span>
+          <a href="{% url 'accounts:register' %}" class="auth-link">Create Account</a>
+        </div>
+        <a href="{% url 'store:home' %}" class="auth-back-link"><i class="fas fa-arrow-left"></i>Back to Store</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  'use strict';
+
+  const usernameInput = document.getElementById('id_username');
+  const passwordInput = document.getElementById('id_password');
+  const togglePwBtn   = document.getElementById('togglePw');
+  const eyeIcon       = document.getElementById('eyeIcon');
+  const submitBtn     = document.getElementById('loginSubmitBtn');
+  const loginForm     = document.getElementById('loginForm');
+
+  /* --- helpers --- */
+  function updateSubmitState() {
+    const hasUser = usernameInput.value.trim().length > 0;
+    const hasPw   = passwordInput.value.length > 0;
+    submitBtn.disabled = !(hasUser && hasPw);
+  }
+
+  usernameInput.addEventListener('input', updateSubmitState);
+  passwordInput.addEventListener('input', updateSubmitState);
+
+  /* --- password visibility toggle --- */
+  togglePwBtn.addEventListener('click', function () {
+    const isText = passwordInput.type === 'text';
+    passwordInput.type = isText ? 'password' : 'text';
+    eyeIcon.className  = isText ? 'fas fa-eye' : 'fas fa-eye-slash';
+  });
+
+  /* --- anti-double-submit --- */
+  loginForm.addEventListener('submit', function () {
+    if (submitBtn.disabled) return false;
+    submitBtn.disabled = true;
+    document.getElementById('loginBtnIcon').className = 'fas fa-spinner fa-spin';
+    document.getElementById('loginBtnText').textContent = 'Signing In…';
+  });
+
+  /* --- initial state (pre-filled fields on back-navigation) --- */
+  updateSubmitState();
+})();
+</script>
+{% endblock %}

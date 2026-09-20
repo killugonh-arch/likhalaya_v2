@@ -1,0 +1,749 @@
+{% extends 'base.html' %}
+{% load static humanize %}
+
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block flash_messages %}{% endblock %}
+
+{% block extra_css %}
+<style>
+:root {
+  --sidebar-w: 260px;
+  --sidebar-bg: #0f3d39;
+  --sidebar-hover: rgba(255,255,255,0.08);
+  --sidebar-active: rgba(201,132,26,0.2);
+  --topbar-h: 64px;
+}
+
+body { background: #f0ede8; }
+
+/* ── Layout ── */
+.dash-layout { display: flex; min-height: 100vh; }
+
+/* ── Sidebar ── */
+.dash-sidebar {
+  width: var(--sidebar-w);
+  background: var(--sidebar-bg);
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  z-index: 1040;
+  overflow-y: auto;
+  overflow-x: hidden;
+  transition: transform 0.3s ease, width 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+.dash-sidebar::-webkit-scrollbar { width: 4px; }
+.dash-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 4px; }
+
+.sidebar-logo {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  display: flex; align-items: center; gap: 12px;
+}
+.sidebar-logo-img {
+  height: 34px;
+  width: auto;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+.sidebar-collapsed .sidebar-logo-img { height: 26px; }
+.sidebar-logo-cdj-img { border-radius: 50%; }
+.sidebar-logo-text { font-family: 'Playfair Display', serif; font-size: 17px; color: #fff; font-weight: 700; line-height: 1.2; }
+.sidebar-logo-sub { font-size: 10px; color: rgba(255,255,255,.4); letter-spacing: 1px; text-transform: uppercase; }
+
+.sidebar-section-label {
+  padding: 16px 20px 6px;
+  font-size: 9px; text-transform: uppercase; letter-spacing: 1.5px;
+  color: rgba(255,255,255,.3); font-weight: 700;
+}
+
+.sidebar-link {
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 20px; color: rgba(255,255,255,.65);
+  font-size: 13px; font-weight: 500;
+  border-left: 3px solid transparent;
+  transition: all 0.18s ease;
+  text-decoration: none;
+  position: relative;
+}
+.sidebar-link:hover {
+  color: #fff;
+  background: var(--sidebar-hover);
+  border-left-color: rgba(201,132,26,.5);
+}
+.sidebar-link.active {
+  color: #fff;
+  background: var(--sidebar-active);
+  border-left-color: var(--gold);
+}
+.sidebar-link i { width: 18px; text-align: center; font-size: 14px; flex-shrink: 0; }
+
+/* Mobile-only Logout entry at the bottom of the off-canvas admin menu.
+   Kept out of the desktop sidebar (it stays permanently visible there,
+   so a second Logout would duplicate the one already in the topbar
+   account dropdown) — this copy only renders on phones/tablets. */
+.sidebar-logout-wrap { display: none; }
+.sidebar-logout-form { margin: 0; }
+.sidebar-link.sidebar-logout-link {
+  width: 100%;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #ff8a8a;
+  font: inherit;
+  text-align: left;
+}
+.sidebar-link.sidebar-logout-link:hover,
+.sidebar-link.sidebar-logout-link:focus-visible {
+  color: #fff;
+  background: rgba(231,76,60,.22);
+  border-left-color: #e74c3c;
+}
+.sidebar-link.sidebar-logout-link:active {
+  background: rgba(231,76,60,.32);
+}
+
+/* Hide the Logout row inside the topbar account dropdown on mobile —
+   its job is taken over by .sidebar-logout-wrap so the option isn't
+   duplicated at the same breakpoint. */
+@media (max-width: 768px) {
+  .sidebar-logout-wrap { display: block; }
+  .topbar-account-logout { display: none !important; }
+}
+
+.sidebar-badge {
+  margin-left: auto;
+  background: #e74c3c;
+  color: #fff;
+  font-size: 10px;
+  padding: 1px 7px;
+  border-radius: 20px;
+  font-weight: 700;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid rgba(255,255,255,.08);
+  font-size: 11px; color: rgba(255,255,255,.3);
+}
+
+/* ── Main Content ── */
+.dash-main {
+  margin-left: var(--sidebar-w);
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  transition: margin-left 0.3s ease;
+}
+
+/* ── Topbar ── */
+.dash-topbar {
+  height: var(--topbar-h);
+  background: #fff;
+  border-bottom: 1px solid #e8e3db;
+  display: flex; align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+  position: sticky; top: 0; z-index: 999;
+  box-shadow: 0 1px 8px rgba(0,0,0,.04);
+}
+.dash-topbar .topbar-title { font-weight: 700; font-size: 16px; color: var(--teal); flex: 1; }
+.topbar-search { max-width: 280px; }
+
+/* ── Page Content ── */
+.dash-page { padding: 28px; flex: 1; }
+
+/* ── Cards ── */
+.stat-card {
+  background: #fff;
+  border-radius: 14px;
+  border: none;
+  box-shadow: 0 2px 12px rgba(0,0,0,.05);
+  padding: 20px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  position: relative; overflow: hidden;
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,.1); }
+.stat-card::after {
+  content: '';
+  position: absolute; right: 0; top: 0; bottom: 0;
+  width: 4px;
+  border-radius: 0 14px 14px 0;
+}
+.stat-card.card-orders::after { background: #3498db; }
+.stat-card.card-revenue::after { background: #27ae60; }
+.stat-card.card-products::after { background: #9b59b6; }
+.stat-card.card-customers::after { background: #e67e22; }
+.stat-card.card-pending::after { background: #e74c3c; }
+.stat-card.card-messages::after { background: #1abc9c; }
+
+.stat-icon {
+  width: 48px; height: 48px;
+  border-radius: 12px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; flex-shrink: 0;
+}
+.stat-label { font-size: 11px; color: #999; text-transform: uppercase; letter-spacing: .5px; }
+.stat-value { font-size: 26px; font-weight: 800; color: #1a1a1a; line-height: 1.1; }
+.stat-sub { font-size: 11px; color: #888; margin-top: 4px; }
+
+/* ── Tables ── */
+.dash-table { font-size: 13px; }
+.dash-table thead th {
+  background: #f8f6f2;
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  color: #666;
+  border-bottom: none;
+  padding: 12px 14px;
+}
+.dash-table tbody tr { border-bottom: 1px solid #f0ede8; }
+.dash-table tbody tr:hover { background: #faf8f4; }
+.dash-table tbody td { padding: 12px 14px; vertical-align: middle; }
+
+/* ── Breadcrumb ── */
+.dash-breadcrumb {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 12px; color: #999; margin-bottom: 20px;
+}
+.dash-breadcrumb a { color: #999; text-decoration: none; }
+.dash-breadcrumb a:hover { color: var(--teal); }
+.dash-breadcrumb .sep { color: #ccc; }
+.dash-breadcrumb .current { color: var(--teal); font-weight: 600; }
+
+/* ── Status badges ── */
+.badge-status {
+  padding: 4px 12px; border-radius: 20px;
+  font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+}
+
+/* ── Sidebar collapsed ── */
+.sidebar-collapsed .dash-sidebar { width: 68px; }
+.sidebar-collapsed .dash-main { margin-left: 68px; }
+.sidebar-collapsed .sidebar-link span,
+.sidebar-collapsed .sidebar-logo-text,
+.sidebar-collapsed .sidebar-logo-sub,
+.sidebar-collapsed .sidebar-section-label,
+.sidebar-collapsed .sidebar-badge,
+.sidebar-collapsed .sidebar-footer { display: none; }
+.sidebar-collapsed .sidebar-logo { justify-content: center; padding: 20px 0 16px; }
+.sidebar-collapsed .sidebar-link { justify-content: center; padding: 12px; }
+.sidebar-collapsed .sidebar-link i { width: auto; font-size: 16px; }
+
+/* ══════════════════════════════════════════════════════════
+   Dark mode — professional palette (slate/navy, teal & gold accents)
+   ══════════════════════════════════════════════════════════ */
+body.dark-mode {
+  --teal: #4fd1c5;
+  --dm-bg:        #0e1420;
+  --dm-surface:   #161d2b;
+  --dm-surface-2: #1c2434;
+  --dm-surface-3: #232c3f;
+  --dm-border:    #2a3448;
+  --dm-text:      #e7eaf0;
+  --dm-text-dim:  #aab2c2;
+  --dm-text-mute: #7c8598;
+  --dm-teal:      #4fd1c5;
+  --dm-gold:      #D0884E;
+  --dm-danger:    #ff6b6b;
+  --dm-success:   #3ecf8e;
+  --dm-info:      #4fa9e8;
+  --dm-warning:   #D0884E;
+  --dm-msg-unread-bg:    rgba(240,180,41,.08);
+  --dm-msg-avatar-read:  var(--dm-surface-3);
+}
+
+body.dark-mode { background: var(--dm-bg); color: var(--dm-text); }
+
+/* Flip the design-system tokens themselves so every component built on
+   var(--text-primary), var(--surface-white), var(--border), etc. — KPI
+   cards, panels, tables, greeting header — switches automatically instead
+   of silently rendering dark-on-dark / light-on-light text. */
+body.dark-mode {
+  --text-primary: var(--dm-text);
+  --text-secondary: var(--dm-text-dim);
+  --text-muted: var(--dm-text-mute);
+  --surface-white: var(--dm-surface);
+  --surface-subtle: var(--dm-surface-2);
+  --border: var(--dm-border);
+  --brand-green: var(--dm-teal);
+  --brand-green-hover: #3fb3a8;
+  --brand-green-light: rgba(79,209,197,.14);
+  --danger: var(--dm-danger);
+  --danger-bg: rgba(255,107,107,.12);
+  --warning: var(--dm-warning);
+  --warning-bg: rgba(208,136,78,.14);
+}
+
+/* Topbar */
+body.dark-mode .dash-topbar { background: var(--dm-surface); border-color: var(--dm-border); }
+body.dark-mode .dash-topbar .topbar-title { color: var(--dm-teal); }
+body.dark-mode .dash-topbar .btn,
+body.dark-mode #sidebarToggle,
+body.dark-mode #darkModeToggle { color: var(--dm-text-dim) !important; }
+body.dark-mode .dash-topbar .btn:hover { color: var(--dm-text) !important; }
+
+/* Cards / stat cards */
+body.dark-mode .stat-card,
+body.dark-mode .card {
+  background: var(--dm-surface);
+  border-color: var(--dm-border);
+  color: var(--dm-text);
+}
+body.dark-mode .stat-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,.35); }
+body.dark-mode .stat-label { color: var(--dm-text-mute); }
+body.dark-mode .stat-value { color: var(--dm-text); }
+body.dark-mode .stat-sub { color: var(--dm-text-dim); }
+body.dark-mode .card-header,
+body.dark-mode .card-footer { background: var(--dm-surface-2); border-color: var(--dm-border); }
+
+/* Tables */
+body.dark-mode .dash-table thead th { background: var(--dm-surface-2); color: var(--dm-text-dim); }
+body.dark-mode .dash-table tbody tr { border-color: var(--dm-border); }
+body.dark-mode .dash-table tbody tr:hover { background: var(--dm-surface-2); }
+body.dark-mode .dash-table tbody td { color: var(--dm-text); }
+body.dark-mode .table { color: var(--dm-text); border-color: var(--dm-border); }
+body.dark-mode .table > :not(caption) > * > * { background: transparent; color: var(--dm-text); border-bottom-color: var(--dm-border); }
+body.dark-mode .table-light,
+body.dark-mode .table-light > th,
+body.dark-mode .table-light > td { background: var(--dm-surface-2) !important; color: var(--dm-text-dim) !important; }
+body.dark-mode .table-hover > tbody > tr:hover > * { background: var(--dm-surface-2); color: var(--dm-text); }
+
+/* Forms */
+body.dark-mode .form-control,
+body.dark-mode .form-select {
+  background: var(--dm-surface-2);
+  border-color: var(--dm-border);
+  color: var(--dm-text);
+}
+body.dark-mode .form-control:focus,
+body.dark-mode .form-select:focus {
+  background: var(--dm-surface-2);
+  border-color: var(--dm-teal);
+  color: var(--dm-text);
+  box-shadow: 0 0 0 .2rem rgba(63,196,184,.2);
+}
+body.dark-mode .form-control::placeholder { color: var(--dm-text-mute); }
+body.dark-mode .form-control:disabled,
+body.dark-mode .form-select:disabled { background: var(--dm-surface); color: var(--dm-text-mute); }
+body.dark-mode .form-label { color: var(--dm-text-dim); }
+body.dark-mode .input-group-text { background: var(--dm-surface-3); border-color: var(--dm-border); color: var(--dm-text-dim); }
+body.dark-mode .form-check-input { background-color: var(--dm-surface-2); border-color: var(--dm-border); }
+body.dark-mode .form-check-input:checked { background-color: var(--dm-teal); border-color: var(--dm-teal); }
+
+/* Text helpers */
+body.dark-mode .text-muted { color: var(--dm-text-mute) !important; }
+body.dark-mode .text-dark:not(.badge):not(.badge-status):not(.toast) { color: var(--dm-text) !important; }
+body.dark-mode .badge.text-dark,
+body.dark-mode .badge.bg-warning,
+body.dark-mode .badge-status.bg-warning,
+body.dark-mode .toast.bg-warning { background: #D0884E !important; color: #fff !important; }
+body.dark-mode a:not(.ds-btn):not(.btn):not(.sidebar-link):not(.dropdown-item):not(.page-link) { color: var(--dm-teal); }
+body.dark-mode hr { border-color: var(--dm-border); opacity: 1; }
+
+/* Breadcrumb */
+body.dark-mode .dash-breadcrumb { color: var(--dm-text-mute); }
+body.dark-mode .dash-breadcrumb a { color: var(--dm-text-mute); }
+body.dark-mode .dash-breadcrumb a:hover { color: var(--dm-teal); }
+body.dark-mode .dash-breadcrumb .sep { color: var(--dm-border); }
+body.dark-mode .dash-breadcrumb .current { color: var(--dm-teal); }
+
+/* Dropdowns (notifications, user menu, etc.) */
+body.dark-mode .dropdown-menu {
+  background: var(--dm-surface-2);
+  border-color: var(--dm-border);
+  box-shadow: 0 8px 28px rgba(0,0,0,.45);
+}
+body.dark-mode .dropdown-item { color: var(--dm-text); }
+body.dark-mode .dropdown-item:hover,
+body.dark-mode .dropdown-item:focus { background: var(--dm-surface-3); color: var(--dm-text); }
+body.dark-mode .dropdown-header { color: var(--dm-text-mute); }
+body.dark-mode .dropdown-divider { border-color: var(--dm-border); }
+
+/* Modals */
+body.dark-mode .modal-content { background: var(--dm-surface); color: var(--dm-text); border-color: var(--dm-border); }
+body.dark-mode .modal-header,
+body.dark-mode .modal-footer { border-color: var(--dm-border); }
+body.dark-mode .btn-close { filter: invert(1) grayscale(100%) brightness(200%); }
+
+/* Pagination */
+body.dark-mode .page-link { background: var(--dm-surface-2); border-color: var(--dm-border); color: var(--dm-text-dim); }
+body.dark-mode .page-link:hover { background: var(--dm-surface-3); color: var(--dm-text); }
+body.dark-mode .page-item.active .page-link { background: var(--dm-teal); border-color: var(--dm-teal); color: #0e1420; }
+body.dark-mode .page-item.disabled .page-link { background: var(--dm-surface); color: var(--dm-text-mute); }
+
+/* List groups */
+body.dark-mode .list-group-item { background: var(--dm-surface); border-color: var(--dm-border); color: var(--dm-text); }
+body.dark-mode .list-group-item:hover { background: var(--dm-surface-2); }
+
+/* Alerts (keep contextual color but soften for dark bg) */
+body.dark-mode .alert-success { background: rgba(62,207,142,.12); border-color: rgba(62,207,142,.3); color: var(--dm-success); }
+body.dark-mode .alert-danger { background: rgba(255,107,107,.12); border-color: rgba(255,107,107,.3); color: var(--dm-danger); }
+body.dark-mode .alert-warning { background: rgba(240,180,41,.12); border-color: rgba(240,180,41,.3); color: var(--dm-warning); }
+body.dark-mode .alert-info { background: rgba(79,169,232,.12); border-color: rgba(79,169,232,.3); color: var(--dm-info); }
+
+/* Badges — keep solid contextual badges legible */
+body.dark-mode .badge.bg-light { background: var(--dm-surface-3) !important; color: var(--dm-text-dim) !important; }
+body.dark-mode .badge-status { filter: brightness(1.1); }
+
+/* Bootstrap bg-white utility is used heavily for card headers/footers — must flip in dark mode */
+body.dark-mode .bg-white { background: var(--dm-surface) !important; color: var(--dm-text); }
+
+/* Stat icon chips: replace the pastel light backgrounds with a subtle translucent chip so the
+   saturated icon colors stay vivid and readable instead of sitting in a washed-out light box */
+body.dark-mode .stat-icon { background: rgba(255,255,255,.07) !important; }
+
+/* --teal is lightened for dark mode text readability, but .btn-teal also uses it as a
+   background — flip the button label to dark text so it still reads clearly */
+body.dark-mode .btn-teal { color: #0e1420 !important; }
+body.dark-mode .btn-teal:hover { color: #0e1420 !important; }
+
+/* Buttons (outline variants need visible borders on dark bg) */
+body.dark-mode .btn-outline-secondary { color: var(--dm-text-dim); border-color: var(--dm-border); }
+body.dark-mode .btn-outline-secondary:hover { background: var(--dm-surface-2); color: var(--dm-text); }
+body.dark-mode .btn-light { background: var(--dm-surface-2); border-color: var(--dm-border); color: var(--dm-text); }
+body.dark-mode .btn-light:hover { background: var(--dm-surface-3); }
+
+/* Scrollbar */
+body.dark-mode ::-webkit-scrollbar-track { background: var(--dm-bg); }
+body.dark-mode ::-webkit-scrollbar-thumb { background: var(--dm-border); border-radius: 4px; }
+
+/* Sidebar stays on its own dark palette in both modes; just sharpen the divider lines a touch */
+body.dark-mode .dash-sidebar { box-shadow: 1px 0 0 rgba(0,0,0,.3); }
+
+/* Smooth theme transition */
+body, .dash-topbar, .stat-card, .card, .form-control, .form-select, .dropdown-menu, .modal-content {
+  transition: background-color .2s ease, border-color .2s ease, color .2s ease;
+}
+
+/* ── Row action buttons (edit/delete) — solid circular icon buttons ── */
+.action-btns { display: inline-flex; gap: 8px; }
+.btn-icon-action {
+  width: 32px; height: 32px; border-radius: 50% !important; border: none;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 13px; cursor: pointer; color: #fff !important;
+  transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+}
+.btn-icon-edit { background: #2f8fce !important; }
+.btn-icon-edit:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(47,143,206,.45); }
+.btn-icon-delete { background: #e64545 !important; }
+.btn-icon-delete:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(230,69,69,.45); }
+.btn-icon-action:active { transform: translateY(0); }
+body.dark-mode .btn-icon-edit { background: #4fa9e8 !important; }
+body.dark-mode .btn-icon-delete { background: #ff6b6b !important; }
+.btn-icon-suspend { background: #D0884E !important; }
+.btn-icon-suspend:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(208,136,78,.45); }
+.btn-icon-activate { background: #3ecf8e !important; }
+.btn-icon-activate:hover { filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 4px 10px rgba(62,207,142,.45); }
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .dash-sidebar { transform: translateX(-100%); }
+  .dash-sidebar.mobile-open { transform: translateX(0); }
+  .dash-main { margin-left: 0 !important; }
+  .sidebar-collapsed .dash-sidebar { transform: translateX(-100%); }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dash-layout" id="dashLayout">
+
+  <!-- SIDEBAR -->
+  <aside class="dash-sidebar" id="dashSidebar">
+    <div class="sidebar-logo">
+      <img src="{% static 'imgs/likhalaya.png' %}" alt="Likhalaya Logo" class="sidebar-logo-img">
+      <div>
+        <div class="sidebar-logo-text">LIKHALAYA</div>
+        <div class="sidebar-logo-sub">
+          {% if user.is_admin_user %}Admin Panel{% elif user.role == 'staff' %}Staff Panel{% elif user.is_courier_user %}Courier Panel{% else %}Dashboard{% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- User snippet -->
+    <div style="padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.06);">
+      <div class="d-flex align-items-center gap-2">
+        {% if user.avatar %}
+          <img src="{{ user.avatar.url }}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;" alt="{{ user.username }}">
+        {% else %}
+          <div style="width:34px;height:34px;border-radius:50%;background:var(--gold);display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;font-weight:700;flex-shrink:0;">
+            {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+          </div>
+        {% endif %}
+        <div class="sidebar-link-text">
+          <div style="font-size:12px;color:#fff;font-weight:600;">{{ user.get_full_name|default:user.username }}</div>
+          <div style="font-size:10px;color:rgba(255,255,255,.4);">{{ user.get_role_display }}</div>
+        </div>
+      </div>
+    </div>
+
+    {% if user.is_staff_user %}
+    <div class="sidebar-section-label">Main</div>
+    <a href="{% url 'dashboard:home' %}" class="sidebar-link {% block sb_dash %}{% endblock %}">
+      <i class="fas fa-chart-pie"></i><span>Overview</span>
+    </a>
+
+    <div class="sidebar-section-label">Catalog</div>
+    <a href="{% url 'dashboard:product_list' %}" class="sidebar-link {% block sb_products %}{% endblock %}">
+      <i class="fas fa-box-open"></i><span>Products</span>
+    </a>
+    <a href="{% url 'dashboard:category_list' %}" class="sidebar-link {% block sb_categories %}{% endblock %}">
+      <i class="fas fa-layer-group"></i><span>Categories</span>
+    </a>
+    <a href="{% url 'dashboard:video_list' %}" class="sidebar-link {% block sb_videos %}{% endblock %}">
+      <i class="fas fa-video"></i><span>Livelihood Videos</span>
+    </a>
+
+    <div class="sidebar-section-label">Sales</div>
+    <a href="{% url 'dashboard:order_list' %}" class="sidebar-link {% block sb_orders %}{% endblock %}">
+      <i class="fas fa-shopping-bag"></i><span>Orders</span>
+      {% if new_orders_count %}<span class="sidebar-badge">{{ new_orders_count }}</span>{% endif %}
+    </a>
+    {% if user.is_courier_user %}
+    <a href="{% url 'dashboard:courier_order_list' %}" class="sidebar-link {% block sb_deliveries2 %}{% endblock %}">
+      <i class="fas fa-truck-fast"></i><span>Deliveries</span>
+      {% if new_deliveries_count %}<span class="sidebar-badge">{{ new_deliveries_count }}</span>{% endif %}
+    </a>
+    {% endif %}
+    <a href="{% url 'dashboard:reports' %}" class="sidebar-link {% block sb_reports %}{% endblock %}">
+      <i class="fas fa-chart-bar"></i><span>Reports</span>
+    </a>
+
+    <div class="sidebar-section-label">Communication</div>
+    <a href="{% url 'dashboard:message_list' %}" class="sidebar-link {% block sb_messages %}{% endblock %}">
+      <i class="fas fa-envelope"></i><span>Messages</span>
+      {% if new_messages_count %}<span class="sidebar-badge">{{ new_messages_count }}</span>{% endif %}
+    </a>
+
+    <div class="sidebar-section-label">Payments</div>
+    {% if user.is_admin_user %}
+    <a href="{% url 'dashboard:gcash_qr_admin' %}" class="sidebar-link {% block sb_gcash_qr %}{% endblock %}">
+      <i class="fas fa-qrcode"></i><span>GCash QR Code</span>
+    </a>
+    {% else %}
+    <a href="{% url 'dashboard:gcash_qr_manage' %}" class="sidebar-link {% block sb_gcash_qr2 %}{% endblock %}">
+      <i class="fas fa-qrcode"></i><span>GCash QR Code</span>
+    </a>
+    {% endif %}
+
+    {% if user.is_admin_user %}
+    <div class="sidebar-section-label">Users &amp; Security</div>
+    <a href="{% url 'dashboard:user_list' %}" class="sidebar-link {% block sb_users %}{% endblock %}">
+      <i class="fas fa-users"></i><span>Users</span>
+    </a>
+    <a href="{% url 'dashboard:activity_log' %}" class="sidebar-link {% block sb_activity %}{% endblock %}">
+      <i class="fas fa-history"></i><span>Activity Log</span>
+    </a>
+    {% endif %}
+
+    <div class="sidebar-section-label">System</div>
+    {% if user.is_admin_user %}
+    <a href="{% url 'dashboard:archive' %}" class="sidebar-link {% block sb_archive %}{% endblock %}">
+      <i class="fas fa-box-archive"></i><span>Archive</span>
+    </a>
+    {% endif %}
+    {% elif user.is_courier_user %}
+    <div class="sidebar-section-label">Deliveries</div>
+    <a href="{% url 'dashboard:courier_order_list' %}" class="sidebar-link {% block sb_deliveries %}{% endblock %}">
+      <i class="fas fa-truck-fast"></i><span>My Deliveries</span>
+      {% if new_deliveries_count %}<span class="sidebar-badge">{{ new_deliveries_count }}</span>{% endif %}
+    </a>
+    {% endif %}
+
+    <hr style="border-color:rgba(255,255,255,.1);margin:12px 16px;">
+    <a href="{% url 'store:home' %}" class="sidebar-link">
+      <i class="fas fa-store"></i><span>View Store</span>
+    </a>
+
+    <!-- Mobile-only: Logout at the bottom of the admin menu, so phone
+         users can sign out without switching to desktop view. Hidden
+         on desktop (≥769px) to avoid duplicating the topbar dropdown's
+         Logout item. -->
+    <div class="sidebar-logout-wrap">
+      <form method="post" action="{% url 'accounts:logout' %}" class="js-logout-form sidebar-logout-form">{% csrf_token %}
+        <button type="submit" class="sidebar-link sidebar-logout-link">
+          <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+        </button>
+      </form>
+    </div>
+
+    <div class="sidebar-footer">
+      <span>v2.0 · Likhalaya PDL Market</span>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <div class="dash-main" id="dashMain">
+
+    <!-- TOPBAR -->
+    <div class="dash-topbar">
+      <button class="btn btn-sm border-0" id="sidebarToggle" style="color:#666;">
+        <i class="fas fa-bars fa-lg"></i>
+      </button>
+      <div class="topbar-title d-none d-md-block">{% block page_title %}Dashboard{% endblock %}</div>
+
+      <!-- Dark mode toggle -->
+      <button class="btn btn-sm border-0" id="darkModeToggle" title="Toggle dark mode" style="color:#666;">
+        <i class="fas fa-moon" id="darkIcon"></i>
+      </button>
+
+      <!-- Notifications -->
+      <div class="dropdown">
+        <button class="btn btn-sm border-0 position-relative" data-bs-toggle="dropdown" style="color:#666;">
+          <i class="fas fa-bell fa-lg"></i>
+          {% if new_orders_count or new_messages_count %}
+          <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:9px;">
+            {{ new_orders_count|add:new_messages_count }}
+          </span>
+          {% endif %}
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="min-width:300px;">
+          <li><h6 class="dropdown-header fw-bold">Notifications</h6></li>
+          {% if new_orders_count %}
+          <li>
+            <a class="dropdown-item py-2" href="{% url 'dashboard:order_list' %}?status=pending">
+              <div class="d-flex gap-2 align-items-start">
+                <span style="background:#fee;padding:6px;border-radius:8px;"><i class="fas fa-shopping-bag text-danger fa-sm"></i></span>
+                <div>
+                  <div class="fw-semibold" style="font-size:12px;">{{ new_orders_count }} pending order{{ new_orders_count|pluralize }}</div>
+                  <div class="text-muted" style="font-size:11px;">Needs your attention</div>
+                </div>
+              </div>
+            </a>
+          </li>
+          {% endif %}
+          {% if new_messages_count %}
+          <li>
+            <a class="dropdown-item py-2" href="{% url 'dashboard:message_list' %}?read=false">
+              <div class="d-flex gap-2 align-items-start">
+                <span style="background:#e8f8f5;padding:6px;border-radius:8px;"><i class="fas fa-envelope text-success fa-sm"></i></span>
+                <div>
+                  <div class="fw-semibold" style="font-size:12px;">{{ new_messages_count }} unread message{{ new_messages_count|pluralize }}</div>
+                  <div class="text-muted" style="font-size:11px;">From customers</div>
+                </div>
+              </div>
+            </a>
+          </li>
+          {% endif %}
+          {% if not new_orders_count and not new_messages_count %}
+          <li><div class="text-center py-3 text-muted small"><i class="fas fa-check-circle text-success me-1"></i>All caught up!</div></li>
+          {% endif %}
+        </ul>
+      </div>
+
+      <!-- User menu -->
+      <div class="dropdown">
+        <button class="btn btn-sm border-0 d-flex align-items-center gap-2" data-bs-toggle="dropdown">
+          {% if user.avatar %}
+            <img src="{{ user.avatar.url }}" style="width:32px;height:32px;border-radius:50%;object-fit:cover;" alt="{{ user.username }}">
+          {% else %}
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:700;">
+              {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+            </div>
+          {% endif %}
+          <span class="d-none d-md-block" style="font-size:13px;font-weight:600;color:var(--dm-text,#333);">{{ user.first_name|default:user.username }}</span>
+          <i class="fas fa-chevron-down fa-xs text-muted"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+          <li><h6 class="dropdown-header">{{ user.get_full_name|default:user.username }}</h6></li>
+          <li><a class="dropdown-item small" href="{% url 'accounts:profile' %}"><i class="fas fa-user me-2 text-muted"></i>My Profile</a></li>
+          <li><a class="dropdown-item small" href="{% url 'accounts:change_password' %}"><i class="fas fa-lock me-2 text-muted"></i>Change Password</a></li>
+          <li class="topbar-account-logout"><hr class="dropdown-divider my-1"></li>
+          <li class="topbar-account-logout">
+            <form method="post" action="{% url 'accounts:logout' %}" class="js-logout-form">{% csrf_token %}
+              <button type="submit" class="dropdown-item small text-danger"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
+            </form>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- FLASH MESSAGES -->
+    {% if messages %}
+    <div style="position:fixed;top:76px;right:20px;z-index:9999;min-width:320px;">
+      {% for msg in messages %}
+      <div class="toast show align-items-center text-white border-0 mb-2 rounded-3 shadow
+          bg-{% if msg.tags == 'error' or msg.tags == 'danger' %}danger{% elif msg.tags == 'success' %}success{% elif msg.tags == 'warning' %}warning text-dark{% else %}info{% endif %}"
+          role="alert" style="animation:slideIn .3s ease;">
+        <div class="d-flex">
+          <div class="toast-body small fw-semibold">
+            <i class="fas fa-{% if msg.tags == 'success' %}check-circle{% elif msg.tags == 'error' or msg.tags == 'danger' %}exclamation-circle{% else %}info-circle{% endif %} me-2"></i>
+            {{ msg }}
+          </div>
+          <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <!-- PAGE CONTENT -->
+    <div class="dash-page">
+      {% block dash_content %}{% endblock %}
+    </div>
+
+  </div>
+
+  <!-- Mobile overlay -->
+  <div class="d-md-none" id="sidebarOverlay"
+       style="display:none!important;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1039;"
+       onclick="closeSidebar()"></div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<style>
+@keyframes slideIn { from{transform:translateX(40px);opacity:0} to{transform:translateX(0);opacity:1} }
+</style>
+<script>
+// Sidebar toggle
+const layout = document.getElementById('dashLayout');
+const sidebar = document.getElementById('dashSidebar');
+const overlay = document.getElementById('sidebarOverlay');
+
+function closeSidebar() {
+  sidebar.classList.remove('mobile-open');
+  overlay.style.display = 'none !important';
+}
+
+document.getElementById('sidebarToggle').addEventListener('click', () => {
+  if (window.innerWidth < 768) {
+    sidebar.classList.toggle('mobile-open');
+    overlay.style.cssText = sidebar.classList.contains('mobile-open') ? 'display:block!important;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1039;' : 'display:none!important;';
+  } else {
+    layout.classList.toggle('sidebar-collapsed');
+    localStorage.setItem('sidebarCollapsed', layout.classList.contains('sidebar-collapsed'));
+  }
+});
+
+// Restore collapsed state
+if (localStorage.getItem('sidebarCollapsed') === 'true') {
+  layout.classList.add('sidebar-collapsed');
+}
+
+// Dark mode
+const darkBtn = document.getElementById('darkModeToggle');
+const darkIcon = document.getElementById('darkIcon');
+function applyDark(on) {
+  document.body.classList.toggle('dark-mode', on);
+  darkIcon.className = on ? 'fas fa-sun' : 'fas fa-moon';
+  localStorage.setItem('darkMode', on);
+}
+darkBtn.addEventListener('click', () => applyDark(!document.body.classList.contains('dark-mode')));
+if (localStorage.getItem('darkMode') === 'true') applyDark(true);
+
+// Auto-dismiss toasts
+document.querySelectorAll('.toast').forEach(t => {
+  setTimeout(() => { try { bootstrap.Toast.getOrCreateInstance(t).hide(); } catch(e){} }, 5000);
+});
+</script>
+{% block dash_js %}{% endblock %}
+{% endblock %}

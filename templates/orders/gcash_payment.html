@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% load static humanize gcash_extras %}
+{% block title %}GCash Payment – Likhalaya{% endblock %}
+
+{% block extra_css %}
+<style>
+.gcash-card { background: #fff; border-radius: 20px; }
+.gcash-header { background: linear-gradient(135deg, #0071CE, #00A0E4); border-radius: 20px 20px 0 0; padding: 22px; color: #fff; }
+.qr-box { background: #fff; border: 2px dashed #cfe6f8; border-radius: 16px; padding: 18px; text-align: center; }
+.qr-box img { width: auto; max-width: 100%; height: 300px; object-fit: contain; border-radius: 8px; }
+.amount-pill { background: #eaf6ff; color: #0071CE; font-weight: 800; font-size: 22px; border-radius: 12px; padding: 10px 18px; display: inline-block; }
+.proof-preview { max-width: 100%; max-height: 260px; border-radius: 12px; margin-top: 10px; }
+.review-card { background:#fff; border:1px solid #eee; border-radius:16px; padding:18px 20px; }
+.review-card h6 { color:var(--teal); font-weight:700; margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+/* Confirm step: 2x2 landscape grid */
+.confirm-grid .review-card { height:100%; }
+.confirm-grid .review-card h6 { margin-bottom:0; font-size:15px; }
+.card-head { display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+.icon-badge { width:44px; height:44px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  background: color-mix(in srgb, var(--gold) 14%, #fff); color: var(--gold); font-size:18px; }
+.pill-btn { display:inline-flex; align-items:center; gap:6px; padding:6px 14px; border-radius:8px; font-size:13px; font-weight:600;
+  color:var(--teal); background: color-mix(in srgb, var(--teal) 10%, #fff); border:0; text-decoration:none; }
+.pill-btn:hover { background: color-mix(in srgb, var(--teal) 18%, #fff); color:var(--teal); }
+.confirm-grid .proof-preview { display:block; max-height:230px; margin:4px auto 0; }
+
+/* ===== Phone-first tweaks (base = phone, enhanced up at lg) ===== */
+.mobile-cta { position:sticky; bottom:0; z-index:5; background:rgba(255,255,255,.97);
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom)); box-shadow:0 -6px 16px rgba(0,0,0,.08); border-radius:14px 14px 0 0; }
+@media (min-width: 992px) { .mobile-cta { position:static; background:none; padding:0; box-shadow:none; border-radius:0; } }
+@media (max-width: 991.98px) {
+  .form-control { font-size:16px; }               /* stops iOS zoom-on-focus */
+  .btn-lg { padding-top:.8rem; padding-bottom:.8rem; }   /* 44px+ touch target */
+}
+@media (max-width: 575.98px) {
+  .amount-pill { font-size:20px; padding:8px 16px; }
+  .qr-box { padding:12px; }
+  .qr-box img { height:auto; max-height:260px; }
+  .proof-preview { max-height:200px; }
+  .gcash-header { padding:16px !important; }
+}
+@media (max-width: 575.98px) {
+  .card-head { flex-wrap:wrap; }
+  .card-head .pill-btn { width:100%; justify-content:center; min-height:42px; }
+  .icon-badge { width:40px; height:40px; font-size:16px; }
+}
+.pill-btn { min-height:38px; }
+
+/* ===== Compact spacing on small phones ===== */
+@media (max-width: 575.98px) {
+  .tight-phone { padding-top:.5rem !important; padding-bottom:.75rem !important; padding-left:.6rem; padding-right:.6rem; }
+  .tight-phone .co-stepper { margin-bottom:10px; }
+  .tight-phone .mb-4 { margin-bottom:.6rem !important; }
+  .tight-phone .mb-3 { margin-bottom:.45rem !important; }
+  .tight-phone .mt-3 { margin-top:.45rem !important; }
+  .tight-phone .p-3 { padding:.6rem !important; }
+  .tight-phone .py-2 { padding-top:.3rem !important; padding-bottom:.3rem !important; }
+  .tight-phone .row { --bs-gutter-x:.5rem; --bs-gutter-y:.5rem; }
+  .tight-phone .review-card { padding:10px 12px; border-radius:14px; }
+  .tight-phone .card-head { margin-bottom:8px; gap:8px; }
+  .tight-phone .icon-badge { width:34px; height:34px; font-size:14px; }
+  .tight-phone .gcash-header { padding:10px 14px !important; }
+  .tight-phone .gcash-header .fs-5 { font-size:1rem !important; }
+  .tight-phone .amount-pill { font-size:18px; padding:6px 14px; }
+  .tight-phone .qr-box { padding:8px; }
+  .tight-phone .qr-box img { max-height:220px; }
+  .tight-phone .upload-drop { padding:12px 10px; }
+  .tight-phone .proof-preview { max-height:170px; margin-top:6px; }
+  .tight-phone .confirm-grid .proof-preview { max-height:190px; }
+  .tight-phone [style*="width:56px"] { width:46px !important; height:46px !important; }
+  .tight-phone .btn-lg { padding-top:.6rem; padding-bottom:.6rem; font-size:1rem; }
+  .tight-phone .mobile-cta { padding:8px 10px calc(8px + env(safe-area-inset-bottom)); }
+  .tight-phone hr { margin:.5rem 0 !important; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-3 py-lg-5 tight-phone">
+  <div class="row justify-content-center">
+    <div class="{% if order.payment_proof %}col-lg-11 col-xl-10{% else %}col-lg-6{% endif %}">
+
+      {% if order.is_finalized %}
+      <a href="{% url 'orders:order_detail' order.pk %}" class="btn btn-outline-secondary btn-sm rounded-3 mb-3">
+        <i class="fas fa-arrow-left me-1"></i>Back to Order
+      </a>
+      {% else %}
+      <a href="{% url 'orders:gcash_back_to_checkout' order.pk %}" class="btn btn-outline-secondary btn-sm rounded-3 mb-3">
+        <i class="fas fa-arrow-left me-1"></i>Back to Cart
+      </a>
+      {% endif %}
+
+      {% include 'orders/_checkout_stepper.html' with current_step=4 %}
+
+      {% if not order.payment_proof %}
+      <div class="gcash-card shadow-sm overflow-hidden mb-4">
+        <div class="gcash-header text-center">
+          <div style="font-size:32px;">📱</div>
+          <div class="fw-bold fs-5">Pay with GCash</div>
+          <div class="small opacity-75">Order {{ order.order_number }}</div>
+        </div>
+
+        <div class="p-3 p-lg-4">
+          <div class="text-center mb-3">
+            <div class="text-muted small mb-1">Amount to send</div>
+            <span class="amount-pill">₱{{ order.total|floatformat:2|intcomma }}</span>
+          </div>
+
+          <div class="qr-box mb-3">
+            {% if active_qr %}
+              <img src="{{ active_qr.image.url }}" alt="GCash QR Code">
+              <div class="small text-muted mt-2">Scan this QR in your GCash app</div>
+              {% if active_qr.account_name %}<div class="fw-bold" style="color:#0071CE;">{{ active_qr.account_name|mask_gcash_name }}</div>{% endif %}
+              {% if active_qr.account_number %}<div class="small text-muted">{{ active_qr.account_number|mask_gcash_number }}</div>{% endif %}
+            {% elif qr_image_url %}
+              <img src="{{ qr_image_url }}" alt="GCash QR Code">
+              <div class="small text-muted mt-2">Scan this QR in your GCash app</div>
+            {% else %}
+              <i class="fas fa-qrcode" style="font-size:48px;color:#cfe6f8;"></i>
+              <div class="fw-bold mt-2" style="color:#8b9490;">No QR code available right now</div>
+              <div class="small text-muted mt-1">Please try again later or choose a different payment method.</div>
+            {% endif %}
+          </div>
+          <h6 class="fw-bold mb-2" style="color:var(--teal);">Send your payment verification</h6>
+          <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" name="payment_proof" accept="image/*" class="form-control mb-2" required>
+            <div class="small text-muted mb-3">PNG or JPG · {{ min_proof_kb }}KB–{{ max_proof_kb }}KB</div>
+            <button type="submit" class="btn btn-teal btn-lg w-100 rounded-3">
+              <i class="fas fa-paper-plane me-2"></i>Submit Payment Proof
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+
+      {% if order.payment_proof %}
+      <div class="row g-3 confirm-grid">
+
+        <!-- Payment Verification -->
+        <div class="col-lg-6">
+          <div class="review-card">
+            <div class="card-head">
+              <div class="icon-badge"><i class="fas fa-mobile-screen-button"></i></div>
+              <div class="flex-grow-1">
+                <h6>Payment Verification</h6>
+                <div class="fw-bold text-success small mt-1"><i class="fas fa-circle-check me-1"></i>Verification image received</div>
+              </div>
+              <a href="#change-proof" data-bs-toggle="collapse" class="pill-btn"><i class="fas fa-rotate"></i>Change Image</a>
+            </div>
+            <img src="{{ order.payment_proof.url }}" class="proof-preview" alt="Payment proof">
+
+            <div class="collapse mt-3" id="change-proof">
+              <form method="post" enctype="multipart/form-data" class="border-top pt-3">
+                {% csrf_token %}
+                <input type="file" name="payment_proof" accept="image/*" class="form-control mb-2" required>
+                <div class="small text-muted mb-2">PNG or JPG · {{ min_proof_kb }}KB–{{ max_proof_kb }}KB</div>
+                <button type="submit" class="btn btn-sm btn-teal rounded-3">
+                  <i class="fas fa-paper-plane me-1"></i>Upload New Image
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- Order Details -->
+        <div class="col-lg-6">
+          <div class="review-card d-flex flex-column">
+            <div class="card-head">
+              <div class="icon-badge"><i class="fas fa-box"></i></div>
+              <h6>Order Details</h6>
+            </div>
+            <div class="flex-grow-1">
+              {% for item in order.items.all %}
+              <div class="d-flex align-items-center gap-3 py-2 {% if not forloop.last %}border-bottom{% endif %}">
+                <div style="width:56px;height:56px;border-radius:8px;overflow:hidden;background:#f5f5f5;flex-shrink:0;">
+                  {% if item.design.image %}
+                    <img src="{{ item.design.image.url }}" alt="{{ item.product_name }}" style="width:100%;height:100%;object-fit:cover;">
+                  {% elif item.product.image %}
+                    <img src="{{ item.product.image.url }}" alt="{{ item.product_name }}" style="width:100%;height:100%;object-fit:cover;">
+                  {% else %}
+                    <div class="d-flex align-items-center justify-content-center h-100"><i class="fas fa-image text-muted"></i></div>
+                  {% endif %}
+                </div>
+                <div style="flex:1;min-width:0;">
+                  <div class="fw-semibold small text-truncate">
+                    {{ item.product_name }}
+                    {% if item.size_display %}<span class="badge bg-light text-dark border ms-1" style="font-size:10px;">{{ item.size_display }}</span>{% endif %}
+                    {% if item.design_name %}<span class="badge bg-light text-dark border ms-1" style="font-size:10px;">{{ item.design_name }}</span>{% endif %}
+                  </div>
+                  <div class="text-muted" style="font-size:11px;">x{{ item.quantity }} @ ₱{{ item.product_price|floatformat:0|intcomma }}</div>
+                </div>
+                <div class="fw-bold small" style="color:var(--gold);">₱{{ item.item_total|floatformat:0|intcomma }}</div>
+              </div>
+              {% endfor %}
+            </div>
+            <div class="d-flex justify-content-between align-items-center fw-bold mt-3 pt-3 border-top">
+              <span>Total</span>
+              <span style="color:var(--gold);font-size:20px;">₱{{ order.total|floatformat:0|intcomma }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Delivery Address -->
+        <div class="col-lg-6">
+          <div class="review-card">
+            <div class="card-head">
+              <div class="icon-badge"><i class="fas fa-map-marker-alt"></i></div>
+              <h6>Delivery Address</h6>
+            </div>
+            <div class="small mb-3">
+              <div class="mb-2"><i class="fas fa-user me-2" style="color:var(--teal);width:16px;"></i><span class="text-muted">Name:</span> <span class="fw-semibold text-dark">{{ order.full_name }}</span></div>
+              <div class="mb-2"><i class="fas fa-phone me-2" style="color:var(--teal);width:16px;"></i><span class="text-muted">Phone:</span> <span class="fw-semibold text-dark">{{ order.phone }}</span></div>
+              <div><i class="fas fa-location-dot me-2" style="color:var(--teal);width:16px;"></i><span class="text-muted">Address:</span> <span class="fw-semibold text-dark">{{ order.address }}, {{ order.city }}, {{ order.province }} {{ order.zip_code }}</span></div>
+            </div>
+            <a href="{% url 'accounts:profile' %}?next={% url 'orders:gcash_payment' order.pk %}&edit=1" class="pill-btn">
+              <i class="fas fa-location-dot"></i>Change Location
+            </a>
+          </div>
+        </div>
+
+        <!-- Final confirmation -->
+        <div class="col-lg-6">
+          <div class="review-card d-flex flex-column">
+            <div class="card-head">
+              <div class="icon-badge"><i class="fas fa-clipboard-check"></i></div>
+              <h6>Ready to Confirm</h6>
+            </div>
+            <div class="small mb-3 flex-grow-1">
+              <div class="mb-1"><i class="fas fa-check text-success me-2"></i>Delivery details verified</div>
+              <div class="mb-1"><i class="fas fa-check text-success me-2"></i>Order details reviewed</div>
+              <div><i class="fas fa-check text-success me-2"></i>Payment proof attached</div>
+            </div>
+            <form method="post" action="{% url 'orders:gcash_finalize' order.pk %}" class="d-none d-lg-block">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-gold btn-lg w-100 rounded-3">
+                <i class="fas fa-check-circle me-2"></i>Confirm Order
+              </button>
+            </form>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Phones/tablets: Confirm button stays pinned to the bottom of the screen -->
+      <div class="mobile-cta d-lg-none mt-3">
+        <form method="post" action="{% url 'orders:gcash_finalize' order.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-gold btn-lg w-100 rounded-3">
+            <i class="fas fa-check-circle me-2"></i>Confirm Order
+          </button>
+        </form>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,442 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Shopping Cart – Likhalaya{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cart-green: #14584A;
+  --cart-green-soft: #EAF4EF;
+  --cart-gold: #C9841A;
+}
+
+/* ===== Page shell ===== */
+.cart-page-wrap { background: #F3F1EA; }
+.cart-page-container { max-width: 1140px; margin: 0 auto; }
+
+.cart-back-link {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-size: 13px; font-weight: 700; color: var(--cart-green);
+  text-decoration: underline; margin-bottom: 8px;
+}
+.cart-back-link:hover { color: #0F3D39; }
+.cart-page-header { margin-bottom: 22px; }
+.cart-page-header h1 {
+  font-family: 'Fraunces', serif; font-weight: 700;
+  font-size: clamp(28px, 3.4vw, 38px); line-height: 1.1;
+  color: var(--cart-green); margin: 0 0 6px;
+}
+.cart-page-header p { margin: 0; font-size: 14px; color: #5f6b67; }
+
+/* ===== Cart card ===== */
+.cart-card { border: none; border-radius: 20px; background: #fff; box-shadow: 0 6px 26px rgba(20,60,50,.07); overflow: hidden; }
+
+/* Select-all toolbar (only when 2+ items) */
+.cart-toolbar { background: var(--cart-green-soft); border-bottom: 1px solid #dcebe3; padding: 14px 22px; }
+.cart-toolbar .btn-select-all {
+  background: #fff; border: 1.5px solid #cfe0d3; color: var(--cart-green);
+  font-weight: 600; font-size: 12.5px; padding: 7px 16px; border-radius: 8px; transition: all .18s ease;
+}
+.cart-toolbar .btn-select-all:hover { background: var(--cart-green); border-color: var(--cart-green); color: #fff; }
+.cart-toolbar .selected-count-text { color: #3f4a46; font-weight: 500; }
+.cart-toolbar .selected-count-text #selectedCount { font-weight: 700; color: var(--cart-green); }
+
+/* ===== Line item ===== */
+.cart-line { display: flex; align-items: center; gap: 18px; padding: 22px 24px; }
+.cart-line + .cart-line { border-top: 1px solid #F0ECE2; }
+.cart-line-checkbox { width: 19px; height: 19px; flex-shrink: 0; cursor: pointer; accent-color: var(--cart-green); }
+
+.cart-line-img, .cart-line-img-placeholder { width: 92px; height: 92px; border-radius: 14px; flex-shrink: 0; }
+.cart-line-img { object-fit: cover; border: 1px solid #F0ECE2; }
+.cart-line-img-placeholder { background: var(--cart-green-soft); display: flex; align-items: center; justify-content: center; font-size: 30px; }
+
+.cart-line-info { flex: 1; min-width: 0; }
+.cart-item-name {
+  display: block; font-family: 'Fraunces', serif; font-weight: 700;
+  font-size: 18px; line-height: 1.25; color: #1a2420; text-decoration: none;
+}
+.cart-item-name:hover { color: var(--cart-green); }
+.cart-item-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.cart-item-variant-badge {
+  background: var(--cart-green-soft); color: var(--cart-green);
+  font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 6px;
+}
+.cart-item-price { font-family: 'Fraunces', serif; font-weight: 700; font-size: 18px; color: var(--cart-green); margin-top: 8px; }
+.stock-warning { display: flex; align-items: center; gap: 5px; margin-top: 6px; font-size: 11.5px; font-weight: 500; color: var(--cart-gold); }
+
+/* Right side: line total, trash, quantity */
+.cart-line-side { display: flex; flex-direction: column; align-items: flex-end; gap: 14px; flex-shrink: 0; }
+.cart-line-top { display: flex; align-items: center; gap: 18px; }
+.cart-line-total { font-family: 'Fraunces', serif; font-weight: 700; font-size: 18px; color: var(--cart-green); }
+.remove-line-btn {
+  background: none; border: none; padding: 4px; color: #7b8582; font-size: 15px;
+  cursor: pointer; transition: color .15s ease;
+}
+.remove-line-btn:hover { color: #b3392b; }
+
+.cart-qty-group {
+  display: inline-flex; align-items: center; gap: 4px; margin: 0;
+  padding: 4px; border: 1.5px solid #E7E3D8; border-radius: 999px; background: #fff;
+}
+.cart-qty-btn {
+  width: 32px; height: 32px; border: none; border-radius: 50%; padding: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: #F1EFE8; color: #3f4a46; font-weight: 700; font-size: 16px;
+  transition: background .15s, color .15s;
+}
+.cart-qty-btn:hover:not(:disabled) { background: var(--cart-green); color: #fff; }
+.cart-qty-btn:disabled { color: #c3c7c5; cursor: not-allowed; }
+.cart-qty-value { min-width: 38px; text-align: center; font-weight: 700; font-size: 14px; color: #1a2420; }
+
+/* Pickup / delivery info bar */
+.cart-info-wrap { padding: 0 24px 24px; }
+.cart-info-bar {
+  display: flex; align-items: center; gap: 12px;
+  padding: 14px 16px; border-radius: 12px;
+  background: var(--cart-green-soft); color: #2f6f5a; font-size: 12.5px;
+}
+.cart-info-bar i { color: var(--cart-green); font-size: 16px; }
+
+/* ===== Order summary ===== */
+.summary-sticky-wrap { position: sticky; top: 96px; }
+.summary-card { border: none; border-radius: 20px; background: #fff; box-shadow: 0 6px 26px rgba(20,60,50,.07); padding: 26px 24px; }
+.summary-title { font-family: 'Fraunces', serif; font-weight: 700; font-size: 20px; color: var(--cart-green); margin: 0 0 18px; }
+.summary-row { display: flex; justify-content: space-between; align-items: center; font-size: 14px; margin-bottom: 12px; }
+.summary-row .label { color: #5f6b67; }
+.summary-row .value { font-weight: 700; color: #1a2420; }
+.summary-row .value.shipping-free { color: var(--cart-green); }
+.free-shipping-alert { font-size: 12px; border-radius: 10px; background: var(--cart-green-soft); border: none; color: #2f6f5a; }
+.summary-divider { border: none; border-top: 1px solid #ECE8DD; margin: 16px 0; }
+.summary-grand-total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.summary-grand-total-label { font-family: 'Fraunces', serif; font-weight: 700; font-size: 16px; color: #1a2420; }
+.summary-grand-total { font-family: 'Fraunces', serif; font-weight: 700; font-size: 28px; color: var(--cart-green); }
+
+.btn-checkout {
+  width: 100%; border: none; border-radius: 12px; padding: 14px 0;
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  background: linear-gradient(135deg, #D08B1E, #BE7A12); color: #fff;
+  font-weight: 700; font-size: 15px;
+  transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+}
+.btn-checkout:hover { color: #fff; filter: brightness(.93); transform: translateY(-2px); box-shadow: 0 10px 24px rgba(201,132,26,.28); }
+.btn-checkout:disabled, .btn-checkout.disabled { background: #cbb98f; cursor: not-allowed; transform: none; box-shadow: none; filter: none; }
+
+.secure-checkout-note {
+  display: flex; align-items: center; gap: 12px; margin-top: 16px;
+  padding: 13px 16px; border-radius: 12px;
+  background: var(--cart-green-soft); color: #2f6f5a; font-size: 12.5px; line-height: 1.4;
+}
+.secure-checkout-note i { color: var(--cart-green); font-size: 17px; }
+
+/* ===== Empty cart ===== */
+.empty-cart-card { background: #fff; border-radius: 20px; box-shadow: 0 6px 26px rgba(20,60,50,.07); padding: 64px 24px; }
+.empty-cart-icon { font-size: 68px; margin-bottom: 14px; }
+
+/* ===== Sticky mobile checkout bar (phones/tablets) ===== */
+.cart-mobile-bar {
+  position: sticky; bottom: 0; z-index: 5; margin-top: 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: rgba(255,255,255,.98); border-radius: 16px 16px 0 0;
+  padding: 10px 14px calc(10px + env(safe-area-inset-bottom));
+  box-shadow: 0 -6px 18px rgba(20,60,50,.12);
+}
+.cart-mobile-bar .bar-label { font-size: 11px; color: #5f6b67; line-height: 1.1; }
+.cart-mobile-bar .bar-total { font-family: 'Fraunces', serif; font-weight: 700; font-size: 20px; color: var(--cart-green); line-height: 1.1; }
+.cart-mobile-bar .btn-checkout { width: auto; padding: 11px 20px; font-size: 14px; white-space: nowrap; }
+
+/* ===== Responsive (phone-first) ===== */
+@media (max-width: 991.98px) {
+  .summary-sticky-wrap { position: static; }
+  .summary-card .btn-checkout { display: none; }   /* replaced by the sticky bar */
+  .summary-card { padding: 18px 18px; }
+  .summary-grand-total-row { margin-bottom: 0; }
+  .qty-tap .cart-qty-btn { width: 34px; height: 34px; }
+}
+@media (max-width: 575.98px) {
+  .cart-page-wrap { padding-top: 12px !important; padding-bottom: 0 !important; }
+  .cart-page-container { padding-left: .6rem; padding-right: .6rem; }
+  .cart-page-header { margin-bottom: 10px; }
+  .cart-back-link { font-size: 12px; margin-bottom: 2px; }
+  .cart-page-header h1 { font-size: 24px; margin-bottom: 2px; }
+  .cart-page-header p { font-size: 12.5px; }
+  .cart-page-container .row { --bs-gutter-x: .5rem; --bs-gutter-y: .6rem; }
+  .cart-card, .summary-card, .empty-cart-card { border-radius: 16px; }
+  .cart-toolbar { padding: 8px 12px; }
+  .cart-toolbar .btn-select-all { padding: 5px 12px; font-size: 12px; }
+  .cart-line { flex-wrap: wrap; padding: 10px 12px; gap: 8px 10px; align-items: flex-start; }
+  .cart-line-checkbox { width: 18px; height: 18px; margin-top: 2px; }
+  .cart-line-img, .cart-line-img-placeholder { width: 64px; height: 64px; border-radius: 12px; }
+  .cart-item-name { font-size: 15px; }
+  .cart-item-badges { margin-top: 4px; gap: 4px; }
+  .cart-item-variant-badge { font-size: 10.5px; padding: 2px 8px; }
+  .cart-item-price { font-size: 14px; margin-top: 4px; }
+  .stock-warning { margin-top: 3px; font-size: 11px; }
+  .cart-line-total { font-size: 15px; }
+  .cart-line-side { width: 100%; flex-direction: row-reverse; justify-content: space-between; align-items: center; gap: 8px; }
+  .cart-line-top { gap: 8px; }
+  .remove-line-btn { padding: 8px; font-size: 16px; }         /* bigger tap target */
+  .cart-qty-group { padding: 2px; }
+  .cart-qty-btn { width: 34px; height: 34px; }
+  .cart-qty-value { min-width: 30px; font-size: 13.5px; }
+  .cart-info-wrap { padding: 0 12px 12px; }
+  .cart-info-bar { padding: 9px 12px; font-size: 12px; gap: 9px; }
+  .summary-card { padding: 14px 14px; }
+  .summary-title { font-size: 17px; margin-bottom: 10px; }
+  .summary-row { font-size: 13px; margin-bottom: 7px; }
+  .summary-divider { margin: 10px 0; }
+  .summary-grand-total { font-size: 22px; }
+  .free-shipping-alert { font-size: 11.5px; }
+  .secure-checkout-note { margin-top: 10px; padding: 9px 12px; font-size: 12px; gap: 9px; }
+  .empty-cart-card { padding: 36px 16px; }
+  .empty-cart-icon { font-size: 52px; margin-bottom: 8px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="cart-page-wrap py-5">
+  <div class="container cart-page-container">
+    <div class="cart-page-header">
+      <a href="{% url 'store:shop' %}" class="cart-back-link"><i class="fas fa-arrow-left"></i>Continue Shopping</a>
+      <h1>Shopping Cart</h1>
+      <p>Review your items and proceed to checkout when you're ready.</p>
+    </div>
+
+    {% if cart %}
+    <div class="row g-4 align-items-start">
+      <div class="col-lg-8">
+        <div class="card cart-card">
+          {% if cart_items|length > 1 %}
+          <div class="d-flex align-items-center flex-wrap gap-2 cart-toolbar">
+            <button type="button" id="selectAllBtn" class="btn btn-select-all">
+              <i class="fas fa-check-square me-1"></i><span id="selectAllLabel">Deselect All</span>
+            </button>
+            <span class="selected-count-text small ms-1"><span id="selectedCount">{{ cart_items|length }}</span> of {{ cart_items|length }} selected</span>
+          </div>
+          {% endif %}
+
+          {% for item in cart_items %}
+          <div class="cart-line">
+            {% if cart_items|length > 1 %}
+            <input type="checkbox" class="form-check-input cart-item-checkbox cart-line-checkbox" data-item-key="{{ item.key }}" data-price="{{ item.total }}" checked>
+            {% else %}
+            <input type="checkbox" class="cart-item-checkbox d-none" data-item-key="{{ item.key }}" data-price="{{ item.total }}" checked>
+            {% endif %}
+
+            {% if item.design.image %}
+            <img src="{{ item.design.image.url }}" class="cart-line-img" alt="{{ item.design.title }}">
+            {% elif item.product.image %}
+            <img src="{{ item.product.image.url }}" class="cart-line-img" alt="{{ item.product.name }}">
+            {% else %}
+            <div class="cart-line-img-placeholder">🎨</div>
+            {% endif %}
+
+            <div class="cart-line-info">
+              <a href="{{ item.product.get_absolute_url }}" class="cart-item-name">{{ item.product.name }}</a>
+              {% if item.size_display or item.design_name %}
+              <div class="cart-item-badges">
+                {% if item.size_display %}<span class="cart-item-variant-badge">{{ item.size_display }}</span>{% endif %}
+                {% if item.design_name %}<span class="cart-item-variant-badge">{{ item.design_name }}</span>{% endif %}
+              </div>
+              {% endif %}
+              <div class="cart-item-price">₱{{ item.price|floatformat:0|intcomma }}</div>
+              {% if item.design %}{% if item.quantity >= item.design.stock %}
+              <div class="stock-warning"><i class="fas fa-exclamation-circle"></i>Max available stock reached</div>
+              {% endif %}{% elif item.quantity >= item.product.stock %}
+              <div class="stock-warning"><i class="fas fa-exclamation-circle"></i>Max available stock reached</div>
+              {% endif %}
+            </div>
+
+            <div class="cart-line-side">
+              <div class="cart-line-top">
+                <span class="cart-line-total">₱{{ item.total|floatformat:0|intcomma }}</span>
+                <form method="post" action="{% url 'orders:cart_remove' item.key %}">
+                  {% csrf_token %}
+                  <button type="submit" class="remove-line-btn" aria-label="Remove {{ item.product.name }} from cart" title="Remove item">
+                    <i class="far fa-trash-can"></i>
+                  </button>
+                </form>
+              </div>
+              <form method="post" action="{% url 'orders:cart_update' item.key %}" class="cart-qty-group">
+                {% csrf_token %}
+                <button type="submit" name="action" value="decrease" class="cart-qty-btn" {% if item.quantity <= 1 %}disabled{% endif %} aria-label="Decrease quantity">−</button>
+                <span class="cart-qty-value">{{ item.quantity }}</span>
+                <button type="submit" name="action" value="increase" class="cart-qty-btn"
+                  {% if item.design %}{% if item.quantity >= item.design.stock %}disabled{% endif %}{% elif item.quantity >= item.product.stock %}disabled{% endif %}
+                  aria-label="Increase quantity">+</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+
+          <div class="cart-info-wrap">
+            <div class="cart-info-bar">
+              <i class="fas fa-truck"></i>
+              <span>{% if cart_items|length == 1 %}This item is{% else %}These items are{% endif %} available for pickup or delivery. Shipping options will be confirmed at checkout.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="summary-sticky-wrap">
+          <form method="post" action="{% url 'orders:checkout_select' %}" id="checkoutSelectForm">
+            {% csrf_token %}
+            <div id="selectedItemsInputs"></div>
+            <div class="card summary-card">
+              <h2 class="summary-title">Order Summary</h2>
+
+              <div class="summary-row">
+                <span class="label">Subtotal</span>
+                <span class="value" id="summarySubtotal">₱{{ cart_total|floatformat:0|intcomma }}</span>
+              </div>
+              <div class="summary-row">
+                <span class="label">Shipping</span>
+                <span class="value {% if shipping_fee == 0 %}shipping-free{% endif %}" id="summaryShipping">
+                  {% if shipping_fee == 0 %}FREE{% else %}₱{{ shipping_fee|floatformat:0 }}.00{% endif %}
+                </span>
+              </div>
+
+              <div class="alert free-shipping-alert py-2 mb-2 {% if cart_total < 500 %}d-none{% endif %}" id="freeShippingAlert">
+                <i class="fas fa-info-circle me-1"></i><span id="freeShippingText">Orders of ₱500 or more have a ₱50 shipping fee.</span>
+              </div>
+
+              <hr class="summary-divider">
+
+              <div class="summary-grand-total-row">
+                <span class="summary-grand-total-label">Grand Total</span>
+                <span class="summary-grand-total" id="summaryGrandTotal">₱{{ cart_total|add:shipping_fee|floatformat:0|intcomma }}</span>
+              </div>
+
+              <button type="submit" class="btn-checkout" id="checkoutSubmitBtn">
+                <i class="fas fa-lock"></i>Proceed to Checkout<i class="fas fa-arrow-right"></i>
+              </button>
+
+              <div class="secure-checkout-note">
+                <i class="fas fa-shield-halved"></i>
+                <span>Your payment information is secure and encrypted.</span>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Phones/tablets: total + checkout stay pinned to the bottom of the screen.
+         Uses the form="..." attribute so it submits the same checkout form. -->
+    <div class="cart-mobile-bar d-lg-none">
+      <div>
+        <div class="bar-label">Grand Total</div>
+        <div class="bar-total" id="stickyGrandTotal">₱{{ cart_total|add:shipping_fee|floatformat:0|intcomma }}</div>
+      </div>
+      <button type="submit" form="checkoutSelectForm" class="btn-checkout" id="stickyCheckoutBtn">
+        <i class="fas fa-lock"></i>Checkout<i class="fas fa-arrow-right"></i>
+      </button>
+    </div>
+    {% else %}
+    <div class="empty-cart-card text-center">
+      <div class="empty-cart-icon">🛒</div>
+      <h4 class="fw-bold text-muted mb-2">Your cart is empty</h4>
+      <p class="text-muted small mb-4">Discover handcrafted products from our PDL artisans.</p>
+      <a href="{% url 'store:shop' %}" class="btn btn-teal btn-lg px-5 rounded-3">Start Shopping</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if cart %}
+<script>
+(function () {
+  const checkboxes = Array.from(document.querySelectorAll('.cart-item-checkbox'));
+  const selectAllBtn = document.getElementById('selectAllBtn');
+  const selectAllLabel = document.getElementById('selectAllLabel');
+  const selectedCountEl = document.getElementById('selectedCount');
+  const inputsContainer = document.getElementById('selectedItemsInputs');
+  const checkoutForm = document.getElementById('checkoutSelectForm');
+  const checkoutBtn = document.getElementById('checkoutSubmitBtn');
+  const stickyBtn = document.getElementById('stickyCheckoutBtn');
+  const stickyTotalEl = document.getElementById('stickyGrandTotal');
+
+  const subtotalEl = document.getElementById('summarySubtotal');
+  const shippingEl = document.getElementById('summaryShipping');
+  const grandTotalEl = document.getElementById('summaryGrandTotal');
+  const freeShippingAlert = document.getElementById('freeShippingAlert');
+  const freeShippingText = document.getElementById('freeShippingText');
+
+  const peso = (n) => '₱' + Math.round(n).toLocaleString('en-US');
+
+  function recalc() {
+    let subtotal = 0;
+    let selectedCount = 0;
+    checkboxes.forEach(function (cb) {
+      if (cb.checked) {
+        subtotal += parseFloat(cb.dataset.price || '0');
+        selectedCount += 1;
+      }
+    });
+
+    const shipping = subtotal >= 500 ? 50 : 0;
+    const grandTotal = subtotal + shipping;
+
+    subtotalEl.textContent = peso(subtotal);
+    if (shipping === 0) {
+      shippingEl.textContent = 'FREE';
+      shippingEl.classList.add('shipping-free');
+    } else {
+      shippingEl.textContent = peso(shipping);
+      shippingEl.classList.remove('shipping-free');
+    }
+    grandTotalEl.textContent = peso(grandTotal);
+    if (stickyTotalEl) stickyTotalEl.textContent = peso(grandTotal);
+
+    if (subtotal >= 500) {
+      freeShippingAlert.classList.remove('d-none');
+      freeShippingText.textContent = 'Orders of ₱500 or more have a ₱50 shipping fee.';
+    } else {
+      freeShippingAlert.classList.add('d-none');
+    }
+
+    if (selectedCountEl) selectedCountEl.textContent = selectedCount;
+    checkoutBtn.disabled = selectedCount === 0;
+    checkoutBtn.classList.toggle('disabled', selectedCount === 0);
+    if (stickyBtn) {
+      stickyBtn.disabled = selectedCount === 0;
+      stickyBtn.classList.toggle('disabled', selectedCount === 0);
+    }
+
+    if (selectAllLabel) {
+      selectAllLabel.textContent = selectedCount === checkboxes.length ? 'Deselect All' : 'Select All';
+    }
+  }
+
+  checkboxes.forEach(function (cb) {
+    cb.addEventListener('change', recalc);
+  });
+
+  if (selectAllBtn) {
+    selectAllBtn.addEventListener('click', function () {
+      const shouldSelectAll = selectAllLabel.textContent === 'Select All';
+      checkboxes.forEach(function (cb) { cb.checked = shouldSelectAll; });
+      recalc();
+    });
+  }
+
+  checkoutForm.addEventListener('submit', function () {
+    inputsContainer.innerHTML = '';
+    checkboxes.forEach(function (cb) {
+      if (cb.checked) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'selected_items';
+        input.value = cb.dataset.itemKey;
+        inputsContainer.appendChild(input);
+      }
+    });
+  });
+
+  recalc();
+})();
+</script>
+{% endif %}
+{% endblock %}

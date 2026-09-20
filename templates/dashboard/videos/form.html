@@ -1,0 +1,406 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block sb_videos %}active{% endblock %}
+{% block title %}{{ title }} – Dashboard{% endblock %}
+
+{% block dash_content %}
+<style>
+.pform-header {
+  background: linear-gradient(120deg, var(--teal), #2D7A73);
+  border-radius: 18px; padding: 28px 32px; margin-bottom: 28px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+  box-shadow: 0 8px 24px rgba(30,95,90,.18);
+}
+.pform-header h4 { color: #fff; font-family: 'Playfair Display', serif; font-size: 24px; margin: 0; }
+.pform-header p { color: rgba(255,255,255,.75); font-size: 13px; margin: 4px 0 0; }
+.pform-header .btn-back {
+  background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.28);
+  border-radius: 10px; font-size: 13px; padding: 8px 16px; transition: background .15s;
+}
+.pform-header .btn-back:hover { background: rgba(255,255,255,.24); color: #fff; }
+
+.pform-card {
+  background: #fff; border-radius: 16px; border: 1px solid #eee6d8;
+  box-shadow: 0 2px 14px rgba(30,25,10,.04); overflow: hidden;
+}
+.pform-card-header {
+  display: flex; align-items: center; gap: 10px; padding: 18px 24px;
+  border-bottom: 1px solid #f2ede1;
+}
+.pform-card-header .icon-badge {
+  width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center;
+  justify-content: center; background: rgba(30,95,90,.09); color: var(--teal); font-size: 15px; flex-shrink: 0;
+}
+.pform-card-header h6 { margin: 0; font-weight: 700; font-size: 14.5px; color: #2a2a2a; }
+.pform-card-header .subtitle { font-size: 11.5px; color: #9a9a9a; margin-top: 1px; }
+.pform-card-body { padding: 22px 24px; }
+
+.pform-card-body label.form-label {
+  font-size: 12.5px; font-weight: 700; color: #555; letter-spacing: .2px;
+  text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 4px;
+}
+.pform-card-body label.form-label .req { color: #c0392b; }
+.pform-card-body .form-control {
+  border-radius: 10px; border: 1.5px solid #e6e0d3; font-size: 14px;
+  padding: 10px 14px; transition: border-color .15s, box-shadow .15s; width: 100%;
+}
+.pform-card-body .form-control:focus {
+  border-color: var(--teal); box-shadow: 0 0 0 3px rgba(30,95,90,.12); outline: none;
+}
+.pform-card-body textarea.form-control { resize: vertical; min-height: 90px; }
+.pform-help { font-size: 11.5px; color: #9a9a9a; margin-top: 6px; }
+.pform-count { font-size: 11px; color: #b7ae9c; text-align: right; margin-top: 4px; }
+.invalid-feedback.d-block { font-size: 12px; }
+
+/* Source tabs (Link vs Upload) */
+.pform-source-tabs {
+  display: flex; gap: 8px; background: #f7f4ec; border-radius: 12px; padding: 5px; margin-bottom: 18px;
+}
+.pform-source-tabs .tab-btn {
+  flex: 1; text-align: center; padding: 10px 12px; border-radius: 9px; font-size: 13px; font-weight: 600;
+  color: #8a8272; cursor: pointer; transition: all .15s; border: none; background: transparent;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.pform-source-tabs .tab-btn.active { background: #fff; color: var(--teal); box-shadow: 0 2px 8px rgba(30,25,10,.08); }
+.pform-source-pane { display: none; }
+.pform-source-pane.active { display: block; }
+
+.pform-note {
+  display: flex; align-items: flex-start; gap: 10px; background: rgba(30,95,90,.06);
+  border: 1px solid rgba(30,95,90,.12); border-radius: 10px; padding: 12px 14px; font-size: 12px;
+  color: #4a5d5a; margin-top: 16px;
+}
+.pform-note i { color: var(--teal); margin-top: 1px; }
+
+.pform-toggle {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 14px 16px; border: 1px solid #eee6d8; border-radius: 12px; margin-bottom: 0;
+}
+.pform-toggle .title { font-weight: 700; font-size: 13px; color: #333; }
+.pform-toggle .desc { font-size: 11.5px; color: #999; margin-top: 1px; }
+.pform-toggle .form-check-input { width: 40px; height: 22px; cursor: pointer; flex-shrink: 0; margin: 0; }
+.pform-toggle .form-check-input:checked { background-color: var(--teal); border-color: var(--teal); }
+
+.pform-actions {
+  background: #fff; border-top: 1px solid #eee6d8; padding: 16px 24px;
+  display: flex; justify-content: flex-end; gap: 10px;
+}
+.pform-actions .btn { border-radius: 10px; font-weight: 600; font-size: 13.5px; padding: 10px 24px; }
+.pform-actions .btn-gold { box-shadow: 0 4px 14px rgba(201,132,26,.3); }
+
+/* Preview column */
+.pform-side-card {
+  background: #fff; border: 1px solid #eee6d8; border-radius: 14px;
+  box-shadow: 0 2px 14px rgba(30,25,10,.04); padding: 18px 20px;
+}
+.pform-side-card h6 {
+  font-size: 13px; font-weight: 700; color: #2a2a2a; display: flex; align-items: center; gap: 6px; margin-bottom: 2px;
+}
+.pform-side-card h6 i { color: var(--teal); width: 16px; text-align: center; }
+.pform-side-card .subtitle { font-size: 11.5px; color: #9a9a9a; margin: 0 0 14px 22px; }
+
+
+.pform-preview-box {
+  aspect-ratio: 16/9; background: #eef1ef; border-radius: 12px; overflow: hidden;
+  display: flex; align-items: center; justify-content: center; position: relative; margin-top: 14px;
+}
+.pform-preview-box img, .pform-preview-box video, .pform-preview-box iframe {
+  width: 100%; height: 100%; object-fit: cover; border: 0;
+}
+.pform-preview-empty { display: flex; flex-direction: column; align-items: center; gap: 8px; color: #a9b3af; }
+.pform-preview-empty i { font-size: 30px; }
+.pform-preview-empty span { font-size: 12px; }
+.pform-preview-title { font-weight: 700; font-size: 13.5px; color: #2a2a2a; margin-top: 14px; word-break: break-word; }
+.pform-preview-desc { font-size: 12px; color: #9a9a9a; margin-top: 2px; word-break: break-word; }
+
+.pform-tips { background: #fbfaf6; margin-top: 20px; }
+.pform-tips h6 { color: var(--teal); margin-bottom: 10px; }
+.pform-tips ul { margin: 0; padding-left: 18px; }
+.pform-tips li { font-size: 12px; color: #7a7568; margin-bottom: 6px; line-height: 1.4; }
+.pform-tips li:last-child { margin-bottom: 0; }
+
+</style>
+
+<div class="dash-breadcrumb">
+  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+  <span class="sep">/</span><a href="{% url 'dashboard:video_list' %}">Livelihood Videos</a>
+  <span class="sep">/</span><span class="current">{{ title }}</span>
+</div>
+
+<div class="pform-header">
+  <div>
+    <h4><i class="fas fa-video me-2"></i>{{ title }}</h4>
+    <p>Videos appear on the About page (and Home, if featured). Use a YouTube/Facebook link, or upload a file if you don't have one.</p>
+  </div>
+  <a href="{% url 'dashboard:video_list' %}" class="btn-back text-decoration-none">
+    <i class="fas fa-arrow-left me-1"></i>Back to Videos
+  </a>
+</div>
+
+<form method="post" enctype="multipart/form-data" id="video-form">
+  {% csrf_token %}
+  <div class="row g-4">
+    <div class="col-lg-8">
+      <div class="pform-card mb-4">
+        <div class="pform-card-header">
+          <div class="icon-badge"><i class="fas fa-video"></i></div>
+          <div>
+            <h6>Video Details</h6>
+            <div class="subtitle">Title and short description of the video</div>
+          </div>
+        </div>
+        <div class="pform-card-body">
+          <div class="mb-3">
+            <label class="form-label">Title <span class="req">*</span></label>
+            {{ form.title }}
+            {% if form.title.errors %}<div class="invalid-feedback d-block">{{ form.title.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="mb-0">
+            <label class="form-label">Description</label>
+            {{ form.description }}
+            {% if form.description.errors %}<div class="invalid-feedback d-block">{{ form.description.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="pform-card mb-4">
+        <div class="pform-card-header">
+          <div class="icon-badge"><i class="fas fa-link"></i></div>
+          <div>
+            <h6>Video Source</h6>
+            <div class="subtitle">Provide either a link or upload a file</div>
+          </div>
+        </div>
+        <div class="pform-card-body">
+          <div class="pform-source-tabs">
+            <button type="button" class="tab-btn active" data-tab="link"><i class="fas fa-link"></i> YouTube / Facebook Link</button>
+            <button type="button" class="tab-btn" data-tab="upload"><i class="fas fa-cloud-upload-alt"></i> Upload File</button>
+          </div>
+
+          <div class="pform-source-pane active" data-pane="link">
+            <label class="form-label">Video Link (YouTube / Facebook)</label>
+            {{ form.video_url }}
+            <div class="pform-help">Paste the full URL from YouTube or Facebook.</div>
+            {% if form.video_url.errors %}<div class="invalid-feedback d-block">{{ form.video_url.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="pform-source-pane" data-pane="upload">
+            <label class="form-label">Upload Video File</label>
+            {{ form.video_file }}
+            <div class="pform-help">Only needed if you don't have a link. Keep files under ~50MB.</div>
+            {% if form.video_file.errors %}<div class="invalid-feedback d-block">{{ form.video_file.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="pform-note">
+            <i class="fas fa-circle-info"></i>
+            <span>Recommended: YouTube or Facebook link. Maximum file size for uploaded videos: 50MB.</span>
+          </div>
+
+          <div class="mt-3">
+            <label class="form-label">Thumbnail (optional)</label>
+            {{ form.thumbnail }}
+            {% if form.thumbnail.errors %}<div class="invalid-feedback d-block">{{ form.thumbnail.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="pform-card mb-4">
+        <div class="pform-card-header">
+          <div class="icon-badge"><i class="fas fa-eye"></i></div>
+          <div>
+            <h6>Display</h6>
+            <div class="subtitle">Order and visibility on the About page</div>
+          </div>
+        </div>
+        <div class="pform-card-body">
+          <div class="mb-3">
+            <label class="form-label">Order</label>
+            {{ form.order }}
+            <div class="pform-help">Lower numbers show first.</div>
+          </div>
+          <label class="pform-toggle" for="{{ form.is_active.id_for_label }}">
+            <span>
+              <span class="title d-block">Active</span>
+              <span class="desc d-block">Visible on the About page</span>
+            </span>
+            {{ form.is_active }}
+          </label>
+          <label class="pform-toggle mt-3" for="{{ form.show_on_home.id_for_label }}" id="show-on-home-label">
+            <span>
+              <span class="title d-block">Show on Home
+                <span class="badge {% if home_count >= 2 %}bg-danger{% else %}bg-secondary{% endif %}" style="font-size:10.5px; font-weight:600; vertical-align:middle;" id="home-count-badge">{{ home_count }}/2 used</span>
+              </span>
+              <span class="desc d-block">Feature this video on the Home page too (max 2 shown there)</span>
+            </span>
+            {{ form.show_on_home }}
+          </label>
+          {% if home_count >= 2 %}
+            <div class="pform-help mt-2" style="color:#c0392b;">2 videos are already featured on Home. Turn one off there first to feature this one.</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mb-4 d-lg-none">
+        <a href="{% url 'dashboard:video_list' %}" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-gold">Save Video</button>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="pform-side-card pform-preview-card">
+        <h6><i class="fas fa-photo-film"></i> Video Preview</h6>
+        <div class="subtitle">How this looks on the About page</div>
+        <div class="pform-preview-box" id="preview-box">
+          <div class="pform-preview-empty" id="preview-empty" {% if video.video_url or video.video_file or video.thumbnail %}style="display:none;"{% endif %}>
+            <i class="fas fa-photo-film"></i>
+            <span>No preview yet</span>
+          </div>
+          <iframe id="preview-iframe" style="display:none;" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          <video id="preview-video" style="display:none;" controls {% if video.video_file %}src="{{ video.video_file.url }}"{% endif %}></video>
+          <img id="preview-img" alt="" style="display:none;" {% if video.thumbnail %}src="{{ video.thumbnail.url }}"{% endif %}>
+        </div>
+        <div class="pform-preview-title" id="preview-title">{{ video.title|default:"Video title" }}</div>
+        <div class="pform-preview-desc" id="preview-desc">{{ video.description|default:"Description will appear here." }}</div>
+      </div>
+
+      <div class="pform-side-card pform-tips mt-4">
+        <h6><i class="fas fa-lightbulb"></i> Tips</h6>
+        <ul class="mt-2">
+          <li>Use clear and descriptive titles.</li>
+          <li>Keep the description short and engaging.</li>
+          <li>Double-check the link plays before saving.</li>
+          <li>Videos help showcase your livelihood programs and boost engagement on the About page.</li>
+        </ul>
+      </div>
+
+      <div class="pform-actions d-none d-lg-flex mt-4" style="border-radius:14px; border:1px solid #eee6d8;">
+        <a href="{% url 'dashboard:video_list' %}" class="btn btn-outline-secondary">Cancel</a>
+        <button type="submit" class="btn btn-gold">Save Video</button>
+      </div>
+    </div>
+  </div>
+</form>
+
+<script>
+(function() {
+  var tabs = document.querySelectorAll('.pform-source-tabs .tab-btn');
+  tabs.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      tabs.forEach(function(b) { b.classList.remove('active'); });
+      document.querySelectorAll('.pform-source-pane').forEach(function(p) { p.classList.remove('active'); });
+      btn.classList.add('active');
+      document.querySelector('.pform-source-pane[data-pane="' + btn.dataset.tab + '"]').classList.add('active');
+    });
+  });
+
+  var titleInput = document.getElementById('{{ form.title.id_for_label }}');
+  var descInput = document.getElementById('{{ form.description.id_for_label }}');
+  var previewTitle = document.getElementById('preview-title');
+  var previewDesc = document.getElementById('preview-desc');
+  if (titleInput) {
+    titleInput.addEventListener('input', function() {
+      previewTitle.textContent = titleInput.value || 'Video title';
+    });
+  }
+  if (descInput) {
+    descInput.addEventListener('input', function() {
+      previewDesc.textContent = descInput.value || 'Description will appear here.';
+    });
+  }
+
+  // ---- Live video/thumbnail preview ----
+  var previewEmpty = document.getElementById('preview-empty');
+  var previewIframe = document.getElementById('preview-iframe');
+  var previewVideo = document.getElementById('preview-video');
+  var previewImg = document.getElementById('preview-img');
+
+  function hideAllPreviewNodes() {
+    previewEmpty.style.display = 'none';
+    previewIframe.style.display = 'none';
+    previewIframe.src = '';
+    previewVideo.style.display = 'none';
+    previewVideo.pause && previewVideo.pause();
+    previewImg.style.display = 'none';
+  }
+
+  function toEmbedUrl(url) {
+    if (!url) return null;
+    url = url.trim();
+    var m;
+    if ((m = url.match(/youtu\.be\/([^?&]+)/)) || (m = url.match(/[?&]v=([^?&]+)/))) {
+      var vid = m[1];
+      return 'https://www.youtube.com/embed/' + vid + '?autoplay=0&rel=0';
+    }
+    if (url.indexOf('facebook.com') !== -1) {
+      return 'https://www.facebook.com/plugins/video.php?href=' + encodeURIComponent(url) + '&show_text=false';
+    }
+    return null;
+  }
+
+  var uploadedFileObjectUrl = null;
+
+  function renderPreview() {
+    var url = urlInput ? urlInput.value : '';
+    var file = fileInput && fileInput.files && fileInput.files[0];
+    hideAllPreviewNodes();
+
+    if (url && toEmbedUrl(url)) {
+      previewIframe.src = toEmbedUrl(url);
+      previewIframe.style.display = 'block';
+      return;
+    }
+    if (file) {
+      if (uploadedFileObjectUrl) URL.revokeObjectURL(uploadedFileObjectUrl);
+      uploadedFileObjectUrl = URL.createObjectURL(file);
+      previewVideo.src = uploadedFileObjectUrl;
+      previewVideo.style.display = 'block';
+      return;
+    }
+    if (previewVideo.getAttribute('src')) {
+      // existing uploaded file from edit mode, no new file chosen
+      previewVideo.style.display = 'block';
+      return;
+    }
+    if (previewImg.getAttribute('src')) {
+      previewImg.style.display = 'block';
+      return;
+    }
+    previewEmpty.style.display = 'flex';
+  }
+
+  var thumbInput = document.getElementById('{{ form.thumbnail.id_for_label }}');
+  if (thumbInput) {
+    thumbInput.addEventListener('change', function() {
+      var file = thumbInput.files && thumbInput.files[0];
+      if (!file) return;
+      var reader = new FileReader();
+      reader.onload = function(e) {
+        previewImg.src = e.target.result;
+        renderPreview();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  var urlInput = document.getElementById('{{ form.video_url.id_for_label }}');
+  var fileInput = document.getElementById('{{ form.video_file.id_for_label }}');
+  if (urlInput) urlInput.addEventListener('input', renderPreview);
+  if (fileInput) fileInput.addEventListener('change', renderPreview);
+
+  // If a video_url is already filled (edit mode), preselect the Link tab (default already does this).
+  if (urlInput && !urlInput.value && fileInput && fileInput.value) {
+    document.querySelector('.tab-btn[data-tab="upload"]').click();
+  }
+
+  renderPreview();
+
+  // ---- Show on Home limit (client-side hint; server still enforces it) ----
+  var homeCheckbox = document.getElementById('{{ form.show_on_home.id_for_label }}');
+  var homeCount = {{ home_count|default:0 }};
+  if (homeCheckbox && homeCount >= 2 && !homeCheckbox.checked) {
+    homeCheckbox.disabled = true;
+    homeCheckbox.title = '2 videos are already featured on Home.';
+  }
+})();
+</script>
+{% endblock %}

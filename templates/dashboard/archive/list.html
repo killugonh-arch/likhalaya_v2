@@ -1,0 +1,302 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block page_title %}Archive{% endblock %}
+{% block sb_archive %}active{% endblock %}
+{% block title %}Archive – Dashboard{% endblock %}
+
+{% block dash_content %}
+<div class="dash-breadcrumb">
+  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+  <span class="sep">/</span><span class="current">Archive</span>
+</div>
+
+<div class="mb-4">
+  <h4 class="fw-bold mb-0" style="color:var(--teal);">Archive</h4>
+  <p class="text-muted small mb-0">Archived items are hidden from the store and dashboard lists. Restore anything below to bring it back.</p>
+</div>
+
+<ul class="nav nav-pills mb-4 gap-2">
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'products' %}active{% endif %}" href="?tab=products">
+      <i class="fas fa-box me-1"></i>Products <span class="badge bg-light text-dark border ms-1">{{ counts.products }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'categories' %}active{% endif %}" href="?tab=categories">
+      <i class="fas fa-layer-group me-1"></i>Categories <span class="badge bg-light text-dark border ms-1">{{ counts.categories }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'customers' %}active{% endif %}" href="?tab=customers">
+      <i class="fas fa-user me-1"></i>Customers <span class="badge bg-light text-dark border ms-1">{{ counts.customers }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'staff' %}active{% endif %}" href="?tab=staff">
+      <i class="fas fa-user-shield me-1"></i>Staff Accounts <span class="badge bg-light text-dark border ms-1">{{ counts.staff }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'videos' %}active{% endif %}" href="?tab=videos">
+      <i class="fas fa-video me-1"></i>Livelihood Videos <span class="badge bg-light text-dark border ms-1">{{ counts.videos }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'messages' %}active{% endif %}" href="?tab=messages">
+      <i class="fas fa-envelope me-1"></i>Messages <span class="badge bg-light text-dark border ms-1">{{ counts.messages }}</span>
+    </a>
+  </li>
+</ul>
+
+{% if tab == 'products' %}
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table dash-table mb-0">
+      <thead><tr><th>Product</th><th>Category</th><th>Price</th><th>Archived</th><th>Archived By</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+        {% for product in products %}
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-3">
+              {% if product.image %}
+              <img src="{{ product.image.url }}" style="width:36px;height:36px;object-fit:cover;border-radius:8px;" alt="{{ product.name }}">
+              {% else %}
+              <div style="width:36px;height:36px;border-radius:8px;background:var(--sand);display:flex;align-items:center;justify-content:center;font-size:16px;">🎨</div>
+              {% endif %}
+              <span class="fw-semibold" style="font-size:13px;">{{ product.name }}</span>
+            </div>
+          </td>
+          <td><span class="badge bg-light text-dark border" style="font-size:11px;">{{ product.category.name|default:"—" }}</span></td>
+          <td style="color:var(--gold);font-weight:600;">{{ product.price_display }}</td>
+          <td class="text-muted small">{{ product.deleted_at|date:"M d, Y · g:i A" }}</td>
+          <td class="text-muted small">{{ product.deleted_by.username|default:"—" }}</td>
+          <td class="text-end">
+            <form method="post" action="{% url 'dashboard:product_restore' product.pk %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-teal"><i class="fas fa-rotate-left me-1"></i>Restore</button>
+            </form>
+            <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#permaDeleteModal"
+              data-delete-url="{% url 'dashboard:product_delete_permanent' product.pk %}"
+              data-item-name="{{ product.name }}"><i class="fas fa-trash me-1"></i>Delete</button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center py-5 text-muted">No archived products.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% elif tab == 'categories' %}
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table dash-table mb-0">
+      <thead><tr><th>Category</th><th>Archived</th><th>Archived By</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+        {% for cat in categories %}
+        <tr>
+          <td>
+            <div class="fw-semibold">{{ cat.name }}</div>
+            <div class="text-muted" style="font-size:11px;">{{ cat.description|truncatechars:50 }}</div>
+          </td>
+          <td class="text-muted small">{{ cat.deleted_at|date:"M d, Y · g:i A" }}</td>
+          <td class="text-muted small">{{ cat.deleted_by.username|default:"—" }}</td>
+          <td class="text-end">
+            <form method="post" action="{% url 'dashboard:category_restore' cat.pk %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-teal"><i class="fas fa-rotate-left me-1"></i>Restore</button>
+            </form>
+            <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#permaDeleteModal"
+              data-delete-url="{% url 'dashboard:category_delete_permanent' cat.pk %}"
+              data-item-name="{{ cat.name }}"><i class="fas fa-trash me-1"></i>Delete</button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center py-5 text-muted">No archived categories.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% elif tab == 'customers' %}
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table dash-table mb-0">
+      <thead><tr><th>Customer</th><th>Email</th><th>Archived</th><th>Archived By</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+        {% for cu in customers %}
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-3">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0;">
+                {{ cu.first_name|first|upper }}{{ cu.last_name|first|upper }}
+              </div>
+              <span class="fw-semibold" style="font-size:13px;">{{ cu.get_full_name|default:cu.username }}</span>
+            </div>
+          </td>
+          <td class="text-muted small">{{ cu.email }}</td>
+          <td class="text-muted small">{{ cu.deleted_at|date:"M d, Y · g:i A" }}</td>
+          <td class="text-muted small">{{ cu.deleted_by.username|default:"—" }}</td>
+          <td class="text-end">
+            <form method="post" action="{% url 'dashboard:user_restore' cu.pk %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-teal"><i class="fas fa-rotate-left me-1"></i>Restore</button>
+            </form>
+            <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#permaDeleteModal"
+              data-delete-url="{% url 'dashboard:user_delete_permanent' cu.pk %}"
+              data-item-name="{{ cu.username }}"><i class="fas fa-trash me-1"></i>Delete</button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center py-5 text-muted">No archived customers.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% elif tab == 'staff' %}
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table dash-table mb-0">
+      <thead><tr><th>Staff</th><th>Role</th><th>Archived</th><th>Archived By</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+        {% for su in staff %}
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-3">
+              <div style="width:32px;height:32px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;flex-shrink:0;">
+                {{ su.first_name|first|upper }}{{ su.last_name|first|upper }}
+              </div>
+              <div>
+                <div class="fw-semibold" style="font-size:13px;">{{ su.get_full_name|default:su.username }}</div>
+                <div class="text-muted" style="font-size:11px;">{{ su.email }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="badge {% if su.role == 'admin' %}bg-danger{% else %}bg-primary{% endif %}" style="font-size:11px;">{{ su.get_role_display }}</span>
+          </td>
+          <td class="text-muted small">{{ su.deleted_at|date:"M d, Y · g:i A" }}</td>
+          <td class="text-muted small">{{ su.deleted_by.username|default:"—" }}</td>
+          <td class="text-end">
+            <form method="post" action="{% url 'dashboard:user_restore' su.pk %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-teal"><i class="fas fa-rotate-left me-1"></i>Restore</button>
+            </form>
+            <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#permaDeleteModal"
+              data-delete-url="{% url 'dashboard:user_delete_permanent' su.pk %}"
+              data-item-name="{{ su.username }}"><i class="fas fa-trash me-1"></i>Delete</button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center py-5 text-muted">No archived staff accounts.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% elif tab == 'videos' %}
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table dash-table mb-0">
+      <thead><tr><th>Video</th><th>Archived</th><th>Archived By</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+        {% for video in videos %}
+        <tr>
+          <td>
+            <div class="d-flex align-items-center gap-3">
+              {% if video.thumbnail %}
+              <img src="{{ video.thumbnail.url }}" style="width:36px;height:36px;object-fit:cover;border-radius:8px;" alt="{{ video.title }}">
+              {% else %}
+              <div style="width:36px;height:36px;border-radius:8px;background:var(--sand);display:flex;align-items:center;justify-content:center;font-size:16px;"><i class="fas fa-video text-muted"></i></div>
+              {% endif %}
+              <span class="fw-semibold" style="font-size:13px;">{{ video.title }}</span>
+            </div>
+          </td>
+          <td class="text-muted small">{{ video.deleted_at|date:"M d, Y · g:i A" }}</td>
+          <td class="text-muted small">{{ video.deleted_by.username|default:"—" }}</td>
+          <td class="text-end">
+            <form method="post" action="{% url 'dashboard:video_restore' video.pk %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-teal"><i class="fas fa-rotate-left me-1"></i>Restore</button>
+            </form>
+            <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#permaDeleteModal"
+              data-delete-url="{% url 'dashboard:video_delete_permanent' video.pk %}"
+              data-item-name="{{ video.title }}"><i class="fas fa-trash me-1"></i>Delete</button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="4" class="text-center py-5 text-muted">No archived videos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% else %}
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table dash-table mb-0">
+      <thead><tr><th>Message</th><th>From</th><th>Archived</th><th>Archived By</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+        {% for msg in contact_messages %}
+        <tr>
+          <td>
+            <div class="fw-semibold" style="font-size:13px;">{{ msg.subject }}</div>
+            <div class="text-muted" style="font-size:11px;">{{ msg.get_inquiry_type_display }}</div>
+          </td>
+          <td class="text-muted small">{{ msg.name }}<br>{{ msg.email }}</td>
+          <td class="text-muted small">{{ msg.deleted_at|date:"M d, Y · g:i A" }}</td>
+          <td class="text-muted small">{{ msg.deleted_by.username|default:"—" }}</td>
+          <td class="text-end">
+            <form method="post" action="{% url 'dashboard:message_restore' msg.pk %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-teal"><i class="fas fa-rotate-left me-1"></i>Restore</button>
+            </form>
+            <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#permaDeleteModal"
+              data-delete-url="{% url 'dashboard:message_delete_permanent' msg.pk %}"
+              data-item-name="{{ msg.subject }}"><i class="fas fa-trash me-1"></i>Delete</button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center py-5 text-muted">No archived messages.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Shared confirmation modal for all "Permanently Delete" buttons above -->
+<div class="modal fade" id="permaDeleteModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" style="color:var(--teal);">Permanently Delete</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Permanently delete <strong id="permaDeleteItemName"></strong>? This cannot be undone — it will be removed for good, not just archived.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="post" id="permaDeleteForm" action="">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-danger"><i class="fas fa-trash me-1"></i>Delete Permanently</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('permaDeleteModal').addEventListener('show.bs.modal', function (event) {
+  const trigger = event.relatedTarget;
+  document.getElementById('permaDeleteForm').action = trigger.getAttribute('data-delete-url');
+  document.getElementById('permaDeleteItemName').textContent = trigger.getAttribute('data-item-name');
+});
+</script>
+{% endblock %}

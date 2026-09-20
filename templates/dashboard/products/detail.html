@@ -1,0 +1,398 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize %}
+{% block page_title %}Product Detail{% endblock %}
+{% block sb_products %}active{% endblock %}
+{% block title %}{{ product.name }} – Likhalaya Dashboard{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+/* ── Product Detail: page header ── */
+.pd-header-top { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; margin-bottom:22px; }
+.pd-header-titles h1 { font-size:22px; font-weight:800; color:#1a1a1a; margin:0 0 2px; }
+.pd-header-titles p { font-size:13px; color:#8a8578; margin:0; }
+.pd-back-link { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:#8a8578; text-decoration:none; margin-bottom:8px; font-weight:600; }
+.pd-back-link:hover { color:var(--teal); }
+.pd-header-actions { display:flex; gap:8px; flex-wrap:wrap; }
+.pd-btn { border-radius:10px; font-size:13px; font-weight:600; padding:9px 16px; display:inline-flex; align-items:center; gap:7px; text-decoration:none; border:1px solid transparent; transition:all .15s ease; }
+.pd-btn-primary { background:var(--teal); color:#fff; }
+.pd-btn-primary:hover { background:#164a46; color:#fff; }
+.pd-btn-outline { background:#fff; color:#555; border-color:#e2ddd2; }
+.pd-btn-outline:hover { background:#f8f6f2; color:var(--teal); border-color:var(--teal); }
+.pd-btn-danger { background:#fff; color:#c0392b; border-color:#f1c7c0; }
+.pd-btn-danger:hover { background:#fdf1ef; }
+
+/* ── Cards ── */
+.pd-card { background:#fff; border-radius:14px; border:1px solid #eee7da; box-shadow:0 2px 10px rgba(0,0,0,.04); margin-bottom:20px; overflow:hidden; }
+.pd-card-body { padding:20px; }
+.pd-card-title { font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:.6px; color:#9a9484; margin-bottom:14px; }
+
+/* ── Image preview ── */
+.pd-main-image-wrap { width:100%; aspect-ratio:1; border-radius:12px; overflow:hidden; background:var(--sand); border:1px solid #eee7da; display:flex; align-items:center; justify-content:center; }
+.pd-main-image-wrap img { width:100%; height:100%; object-fit:cover; }
+.pd-noimg { display:flex; flex-direction:column; align-items:center; gap:8px; color:#b3ac9c; font-size:13px; }
+.pd-noimg i { font-size:34px; }
+.pd-thumb-strip { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+.pd-thumb { width:56px; height:56px; border-radius:8px; overflow:hidden; border:2px solid transparent; cursor:pointer; opacity:.75; transition:all .15s ease; flex-shrink:0; }
+.pd-thumb img { width:100%; height:100%; object-fit:cover; }
+.pd-thumb:hover { opacity:1; }
+.pd-thumb.active { border-color:var(--gold); opacity:1; }
+
+/* ── Status badge ── */
+.pd-status-pill { display:inline-flex; align-items:center; gap:7px; padding:6px 12px; border-radius:20px; font-size:12px; font-weight:700; }
+.pd-status-pill.is-active { background:#e6f6ee; color:#1c8a53; }
+.pd-status-pill.is-inactive { background:#f2f0eb; color:#8a8578; }
+.pd-status-dot { width:7px; height:7px; border-radius:50%; }
+.pd-status-pill.is-active .pd-status-dot { background:#1c8a53; }
+.pd-status-pill.is-inactive .pd-status-dot { background:#9a9484; }
+.pd-status-sub { font-size:11px; color:#9a9484; margin-top:3px; }
+
+/* ── Info rows ── */
+.pd-info-row { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; padding:10px 0; border-bottom:1px solid #f3efe6; }
+.pd-info-row:last-child { border-bottom:none; }
+.pd-info-label { font-size:11.5px; color:#9a9484; font-weight:600; display:flex; align-items:center; gap:6px; flex-shrink:0; }
+.pd-info-label i { width:14px; text-align:center; color:#b8b09c; }
+.pd-info-value { font-size:13.5px; color:#333; font-weight:600; text-align:right; }
+.pd-desc-block { font-size:13.5px; color:#444; line-height:1.7; white-space:pre-wrap; }
+
+/* ── Quick summary ── */
+.pd-quick-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+.pd-quick-item { background:var(--sand); border-radius:10px; padding:12px 14px; }
+.pd-quick-label { font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:#7f9791; font-weight:700; margin-bottom:4px; }
+.pd-quick-value { font-size:19px; font-weight:800; color:#1a1a1a; }
+
+/* ── Variants ── */
+.pd-variants-header { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; padding:18px 20px; border-bottom:1px solid #f3efe6; }
+.pd-variants-header h2 { font-size:15px; font-weight:800; color:#1a1a1a; margin:0; }
+.pd-variants-header .subtitle { font-size:12px; color:#9a9484; margin:2px 0 0; }
+.pd-variant-chips { display:flex; gap:8px; flex-wrap:wrap; }
+.pd-chip { background:var(--sand); color:#1E5F5A; font-size:11.5px; font-weight:700; padding:5px 11px; border-radius:20px; }
+
+.pd-size-block { border-bottom:1px solid #f3efe6; }
+.pd-size-block:last-of-type { border-bottom:none; }
+.pd-size-summary { list-style:none; cursor:pointer; padding:15px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.pd-size-summary::-webkit-details-marker { display:none; }
+.pd-size-summary:hover { background:#faf8f4; }
+.pd-size-left { display:flex; align-items:center; gap:14px; }
+.pd-size-name { font-size:13.5px; font-weight:800; color:#1a1a1a; text-transform:uppercase; letter-spacing:.4px; }
+.pd-size-price { font-size:14px; font-weight:800; color:var(--gold); }
+.pd-size-meta { font-size:12px; color:#9a9484; }
+.pd-size-chevron { transition:transform .2s ease; color:#b3ac9c; }
+details[open] > .pd-size-summary .pd-size-chevron { transform:rotate(180deg); }
+.pd-size-body { padding:4px 20px 18px; }
+
+.pd-design-card { display:flex; align-items:center; gap:14px; background:#faf8f4; border:1px solid #f0ede4; border-radius:12px; padding:10px 14px; margin-bottom:10px; }
+.pd-design-card:last-child { margin-bottom:0; }
+.pd-design-thumb { width:56px; height:56px; border-radius:8px; object-fit:cover; flex-shrink:0; background:#eee; }
+.pd-design-noimg { width:56px; height:56px; border-radius:8px; flex-shrink:0; background:var(--sand); display:flex; align-items:center; justify-content:center; color:#b3ac9c; }
+.pd-design-info { flex:1; min-width:0; }
+.pd-design-title { font-size:13.5px; font-weight:700; color:#1a1a1a; }
+.pd-design-tags { font-size:11.5px; color:#9a9484; }
+.pd-design-stats { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+.pd-stock-badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:20px; background:#eef5f0; color:#1c8a53; }
+.pd-stock-badge.low { background:#fdf3e3; color:#b57c12; }
+.pd-stock-badge.out { background:#fbeceb; color:#c0392b; }
+.pd-design-actions { display:flex; gap:6px; }
+.pd-mini-btn { font-size:11px; padding:5px 10px; border-radius:7px; border:1px solid #e2ddd2; background:#fff; color:#666; text-decoration:none; font-weight:600; }
+.pd-mini-btn:hover { border-color:var(--teal); color:var(--teal); }
+
+.pd-empty-size { text-align:center; padding:18px 10px; color:#9a9484; font-size:13px; }
+.pd-empty-size a { display:inline-block; margin-top:8px; }
+.pd-add-design-link { display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:700; color:var(--teal); text-decoration:none; margin-top:6px; }
+.pd-add-design-link:hover { text-decoration:underline; }
+
+.pd-no-variants { padding:30px 20px; text-align:center; color:#9a9484; }
+.pd-no-variants i { font-size:30px; color:#c9c2b2; margin-bottom:10px; display:block; }
+
+@media (max-width: 767px) {
+  .pd-header-actions { width:100%; }
+  .pd-header-actions .pd-btn { flex:1; justify-content:center; }
+  .pd-quick-grid { grid-template-columns:repeat(2,1fr); }
+}
+</style>
+{% endblock %}
+
+{% block dash_content %}
+<div class="dash-breadcrumb">
+  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+  <span class="sep">/</span><a href="{% url 'dashboard:product_list' %}">Products</a>
+  <span class="sep">/</span><span class="current">{{ product.name }}</span>
+</div>
+
+<a href="{% url 'dashboard:product_list' %}" class="pd-back-link"><i class="fas fa-arrow-left"></i> Back to Products</a>
+
+<div class="pd-header-top">
+  <div class="pd-header-titles">
+    <h1>Product Details</h1>
+    <p>Manage product information, variants, pricing, and inventory.</p>
+  </div>
+  <div class="pd-header-actions">
+    <a href="{{ product.get_absolute_url }}" class="pd-btn pd-btn-outline" target="_blank" rel="noopener">
+      <i class="fas fa-external-link-alt"></i> View in Shop
+    </a>
+    <a href="{% url 'dashboard:product_edit' product.pk %}" class="pd-btn pd-btn-primary">
+      <i class="fas fa-pencil-alt"></i> Edit Product
+    </a>
+    {% if request.user.is_admin_user %}
+    <button type="button" class="pd-btn pd-btn-danger" data-bs-toggle="modal" data-bs-target="#deleteProductModal">
+      <i class="fas fa-box-archive"></i> Archive
+    </button>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- LEFT COLUMN -->
+  <div class="col-lg-5">
+    <div class="pd-card">
+      <div class="pd-card-body">
+        <div class="pd-card-title">Product Preview</div>
+        <div class="pd-main-image-wrap" id="pdMainImageWrap">
+          {% if product.image %}
+          <img src="{{ product.image.url }}" alt="{{ product.name }}" id="pdMainImage">
+          {% else %}
+          <div class="pd-noimg" id="pdMainImageEmpty">
+            <i class="fas fa-image"></i>
+            <span>No product image</span>
+            <a href="{% url 'dashboard:product_edit' product.pk %}" class="pd-mini-btn"><i class="fas fa-upload me-1"></i>Upload Image</a>
+          </div>
+          {% endif %}
+        </div>
+        {% with extra=product.extra_images.all %}
+        {% if product.image or extra %}
+        <div class="pd-thumb-strip">
+          {% if product.image %}
+          <div class="pd-thumb active" data-full="{{ product.image.url }}" onclick="pdSwapImage(this)"><img src="{{ product.image.url }}" alt=""></div>
+          {% endif %}
+          {% for img in extra %}
+          <div class="pd-thumb" data-full="{{ img.image.url }}" onclick="pdSwapImage(this)"><img src="{{ img.image.url }}" alt="{{ img.caption }}"></div>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+      </div>
+    </div>
+
+    <div class="pd-card">
+      <div class="pd-card-body">
+        <div class="pd-card-title">Quick Summary</div>
+        <div class="mb-3">
+          {% if product.is_active %}
+          <span class="pd-status-pill is-active"><span class="pd-status-dot"></span>Active</span>
+          <div class="pd-status-sub">Visible to customers in the shop</div>
+          {% else %}
+          <span class="pd-status-pill is-inactive"><span class="pd-status-dot"></span>Inactive</span>
+          <div class="pd-status-sub">Hidden from customers</div>
+          {% endif %}
+        </div>
+        {% if product.has_variants %}
+        <div class="pd-quick-grid">
+          <div class="pd-quick-item">
+            <div class="pd-quick-label">Sizes</div>
+            <div class="pd-quick-value">{{ variant_summary.size_count }}</div>
+          </div>
+          <div class="pd-quick-item">
+            <div class="pd-quick-label">Designs</div>
+            <div class="pd-quick-value">{{ variant_summary.design_count }}</div>
+          </div>
+          <div class="pd-quick-item" style="grid-column:span 2;">
+            <div class="pd-quick-label">Total Stock</div>
+            <div class="pd-quick-value">{{ variant_summary.total_stock }}</div>
+          </div>
+        </div>
+        {% else %}
+        <div class="pd-quick-grid">
+          <div class="pd-quick-item" style="grid-column:span 2;">
+            <div class="pd-quick-label">Stock</div>
+            <div class="pd-quick-value">{{ product.stock }}</div>
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT COLUMN -->
+  <div class="col-lg-7">
+    <div class="pd-card">
+      <div class="pd-card-body">
+        <div class="pd-card-title">Basic Information</div>
+        <div class="pd-info-row">
+          <div class="pd-info-label"><i class="fas fa-tag"></i>Product Name</div>
+          <div class="pd-info-value">{{ product.name }}</div>
+        </div>
+        <div class="pd-info-row">
+          <div class="pd-info-label"><i class="fas fa-layer-group"></i>Category</div>
+          <div class="pd-info-value">{{ product.category.name|default:"—" }}</div>
+        </div>
+        <div class="pd-info-row">
+          <div class="pd-info-label"><i class="fas fa-tags"></i>{% if product.has_size_pricing %}Price Range{% else %}Price{% endif %}</div>
+          <div class="pd-info-value" style="color:var(--gold);">
+            {% if product.has_size_pricing %}₱{{ product.price_small|floatformat:0 }} – ₱{{ product.price_large|floatformat:0 }}{% else %}{{ product.price_display }}{% endif %}
+          </div>
+        </div>
+        {% if product.has_size_pricing %}
+        <div class="pd-info-row">
+          <div class="pd-info-label"><i class="fas fa-ruler"></i>Sizes &amp; Pricing</div>
+          <div class="pd-info-value">
+            <span class="badge bg-light text-dark border me-1">S ₱{{ product.price_small|floatformat:0 }}</span>
+            <span class="badge bg-light text-dark border me-1">M ₱{{ product.price_medium|floatformat:0 }}</span>
+            <span class="badge bg-light text-dark border">L ₱{{ product.price_large|floatformat:0 }}</span>
+          </div>
+        </div>
+        {% endif %}
+        <div class="pd-info-row">
+          <div class="pd-info-label"><i class="fas fa-calendar-plus"></i>Created</div>
+          <div class="pd-info-value">{{ product.created_at|date:"F d, Y" }}</div>
+        </div>
+        <div class="pd-info-row">
+          <div class="pd-info-label"><i class="fas fa-clock"></i>Last Updated</div>
+          <div class="pd-info-value">{{ product.updated_at|date:"F d, Y" }}</div>
+        </div>
+        <div class="pd-info-row" style="display:block;">
+          <div class="pd-info-label mb-2"><i class="fas fa-align-left"></i>Description</div>
+          <div class="pd-desc-block">{{ product.description|default:"No description provided." }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pd-card mb-0">
+      <div class="pd-variants-header">
+        <div>
+          <h2>Variants</h2>
+          <p class="subtitle">Sizes, prices, designs, colors, and stock</p>
+        </div>
+        {% if product.has_variants %}
+        <div class="pd-variant-chips">
+          <span class="pd-chip">{{ variant_summary.size_count }} Size{{ variant_summary.size_count|pluralize }}</span>
+          <span class="pd-chip">{{ variant_summary.design_count }} Design{{ variant_summary.design_count|pluralize }}</span>
+          <span class="pd-chip">Total Stock: {{ variant_summary.total_stock }}</span>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if size_rows %}
+        {% for size in size_rows %}
+        <div class="pd-size-block">
+          <details {% if forloop.first %}open{% endif %}>
+            <summary class="pd-size-summary">
+              <div class="pd-size-left">
+                <span class="pd-size-name">{{ size.get_name_display }}</span>
+                <span class="pd-size-price">₱{{ size.price|floatformat:0 }}</span>
+                <span class="pd-size-meta">{{ size.design_count }} Design{{ size.design_count|pluralize }} · Stock: {{ size.stock_total }}</span>
+              </div>
+              <i class="fas fa-chevron-down pd-size-chevron"></i>
+            </summary>
+            <div class="pd-size-body">
+              {% if size.design_list %}
+                {% for d in size.design_list %}
+                <div class="pd-design-card">
+                  {% if d.image %}
+                  <img src="{{ d.image.url }}" alt="{{ d.title }}" class="pd-design-thumb">
+                  {% else %}
+                  <div class="pd-design-noimg"><i class="fas fa-image"></i></div>
+                  {% endif %}
+                  <div class="pd-design-info">
+                    <div class="pd-design-title">{{ d.title|default:"Untitled Design" }}</div>
+                    <div class="pd-design-tags">{{ d.color|default:"—" }}</div>
+                  </div>
+                  <div class="pd-design-stats">
+                    <span class="pd-stock-badge {% if d.stock == 0 %}out{% elif d.stock <= 5 %}low{% endif %}">Stock: {{ d.stock }}</span>
+                    {% if d.is_active %}
+                    <span class="pd-status-pill is-active" style="padding:3px 9px;"><span class="pd-status-dot"></span>Active</span>
+                    {% else %}
+                    <span class="pd-status-pill is-inactive" style="padding:3px 9px;"><span class="pd-status-dot"></span>Inactive</span>
+                    {% endif %}
+                    <div class="pd-design-actions">
+                      <a href="{% url 'dashboard:product_edit' product.pk %}#sizesDesigns" class="pd-mini-btn">Edit</a>
+                    </div>
+                  </div>
+                </div>
+                {% endfor %}
+              {% else %}
+                <div class="pd-empty-size">
+                  No designs added yet.<br>
+                  <a href="{% url 'dashboard:product_edit' product.pk %}#sizesDesigns" class="pd-add-design-link"><i class="fas fa-plus"></i> Add Design</a>
+                </div>
+              {% endif %}
+            </div>
+          </details>
+        </div>
+        {% endfor %}
+        <div class="p-3 text-center">
+          <a href="{% url 'dashboard:product_edit' product.pk %}#sizesDesigns" class="pd-add-design-link"><i class="fas fa-plus"></i> Add Size</a>
+        </div>
+      {% else %}
+        <div class="pd-no-variants">
+          <i class="fas fa-layer-group"></i>
+          This product doesn't use size/design variants yet.
+          <div class="mt-2">
+            <a href="{% url 'dashboard:product_edit' product.pk %}#sizesDesigns" class="pd-add-design-link"><i class="fas fa-plus"></i> Add Size</a>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if gallery_by_size.General or gallery_by_size.Small or gallery_by_size.Medium or gallery_by_size.Large %}
+<div class="pd-card mt-4">
+  <div class="pd-card-body">
+    <div class="pd-card-title">Photos by Size</div>
+    <div class="row g-3">
+      {% for label, imgs in gallery_by_size.items %}
+      {% if imgs %}
+      <div class="col-sm-6 col-md-3">
+        <div class="text-muted small mb-2">{{ label }}{% if label == 'General' %} (all sizes){% endif %}</div>
+        <div class="d-flex flex-wrap gap-2">
+          {% for img in imgs %}
+          <img src="{{ img.image.url }}" alt="{{ img.caption }}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #eee;">
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Delete/Archive Confirmation Modal -->
+<div class="modal fade" id="deleteProductModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold">Archive Product</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body pt-2">
+        <p class="mb-0">Move <strong>{{ product.name }}</strong> to the Archive? You can restore it anytime from the Archive page.</p>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">No, keep it</button>
+        <form method="post" action="{% url 'dashboard:product_delete' product.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger">Yes, archive</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block dash_js %}
+<script>
+function pdSwapImage(el) {
+  var full = el.getAttribute('data-full');
+  var wrap = document.getElementById('pdMainImageWrap');
+  var img = document.getElementById('pdMainImage');
+  if (!img) {
+    wrap.innerHTML = '<img src="' + full + '" alt="" id="pdMainImage">';
+  } else {
+    img.src = full;
+  }
+  document.querySelectorAll('.pd-thumb').forEach(function(t){ t.classList.remove('active'); });
+  el.classList.add('active');
+}
+</script>
+{% endblock %}

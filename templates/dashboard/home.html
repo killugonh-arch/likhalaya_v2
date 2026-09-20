@@ -1,0 +1,660 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize static %}
+{% block page_title %}Dashboard Overview{% endblock %}
+{% block sb_dash %}active{% endblock %}
+{% block title %}Dashboard – Likhalaya{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+/* =========================================================
+   LIKHALAYA DESIGN SYSTEM — Component Library
+   Single-green, 70% white / 20% green / 10% gray system.
+   Load AFTER bootstrap.min.css, BEFORE page-specific styles.
+   ========================================================= */
+
+:root {
+  --brand-green: #0F6B4F;
+  --brand-green-hover: #0C5940;
+  --brand-green-light: #E6F4EF;
+  --surface-white: #FFFFFF;
+  --surface-subtle: #F9FAF9;
+  --border: #E4E7E4;
+  --text-primary: #1A1D1B;
+  --text-secondary: #5B615D;
+  --text-muted: #9AA09C;
+  --success: #0F6B4F;
+  --warning: #B7791F;
+  --warning-bg: #FBF3E4;
+  --danger: #C0362C;
+  --danger-bg: #FBEAE8;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+
+  --shadow-sm: 0 1px 2px rgba(16,24,20,0.06);
+  --shadow-md: 0 4px 12px rgba(16,24,20,0.08);
+  --shadow-lg: 0 12px 32px rgba(16,24,20,0.12);
+
+  --space-1: 4px; --space-2: 8px; --space-3: 16px;
+  --space-4: 24px; --space-5: 32px; --space-6: 48px;
+
+  --transition: 150ms ease;
+}
+
+/* ============ NAVIGATION BAR ============ */
+/* Bootstrap default: full-color navbar, default .nav-link spacing, no active-state clarity.
+   Reads as template-default because every Bootstrap starter project looks identical.
+   Shopify/Notion approach: white nav, single-pixel border for separation (not shadow — nav
+   sits at z-top and a shadow there looks like a floating bar, not an anchor). Active state
+   shown via a 2px underline in brand green, not a color/weight change alone (color-only
+   active states fail accessibility for colorblind users). */
+.ds-navbar {
+  background: var(--surface-white);
+  border-bottom: 1px solid var(--border);
+  padding: var(--space-2) var(--space-4);
+}
+.ds-navbar .nav-link {
+  color: var(--text-secondary);
+  font-size: 14px; font-weight: 500;
+  padding: var(--space-2) var(--space-3);
+  border-bottom: 2px solid transparent;
+  transition: color var(--transition), border-color var(--transition);
+}
+.ds-navbar .nav-link:hover { color: var(--text-primary); }
+.ds-navbar .nav-link.active { color: var(--brand-green); border-bottom-color: var(--brand-green); font-weight: 600; }
+/* Responsive: collapse to icon-only utility row + hamburger below 768px, keep logo + cart/profile visible */
+@media (max-width: 768px) {
+  .ds-navbar .nav-link { padding: var(--space-2); }
+}
+/* A11y: nav-link needs visible focus ring since default browser outline is often suppressed by Bootstrap resets */
+.ds-navbar .nav-link:focus-visible { outline: 2px solid var(--brand-green-light); outline-offset: 2px; }
+
+
+/* ============ SIDEBAR ============ */
+/* Current: solid dark-green block, flat white text, no grouping. Reads as a color swatch,
+   not a navigation system. Stripe/Linear sidebars use a near-black or deep-brand background
+   with LOW-CONTRAST section labels to create scan-hierarchy, and a pill/bar active-state
+   rather than a full-row color fill (full-row fill on every nav item makes all items look
+   equally important). */
+.ds-sidebar { background: #0B3B2D; width: 260px; padding: var(--space-4) 0; }
+.ds-sidebar .sidebar-section-label {
+  font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em;
+  color: rgba(255,255,255,0.45); padding: var(--space-3) var(--space-4) var(--space-1);
+}
+.ds-sidebar .sidebar-link {
+  display: flex; align-items: center; gap: var(--space-2);
+  color: rgba(255,255,255,0.75); font-size: 14px; font-weight: 500;
+  padding: 10px var(--space-4); border-left: 3px solid transparent;
+  transition: background var(--transition), color var(--transition);
+}
+.ds-sidebar .sidebar-link:hover { background: rgba(255,255,255,0.06); color: #fff; }
+.ds-sidebar .sidebar-link.active {
+  background: rgba(255,255,255,0.1); color: #fff; border-left-color: var(--brand-green-light);
+}
+/* Responsive: sidebar collapses to icon-rail (64px, labels hidden, tooltip on hover) below 992px,
+   fully off-canvas with overlay below 768px */
+@media (max-width: 992px) { .ds-sidebar { width: 64px; } .ds-sidebar .sidebar-link span { display: none; } }
+
+
+/* ============ BREADCRUMBS ============ */
+/* Current: default Bootstrap breadcrumb slashes, full-opacity text on every level, which
+   competes with the page title for attention. Fix: mute all but the current page, drop the
+   slash separator for a lighter chevron, reduce size so it reads as metadata not navigation. */
+.ds-breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: var(--space-3); display: flex; align-items: center; gap: 6px; }
+.ds-breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color var(--transition); }
+.ds-breadcrumb a:hover { color: var(--brand-green); }
+.ds-breadcrumb .current { color: var(--text-primary); font-weight: 600; }
+.ds-breadcrumb .sep { color: var(--border); }
+
+
+/* ============ KPI / STATISTICS CARDS ============ */
+/* Current: colored left-accent bars in mismatched hues per card (blue/purple/orange/red),
+   which looks decorative rather than data-driven — each color implies a category that
+   doesn't actually exist. Stripe Dashboard uses uniform white cards, a single muted icon,
+   and lets the NUMBER carry visual weight (large, bold) rather than the card chrome. */
+.ds-kpi-card {
+  background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: var(--space-4); box-shadow: var(--shadow-sm); transition: box-shadow var(--transition);
+}
+.ds-kpi-card:hover { box-shadow: var(--shadow-md); }
+.ds-kpi-card .kpi-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+.ds-kpi-card .kpi-value { font-size: 28px; font-weight: 700; color: var(--text-primary); line-height: 1.1; margin-top: 4px; }
+.ds-kpi-card .kpi-delta { font-size: 12px; font-weight: 600; margin-top: 6px; display: inline-flex; align-items: center; gap: 4px; }
+.ds-kpi-card .kpi-delta.up { color: var(--brand-green); }
+.ds-kpi-card .kpi-delta.down { color: var(--danger); }
+.ds-kpi-card .kpi-icon { width: 36px; height: 36px; border-radius: var(--radius-sm); background: var(--brand-green-light); color: var(--brand-green); display: flex; align-items: center; justify-content: center; }
+/* Responsive: 4-col grid → 2-col at 992px → 1-col stacked at 576px */
+
+
+/* ============ BUTTONS ============ */
+/* Current: default Bootstrap .btn-primary/.btn-success mix (two different greens fighting
+   each other), uppercase-free but heavy default shadow/border. Fix: one green, flat resting
+   state, shadow appears ONLY on hover (motion implies interactivity, static shadow implies
+   decoration). No transform/scale — that's a consumer-app pattern, not SaaS. */
+.ds-btn { font-size: 14px; font-weight: 600; border-radius: var(--radius-sm); padding: 10px 16px; border: none; transition: background var(--transition), box-shadow var(--transition); cursor: pointer; }
+.ds-btn-primary { background: var(--brand-green); color: #fff; }
+.ds-btn-primary:hover { background: var(--brand-green-hover); box-shadow: var(--shadow-sm); }
+.ds-btn-secondary { background: var(--surface-white); color: var(--text-primary); border: 1px solid var(--border); }
+.ds-btn-secondary:hover { background: var(--surface-subtle); }
+.ds-btn-ghost { background: transparent; color: var(--text-secondary); }
+.ds-btn-ghost:hover { background: var(--surface-subtle); color: var(--text-primary); }
+.ds-btn-sm { padding: 8px 12px; font-size: 13px; }
+.ds-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.ds-btn:focus-visible { outline: 2px solid var(--brand-green-light); outline-offset: 2px; }
+
+
+/* ============ INPUTS / FORMS ============ */
+/* Current: default Bootstrap form-control — fine functionally, but thick blue focus ring
+   clashes with brand, and no distinction between resting/error/success states beyond a
+   thin border-color swap that's hard to see. */
+.ds-input {
+  border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px;
+  font-size: 14px; color: var(--text-primary); background: var(--surface-white);
+  transition: border-color var(--transition), box-shadow var(--transition); width: 100%;
+}
+.ds-input:focus { outline: none; border-color: var(--brand-green); box-shadow: 0 0 0 3px var(--brand-green-light); }
+.ds-input.is-invalid { border-color: var(--danger); }
+.ds-input.is-invalid:focus { box-shadow: 0 0 0 3px var(--danger-bg); }
+.ds-label { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; display: block; }
+.ds-help-text { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.ds-error-text { font-size: 12px; color: var(--danger); margin-top: 4px; }
+
+
+/* ============ SEARCH BAR ============ */
+.ds-search { position: relative; }
+.ds-search input { padding-left: 38px; background: var(--surface-subtle); border: 1px solid transparent; }
+.ds-search input:focus { background: var(--surface-white); border-color: var(--brand-green); }
+.ds-search .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 14px; }
+
+
+/* ============ FILTERS / DROPDOWNS ============ */
+/* Current: default Bootstrap dropdown-menu, hard shadow, square corners, no separation
+   between filter groups. Fix: soft shadow + radius consistent with card system, active
+   filters shown as removable chips above the results, not buried in a reopened dropdown. */
+.ds-filter-chip {
+  display: inline-flex; align-items: center; gap: 6px; background: var(--brand-green-light);
+  color: var(--brand-green); font-size: 12px; font-weight: 600; padding: 5px 10px; border-radius: 20px;
+}
+.ds-filter-chip .remove { cursor: pointer; opacity: 0.7; }
+.ds-filter-chip .remove:hover { opacity: 1; }
+.ds-dropdown-menu { border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-md); padding: var(--space-2) 0; }
+.ds-dropdown-item { padding: 8px var(--space-3); font-size: 14px; color: var(--text-primary); transition: background var(--transition); }
+.ds-dropdown-item:hover { background: var(--surface-subtle); }
+.ds-dropdown-item.active { background: var(--brand-green-light); color: var(--brand-green); font-weight: 600; }
+
+
+/* ============ TABLES ============ */
+/* Current: default Bootstrap striped table — zebra striping is a print-design holdover and
+   reads dated in a SaaS product. Fix: white rows, hover-highlight instead of stripes,
+   header row gets a subtle background + uppercase micro-label treatment, generous row
+   height (48px min) for touch/scan comfort. */
+.ds-table { width: 100%; border-collapse: collapse; background: var(--surface-white); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); }
+.ds-table thead th {
+  background: var(--surface-subtle); font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: .04em; color: var(--text-muted); padding: 12px var(--space-3); text-align: left; border-bottom: 1px solid var(--border);
+}
+.ds-table tbody td { padding: 14px var(--space-3); font-size: 14px; color: var(--text-primary); border-bottom: 1px solid var(--border); }
+.ds-table tbody tr { transition: background var(--transition); }
+.ds-table tbody tr:hover { background: var(--surface-subtle); }
+.ds-table tbody tr:last-child td { border-bottom: none; }
+/* Responsive: below 768px convert to stacked card-per-row (data-label attrs + CSS content) */
+
+
+/* ============ PAGINATION ============ */
+.ds-pagination { display: flex; gap: 4px; align-items: center; }
+.ds-page-btn {
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; color: var(--text-secondary);
+  transition: background var(--transition), color var(--transition);
+}
+.ds-page-btn:hover { background: var(--surface-subtle); }
+.ds-page-btn.active { background: var(--brand-green); color: #fff; }
+.ds-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+
+/* ============ MODALS ============ */
+/* Current: default Bootstrap modal — fine structurally, but header/body/footer use flat
+   dividers with no breathing room. Fix: larger padding, radius-lg, footer buttons
+   right-aligned with secondary action on the left (Cancel), primary on the right — this
+   ordering matches Shopify/Stripe convention and reduces mis-click risk on destructive actions. */
+.ds-modal-content { border-radius: var(--radius-lg); border: none; box-shadow: var(--shadow-lg); }
+.ds-modal-header { padding: var(--space-4); border-bottom: 1px solid var(--border); }
+.ds-modal-header .modal-title { font-size: 18px; font-weight: 700; color: var(--text-primary); }
+.ds-modal-body { padding: var(--space-4); font-size: 14px; color: var(--text-secondary); }
+.ds-modal-footer { padding: var(--space-4); border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: var(--space-2); }
+
+
+/* ============ ALERTS ============ */
+/* Current: default Bootstrap alert-success/warning/danger — saturated background fills
+   the whole box, which is visually loud for a message that's often just informational.
+   Fix: left-border accent + tinted background, icon reinforces meaning (not color alone). */
+.ds-alert { display: flex; gap: var(--space-2); padding: var(--space-3); border-radius: var(--radius-sm); border-left: 3px solid; font-size: 14px; }
+.ds-alert-success { background: var(--brand-green-light); border-color: var(--brand-green); color: #0C5940; }
+.ds-alert-warning { background: var(--warning-bg); border-color: var(--warning); color: #7A5417; }
+.ds-alert-danger { background: var(--danger-bg); border-color: var(--danger); color: #8F241C; }
+
+
+/* ============ TOAST NOTIFICATIONS ============ */
+.ds-toast {
+  background: var(--text-primary); color: #fff; border-radius: var(--radius-md);
+  padding: 12px var(--space-3); font-size: 13px; box-shadow: var(--shadow-lg);
+  display: flex; align-items: center; gap: var(--space-2); min-width: 280px;
+}
+.ds-toast .toast-icon.success { color: #6FD6A8; }
+.ds-toast .toast-icon.danger { color: #F0958C; }
+
+
+/* ============ STATUS BADGES ============ */
+/* Current: rainbow badge colors per status (yellow/blue/cyan/red) with full-saturation fills
+   — same problem as KPI cards, color implies meaning it doesn't consistently carry. Fix:
+   tinted background + matching text color only (no white-on-color), consistent pill shape. */
+.ds-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.ds-badge-neutral { background: var(--surface-subtle); color: var(--text-secondary); }
+.ds-badge-success { background: var(--brand-green-light); color: var(--brand-green); }
+.ds-badge-warning { background: var(--warning-bg); color: var(--warning); }
+.ds-badge-danger { background: var(--danger-bg); color: var(--danger); }
+
+
+/* ============ PRODUCT CARDS ============ */
+.ds-product-card { background: var(--surface-white); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); transition: box-shadow var(--transition); }
+.ds-product-card:hover { box-shadow: var(--shadow-md); }
+.ds-product-card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; background: var(--surface-subtle); }
+.ds-product-card .body { padding: var(--space-3); }
+.ds-product-card .price { font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.ds-product-card .tag { font-size: 10px; font-weight: 600; color: var(--brand-green); text-transform: uppercase; letter-spacing: .05em; }
+
+
+/* ============ EMPTY STATES ============ */
+/* Current: likely a bare "No items found" text string. Fix: centered icon + headline +
+   one-line explanation + a primary action, so an empty table doesn't read as broken. */
+.ds-empty-state { text-align: center; padding: var(--space-6) var(--space-4); color: var(--text-muted); }
+.ds-empty-state .icon { font-size: 40px; color: var(--border); margin-bottom: var(--space-3); }
+.ds-empty-state .title { font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+.ds-empty-state .desc { font-size: 13px; margin-bottom: var(--space-3); }
+
+
+/* ============ LOADING STATES ============ */
+/* Current: likely a spinner or nothing at all during fetch. Fix: skeleton screens for
+   table/card content — perceived performance is significantly better than a spinner
+   because the layout doesn't jump when data arrives. */
+.ds-skeleton { background: linear-gradient(90deg, var(--surface-subtle) 25%, var(--border) 50%, var(--surface-subtle) 75%); background-size: 200% 100%; animation: ds-shimmer 1.4s ease infinite; border-radius: var(--radius-sm); }
+@keyframes ds-shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+
+
+/* ============ CHART CONTAINERS ============ */
+.ds-chart-card { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-4); box-shadow: var(--shadow-sm); }
+.ds-chart-card .chart-title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: var(--space-3); }
+
+
+/* ============ FILE UPLOAD ============ */
+.ds-dropzone { border: 1.5px dashed var(--border); border-radius: var(--radius-md); padding: var(--space-5); text-align: center; color: var(--text-muted); transition: border-color var(--transition), background var(--transition); cursor: pointer; }
+.ds-dropzone:hover, .ds-dropzone.drag-over { border-color: var(--brand-green); background: var(--brand-green-light); color: var(--brand-green); }
+
+
+/* ============ PROFILE CARDS ============ */
+.ds-profile-card { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-4); display: flex; align-items: center; gap: var(--space-3); box-shadow: var(--shadow-sm); }
+.ds-profile-card .avatar { width: 44px; height: 44px; border-radius: 50%; background: var(--brand-green-light); color: var(--brand-green); display: flex; align-items: center; justify-content: center; font-weight: 700; }
+.ds-profile-card .name { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.ds-profile-card .meta { font-size: 12px; color: var(--text-muted); }
+
+
+/* =========================================================
+   DASHBOARD PAGE STYLES
+   Extends design-system.css tokens. Load order:
+   bootstrap.css -> design-system.css -> dashboard.css
+   ========================================================= */
+
+/* Greeting header */
+.dash-greeting-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+.dash-greeting-sub { font-size: 13px; color: var(--text-muted); }
+
+/* KPI icon squares — replaces inline background/color styles per stat card.
+   Each icon sits in a soft tinted square instead of a bare colored icon,
+   consistent with the approved KPI card spec (icon top-right, muted, tinted bg). */
+.dash-kpi-icon {
+  width: 40px; height: 40px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center; font-size: 16px;
+  flex-shrink: 0;
+}
+.dash-kpi-icon.icon-revenue { background: var(--brand-green-light); color: var(--brand-green); }
+.dash-kpi-icon.icon-orders  { background: #E8F1FB; color: #2980B9; }
+.dash-kpi-icon.icon-pending { background: var(--danger-bg); color: var(--danger); }
+.dash-kpi-icon.icon-stock   { background: var(--warning-bg); color: var(--warning); }
+
+.dash-kpi-delta { font-size: 12px; font-weight: 600; margin-top: 6px; }
+.dash-kpi-delta.attention { color: var(--danger); }
+.dash-kpi-delta.ok { color: var(--text-muted); }
+
+/* Secondary metric strip — quiet, small, not competing with KPI cards */
+.dash-secondary-strip {
+  font-size: 13px; color: var(--text-secondary);
+  display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center;
+  padding: 0 4px; margin-bottom: var(--space-4);
+}
+.dash-secondary-strip .icon { margin-right: 4px; color: var(--text-muted); }
+
+/* Chart / list card header — consistent white header, no default Bootstrap card-header border noise */
+.dash-panel { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.dash-panel-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border);
+}
+.dash-panel-header h6 { font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0; }
+.dash-panel-body { padding: var(--space-3); }
+
+/* Low-stock / recent-customer row list */
+.dash-list-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-2) var(--space-4); border-bottom: 1px solid var(--border);
+}
+.dash-list-row:last-child { border-bottom: none; }
+.dash-list-row .item-title { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.dash-list-row .item-meta { font-size: 11px; color: var(--text-muted); }
+
+.dash-avatar {
+  width: 32px; height: 32px; border-radius: 50%; background: var(--brand-green);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 12px; font-weight: 700; flex-shrink: 0;
+}
+
+/* Empty / all-clear state inside dashboard panels — smaller than the full ds-empty-state,
+   fits within a card body rather than a full page section */
+.dash-panel-empty { text-align: center; padding: var(--space-4); color: var(--text-muted); font-size: 13px; }
+.dash-panel-empty i { color: var(--brand-green); margin-right: 4px; }
+
+/* Responsive: KPI row goes from 4-col to 2-col at tablet, stays 2-col on mobile (2x2 grid
+   reads better than a 1-col stack for 4 short numeric cards) */
+@media (max-width: 991px) {
+  .dash-greeting-title { font-size: 18px; }
+}
+
+</style>
+{% endblock %}
+
+{% block dash_content %}
+<!-- Breadcrumb: quiet metadata row, current page marked for a11y -->
+<nav class="ds-breadcrumb" aria-label="Breadcrumb">
+  <i class="fas fa-home"></i>
+  <span class="sep">/</span>
+  <span class="current" aria-current="page">Dashboard</span>
+</nav>
+
+<!-- Header: greeting (identity) left, single secondary action right -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+  <div>
+    <h1 class="dash-greeting-title">Good {% now "G" as hr %}{% if hr|add:"0" < 12 %}Morning{% elif hr|add:"0" < 18 %}Afternoon{% else %}Evening{% endif %}, {{ user.first_name|default:user.username }} 👋</h1>
+    <p class="dash-greeting-sub mb-0">Here's what's happening with your store today.</p>
+  </div>
+  <div class="d-flex gap-2 flex-wrap">
+    <a href="{% url 'dashboard:order_export_csv' %}" class="ds-btn ds-btn-secondary ds-btn-sm">
+      <i class="fas fa-download me-1"></i>Export Orders
+    </a>
+  </div>
+</div>
+
+<!-- KPI CARDS: the 4 numbers that drive a decision, scanned first (urgency communicated
+     via icon color + delta text, never background fill, per approved KPI spec) -->
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3">
+    <div class="ds-kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Total Revenue</div>
+          <div class="kpi-value" style="font-size:22px;">₱{{ stats.total_revenue|floatformat:0|intcomma }}</div>
+          <div class="dash-kpi-delta ok">₱{{ stats.monthly_revenue|floatformat:0|intcomma }} this month</div>
+        </div>
+        <div class="dash-kpi-icon icon-revenue"><i class="fas fa-peso-sign"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="ds-kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Total Orders</div>
+          <div class="kpi-value counter" data-target="{{ stats.total_orders }}">0</div>
+          <div class="dash-kpi-delta ok">+{{ stats.orders_today }} today</div>
+        </div>
+        <div class="dash-kpi-icon icon-orders"><i class="fas fa-shopping-bag"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="ds-kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Pending Orders</div>
+          <div class="kpi-value counter" data-target="{{ stats.pending_orders }}">0</div>
+          <div class="dash-kpi-delta {% if stats.pending_orders %}attention{% else %}ok{% endif %}">
+            {% if stats.pending_orders %}Needs action{% else %}All caught up{% endif %}
+          </div>
+        </div>
+        <div class="dash-kpi-icon icon-pending"><i class="fas fa-clock"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="ds-kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Low Stock Items</div>
+          <div class="kpi-value counter" data-target="{{ stats.low_stock }}">0</div>
+          <div class="dash-kpi-delta {% if stats.low_stock %}attention{% else %}ok{% endif %}">
+            {% if stats.low_stock %}Out of {{ stats.total_products }} products{% else %}Stock is healthy{% endif %}
+          </div>
+        </div>
+        <div class="dash-kpi-icon icon-stock"><i class="fas fa-box-open"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Secondary numbers: intentionally small/quiet, not competing with KPI cards -->
+<div class="dash-secondary-strip">
+  <span><i class="fas fa-users icon"></i><strong>{{ stats.total_customers }}</strong> customers <span class="text-muted">(+{{ stats.new_customers }} this month)</span></span>
+  <span><i class="fas fa-envelope icon"></i><strong>{{ stats.unread_messages }}</strong> unread messages <span class="text-muted">of {{ stats.total_messages }}</span></span>
+</div>
+
+<!-- CHARTS ROW: trend (wide, primary) + status breakdown (narrow, secondary) -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-7">
+    <div class="dash-panel h-100">
+      <div class="dash-panel-header">
+        <h6>Orders – Last 7 Days</h6>
+        <span class="ds-badge ds-badge-neutral">Daily Trend</span>
+      </div>
+      <div class="dash-panel-body">
+        <canvas id="chartDailyOrders" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="dash-panel h-100">
+      <div class="dash-panel-header">
+        <h6>Order Status</h6>
+      </div>
+      <div class="dash-panel-body d-flex align-items-center justify-content-center">
+        {% if chart_status_data == "[]" %}
+          <div class="dash-panel-empty"><i class="fas fa-inbox fa-lg mb-2 d-block"></i>No orders yet.</div>
+        {% else %}
+          <canvas id="chartStatusPie" height="230"></canvas>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TABLES ROW -->
+<div class="row g-4">
+  <!-- Recent Orders: primary detail table, left/wide per approved IA -->
+  <div class="col-lg-8">
+    <div class="dash-panel">
+      <div class="dash-panel-header">
+        <h6>Recent Orders</h6>
+        <a href="{% url 'dashboard:order_list' %}" class="ds-btn ds-btn-secondary ds-btn-sm">View All</a>
+      </div>
+      <div class="table-responsive">
+        <table class="ds-table mb-0">
+          <thead><tr>
+            <th>Order #</th>
+            <th>Customer</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th></th>
+          </tr></thead>
+          <tbody>
+            {% for order in recent_orders %}
+            <tr>
+              <td class="fw-semibold" style="color:var(--brand-green);">{{ order.order_number }}</td>
+              <td>{{ order.full_name }}</td>
+              <td class="fw-semibold">₱{{ order.total|floatformat:0|intcomma }}</td>
+              <td>
+                <span class="ds-badge
+                  {% if order.status == 'pending' %}ds-badge-warning
+                  {% elif order.status == 'confirmed' %}ds-badge-success
+                  {% elif order.status == 'processing' %}ds-badge-neutral
+                  {% elif order.status == 'shipped' %}ds-badge-neutral
+                  {% elif order.status == 'delivered' %}ds-badge-success
+                  {% else %}ds-badge-danger{% endif %}">
+                  {{ order.get_status_display }}
+                </span>
+              </td>
+              <td class="text-muted">{{ order.created_at|date:"M d, Y" }}</td>
+              <td><a href="{% url 'dashboard:order_detail' order.pk %}" class="ds-btn ds-btn-ghost ds-btn-sm" style="padding:4px 10px;font-size:11px;">View</a></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="6" class="dash-panel-empty">No orders yet.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right column: things that need attention, per approved urgency-first IA -->
+  <div class="col-lg-4">
+    <!-- Low stock alert -->
+    <div class="dash-panel mb-4">
+      <div class="dash-panel-header">
+        <h6 style="color:var(--danger);"><i class="fas fa-exclamation-triangle me-1"></i>Low Stock</h6>
+        <a href="{% url 'dashboard:product_list' %}?status=low_stock" class="ds-btn ds-btn-secondary ds-btn-sm">Manage</a>
+      </div>
+      <div>
+        {% for p in low_stock_products %}
+        <div class="dash-list-row">
+          <div>
+            <div class="item-title">{{ p.name|truncatechars:22 }}</div>
+            <div class="item-meta">{{ p.category.name|default:"—" }}</div>
+          </div>
+          <span class="ds-badge {% if p.stock == 0 %}ds-badge-danger{% else %}ds-badge-warning{% endif %}">
+            {{ p.stock }} left
+          </span>
+        </div>
+        {% empty %}
+        <div class="dash-panel-empty"><i class="fas fa-check-circle"></i>All stocked!</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Recent customers -->
+    <div class="dash-panel">
+      <div class="dash-panel-header">
+        <h6>New Customers</h6>
+        <a href="{% url 'dashboard:user_list' %}" class="ds-btn ds-btn-secondary ds-btn-sm">All</a>
+      </div>
+      <div>
+        {% for u in recent_customers %}
+        <div class="dash-list-row">
+          <div class="d-flex align-items-center gap-3">
+            <div class="dash-avatar">{{ u.first_name|first|upper }}{{ u.last_name|first|upper }}</div>
+            <div>
+              <div class="item-title">{{ u.get_full_name|default:u.username|truncatechars:20 }}</div>
+              <div class="item-meta">{{ u.created_at|date:"M d, Y" }}</div>
+            </div>
+          </div>
+        </div>
+        {% empty %}
+        <div class="dash-panel-empty">No customers yet.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block dash_js %}
+<script id="chart-data" type="application/json">
+{
+  "daily_labels": {{ chart_daily_labels|safe }},
+  "daily_orders": {{ chart_daily_orders|safe }},
+  "status_labels": {{ chart_status_labels|safe }},
+  "status_data": {{ chart_status_data|safe }},
+  "status_colors": {{ chart_status_colors|safe }}
+}
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+const chartData = JSON.parse(document.getElementById('chart-data').textContent);
+
+if (document.body.classList.contains('dark-mode')) {
+  Chart.defaults.color = '#aab2c2';
+  Chart.defaults.borderColor = '#2a3448';
+}
+
+document.querySelectorAll('.counter').forEach(el => {
+  const target = +el.dataset.target;
+  let cur = 0;
+  const step = Math.max(1, Math.ceil(target / 40));
+  const timer = setInterval(() => {
+    cur = Math.min(cur + step, target);
+    el.textContent = cur.toLocaleString();
+    if (cur >= target) clearInterval(timer);
+  }, 30);
+});
+
+const BRAND_GREEN = '#0F6B4F';
+
+new Chart(document.getElementById('chartDailyOrders'), {
+  type: 'line',
+  data: {
+    labels: chartData.daily_labels,
+    datasets: [{
+      label: 'Orders',
+      data: chartData.daily_orders,
+      borderColor: BRAND_GREEN,
+      backgroundColor: 'rgba(15,107,79,.08)',
+      tension: 0.4, fill: true,
+      pointBackgroundColor: BRAND_GREEN, pointRadius: 4,
+    }]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } } }
+  }
+});
+
+const statusEl = document.getElementById('chartStatusPie');
+if (statusEl && chartData.status_data.length) {
+  new Chart(statusEl, {
+    type: 'doughnut',
+    data: {
+      labels: chartData.status_labels,
+      datasets: [{
+        data: chartData.status_data,
+        backgroundColor: chartData.status_colors,
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } },
+      cutout: '65%',
+    }
+  });
+}
+</script>
+{% endblock %}

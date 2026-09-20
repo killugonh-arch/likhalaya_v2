@@ -1,0 +1,381 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block page_title %}GCash QR Code Management{% endblock %}
+{% block sb_gcash_qr2 %}active{% endblock %}
+{% block title %}GCash QR Code – Dashboard{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+:root {
+  --brand-green: #0F6B4F;
+  --brand-green-hover: #0C5940;
+  --brand-green-light: #E6F4EF;
+  --surface-white: #FFFFFF;
+  --surface-subtle: #F9FAF9;
+  --border: #E4E7E4;
+  --text-primary: #1A1D1B;
+  --text-secondary: #5B615D;
+  --text-muted: #9AA09C;
+  --danger: #C0362C;
+  --danger-bg: #FBEAE8;
+  --warning: #8a6d1f;
+  --warning-bg: #fdf0d5;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgba(16,24,20,0.06);
+  --shadow-md: 0 4px 12px rgba(16,24,20,0.08);
+  --space-1: 4px; --space-2: 8px; --space-3: 16px; --space-4: 24px; --space-5: 32px;
+  --transition: 150ms ease;
+}
+.ds-breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: var(--space-2); display: flex; align-items: center; gap: 6px; }
+.ds-breadcrumb a { color: var(--text-muted); text-decoration: none; }
+.ds-breadcrumb .current { color: var(--text-primary); font-weight: 600; }
+.ds-breadcrumb .sep { color: var(--border); }
+.ds-page-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); padding-bottom: var(--space-2); margin-bottom: var(--space-3); border-bottom: 1px solid var(--border); }
+.ds-page-header h1 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0; }
+.ds-page-header p { font-size: 13px; color: var(--text-muted); margin: 4px 0 0; }
+.ds-btn { font-size: 14px; font-weight: 600; border-radius: var(--radius-sm); padding: 10px 16px; border: none; cursor: pointer; display: inline-flex; align-items: center; text-decoration: none; white-space: nowrap; }
+.ds-btn-primary { background: var(--brand-green); color: #fff; }
+.ds-btn-primary:hover { background: var(--brand-green-hover); color: #fff; }
+.ds-btn-secondary { background: var(--surface-white); color: var(--text-primary); border: 1px solid var(--border); }
+.ds-btn-secondary:hover { background: var(--surface-subtle); }
+.ds-btn-danger { background: var(--danger); color: #fff; }
+.ds-btn-danger:hover { background: #a32b23; color: #fff; }
+.ds-btn-sm { padding: 8px 12px; font-size: 13px; }
+.dash-panel { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden; }
+.dash-panel-header { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-4); border-bottom: 1px solid var(--border); }
+.dash-panel-header.with-pill { justify-content: space-between; }
+.dash-panel-header .icon-badge { width: 34px; height: 34px; border-radius: var(--radius-sm); flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--brand-green-light); color: var(--brand-green); font-size: 14px; }
+.dash-panel-header h6 { margin: 0; font-weight: 700; font-size: 14.5px; color: var(--text-primary); }
+.dash-panel-header .subtitle { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+.dash-panel-header .heading-group { display: flex; align-items: center; gap: var(--space-2); }
+.dash-panel-body { padding: var(--space-4); }
+.dash-panel-footer { padding: var(--space-3) var(--space-4); border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: var(--space-2); }
+
+.qr-status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+.qr-status-pill .dot { width: 7px; height: 7px; border-radius: 50%; }
+.qr-status-pill.st-locked { background: #e6f6ec; color: #1e7e42; }
+.qr-status-pill.st-locked .dot { background: #27ae60; }
+.qr-status-pill.st-pending { background: var(--warning-bg); color: var(--warning); }
+.qr-status-pill.st-pending .dot { background: #c9841a; }
+.qr-status-pill.st-rejected { background: var(--danger-bg); color: var(--danger); }
+.qr-status-pill.st-rejected .dot { background: #e05252; }
+.qr-status-pill.st-none { background: var(--surface-subtle); color: var(--text-muted); }
+.qr-status-pill.st-none .dot { background: #b7bdb8; }
+
+.qr-preview-box { background: var(--surface-subtle); border: 2px dashed var(--border); border-radius: var(--radius-lg); padding: 24px; text-align: center; }
+.qr-preview-box img { max-width: 260px; width: 100%; height: auto; border-radius: 8px; background: #fff; box-shadow: var(--shadow-sm); }
+.qr-warning-box { background: var(--warning-bg); color: var(--warning); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; margin-top: var(--space-3); display: flex; gap: 8px; align-items: flex-start; }
+.qr-locked-note { background: var(--surface-subtle); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; color: var(--text-secondary); margin-top: var(--space-3); }
+.qr-admin-only-note { background: var(--brand-green-light); color: var(--brand-green); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 13px; margin-top: var(--space-3); display: flex; gap: 8px; align-items: flex-start; }
+
+.gcash-qr-page { margin-top: -12px; }
+
+/* ── Two-column "current QR" layout ── */
+.qr-grid { display: grid; grid-template-columns: 1.35fr 1fr; gap: 20px; align-items: start; }
+@media (max-width: 991px) { .qr-grid { grid-template-columns: 1fr; } }
+
+.qr-banner { display: flex; gap: 10px; align-items: flex-start; background: var(--brand-green-light); color: var(--brand-green); border-radius: var(--radius-sm); padding: 14px 16px; font-size: 13px; line-height: 1.45; }
+.qr-banner .banner-icon { width: 26px; height: 26px; border-radius: 50%; background: var(--brand-green); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; margin-top: 1px; }
+.qr-banner.is-warning { background: var(--warning-bg); color: var(--warning); }
+.qr-banner.is-warning .banner-icon { background: var(--warning); }
+.qr-banner.is-danger { background: var(--danger-bg); color: var(--danger); }
+.qr-banner.is-danger .banner-icon { background: var(--danger); }
+
+.qr-detail-list { margin-top: var(--space-3); }
+.qr-detail-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 13px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; flex-wrap: wrap; }
+.qr-detail-row:last-child { border-bottom: none; padding-bottom: 0; }
+.qr-detail-row .label { color: var(--text-secondary); }
+.qr-detail-row .value { color: var(--text-primary); font-weight: 600; text-align: right; }
+
+.qr-pay-card { background: #fff; border: 1px solid var(--border); border-radius: var(--radius-md); overflow: hidden; box-shadow: var(--shadow-sm); }
+.qr-pay-card-header { display: flex; gap: 10px; align-items: center; background: var(--brand-green-light); padding: 16px; }
+.qr-pay-card-header .g-icon { width: 32px; height: 32px; border-radius: 50%; background: #0071CE; color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; flex-shrink: 0; }
+.qr-pay-card-header .title { font-weight: 700; font-size: 14px; color: var(--text-primary); }
+.qr-pay-card-header .subtitle { font-size: 11.5px; color: var(--text-secondary); margin-top: 1px; }
+.qr-pay-card-body { padding: 20px; text-align: center; }
+.qr-pay-card-body img { max-width: 100%; width: 220px; height: auto; display: block; margin: 0 auto; border-radius: 8px; }
+.qr-pay-amount { margin-top: 16px; background: #eaf6ff; color: #0071CE; font-weight: 800; font-size: 14px; border-radius: 10px; padding: 12px; text-align: center; display: flex; align-items: center; justify-content: center; gap: 8px; }
+
+.qr-actions-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.qr-actions-row .qr-banner { flex: 1 1 320px; }
+.qr-actions-row .ds-btn { flex-shrink: 0; }
+
+body.dark-mode .dash-panel, body.dark-mode .qr-preview-box, body.dark-mode .qr-pay-card { background: var(--dm-surface); border-color: var(--dm-border); }
+body.dark-mode .qr-locked-note { background: var(--dm-surface-2); border-color: var(--dm-border); color: var(--dm-text-dim); }
+body.dark-mode .qr-detail-row { border-color: var(--dm-border); }
+body.dark-mode .qr-pay-card-header { background: var(--dm-surface-2); }
+</style>
+{% endblock %}
+
+{% block dash_content %}
+<div class="gcash-qr-page">
+<nav class="ds-breadcrumb" aria-label="Breadcrumb">
+  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+  <span class="sep">/</span><span class="current">GCash QR Code Management</span>
+</nav>
+
+<div class="ds-page-header">
+  <div>
+    <h1>GCash QR Code Management</h1>
+    <p>Manage your GCash payment QR code for customer payments.</p>
+  </div>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-xl-11">
+
+    {% if not request.user.is_admin_user %}
+      {# ── Staff: view-only, no edit controls at all ── #}
+      {% if not active and not pending %}
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <div class="icon-badge"><i class="fas fa-qrcode"></i></div>
+          <div>
+            <h6>No GCash QR Code Configured</h6>
+            <div class="subtitle">Nothing is set up yet.</div>
+          </div>
+        </div>
+        <div class="dash-panel-body">
+          <div class="qr-admin-only-note">
+            <i class="fas fa-user-shield mt-1"></i>
+            <div>Only an Administrator can upload a GCash QR code. Please ask an Admin to set one up.</div>
+          </div>
+        </div>
+      </div>
+      {% elif pending %}
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <div class="icon-badge"><i class="fas fa-qrcode"></i></div>
+          <div>
+            <h6>GCash QR Code Awaiting Confirmation</h6>
+            <div class="subtitle">An Administrator has uploaded a new QR code.</div>
+          </div>
+        </div>
+        <div class="dash-panel-body">
+          <div class="qr-preview-box"><img src="{{ pending.image.url }}" alt="GCash QR preview"></div>
+          <div class="qr-admin-only-note">
+            <i class="fas fa-user-shield mt-1"></i>
+            <div>Only an Administrator can confirm or cancel this upload.</div>
+          </div>
+        </div>
+      </div>
+      {% else %}
+      <div class="qr-grid mb-3">
+        <div class="dash-panel">
+          <div class="dash-panel-header with-pill">
+            <div class="heading-group">
+              <div class="icon-badge"><i class="fas fa-qrcode"></i></div>
+              <h6>Current GCash QR Code</h6>
+            </div>
+            {% if active.status == 'active_locked' %}<span class="qr-status-pill st-locked"><span class="dot"></span>Active &amp; Locked</span>
+            {% elif active.status == 'removal_pending' %}<span class="qr-status-pill st-pending"><span class="dot"></span>Removal Pending</span>
+            {% elif active.status == 'removal_rejected' %}<span class="qr-status-pill st-rejected"><span class="dot"></span>Removal Rejected</span>
+            {% endif %}
+          </div>
+          <div class="dash-panel-body">
+            {% if active.status == 'active_locked' %}
+              <div class="qr-banner">
+                <span class="banner-icon"><i class="fas fa-lock"></i></span>
+                <div>This QR code is currently active and locked. Only an Administrator can change it.</div>
+              </div>
+            {% elif active.status == 'removal_pending' %}
+              <div class="qr-banner is-warning">
+                <span class="banner-icon"><i class="fas fa-hourglass-half"></i></span>
+                <div><strong>Removal Request Pending</strong><br>Your request has been submitted to the Administrator.</div>
+              </div>
+            {% elif active.status == 'removal_rejected' %}
+              <div class="qr-banner is-danger">
+                <span class="banner-icon"><i class="fas fa-circle-xmark"></i></span>
+                <div><strong>Removal Request Rejected</strong><br>{% if latest_request.decision_reason %}{{ latest_request.decision_reason }}{% else %}The current QR code remains active and locked.{% endif %}</div>
+              </div>
+            {% endif %}
+
+            <div class="qr-detail-list">
+              <div class="qr-detail-row"><span class="label">GCash Account Name</span><span class="value">{{ active.account_name|default:"—" }}</span></div>
+              <div class="qr-detail-row"><span class="label">Account Number</span><span class="value">{{ active.account_number|default:"—" }}</span></div>
+              <div class="qr-detail-row"><span class="label">QR Code Status</span><span class="value">{{ active.get_status_display }}</span></div>
+              <div class="qr-detail-row"><span class="label">Last Updated</span><span class="value">{{ active.updated_at|date:"M d, Y · g:i A" }}</span></div>
+              <div class="qr-detail-row"><span class="label">Updated By</span><span class="value">{{ active.uploaded_by.get_full_name|default:active.uploaded_by.username|default:"—" }}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="qr-pay-card">
+          <div class="qr-pay-card-header">
+            <div class="g-icon">G</div>
+            <div>
+              <div class="title">GCash Payment QR Code</div>
+              <div class="subtitle">Scan this QR code in your GCash app</div>
+            </div>
+          </div>
+          <div class="qr-pay-card-body">
+            <img src="{{ active.image.url }}" alt="Active GCash QR code">
+            <div class="qr-pay-amount"><i class="fas fa-copy"></i> ₱1,234.00</div>
+          </div>
+        </div>
+      </div>
+
+      {% if active.status == 'active_locked' %}
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <div class="icon-badge"><i class="fas fa-gear"></i></div>
+          <h6>QR Code Actions</h6>
+        </div>
+        <div class="dash-panel-body">
+          <div class="qr-actions-row">
+            <div class="qr-banner">
+              <span class="banner-icon"><i class="fas fa-info"></i></span>
+              <div>Spotted a problem with this QR code? Flag it for an Administrator to review.</div>
+            </div>
+            <a href="{% url 'dashboard:gcash_qr_request_removal' active.pk %}" class="ds-btn ds-btn-primary">
+              <i class="fas fa-lock me-2"></i>Flag for Administrator Review
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+      {% endif %}
+
+    {% elif pending %}
+      {# ── Confirmation State ── #}
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <div class="icon-badge"><i class="fas fa-qrcode"></i></div>
+          <div>
+            <h6>Confirm GCash QR Code</h6>
+            <div class="subtitle">Review the QR code carefully before activating it.</div>
+          </div>
+        </div>
+        <div class="dash-panel-body">
+          <div class="qr-preview-box">
+            <img src="{{ pending.image.url }}" alt="GCash QR preview">
+          </div>
+          <div class="qr-warning-box">
+            <i class="fas fa-triangle-exclamation mt-1"></i>
+            <div>
+              <strong>Are you sure you want to use this GCash QR code?</strong><br>
+              Once confirmed, this QR code will be locked and cannot be edited or removed by Staff.
+              If it contains an error, you'll need to submit a removal request to an Administrator.
+            </div>
+          </div>
+        </div>
+        <div class="dash-panel-footer">
+          <form method="post" action="{% url 'dashboard:gcash_qr_cancel_preview' pending.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="ds-btn ds-btn-secondary">Cancel</button>
+          </form>
+          <form method="post" action="{% url 'dashboard:gcash_qr_confirm' pending.pk %}">
+            {% csrf_token %}
+            <button type="submit" class="ds-btn ds-btn-primary">Confirm &amp; Activate</button>
+          </form>
+        </div>
+      </div>
+
+    {% elif active %}
+      {# ── Locked / Pending-request / Rejected State (Admin) ── #}
+      <div class="qr-grid mb-3">
+        <div class="dash-panel">
+          <div class="dash-panel-header with-pill">
+            <div class="heading-group">
+              <div class="icon-badge"><i class="fas fa-qrcode"></i></div>
+              <h6>Current GCash QR Code</h6>
+            </div>
+            {% if active.status == 'active_locked' %}<span class="qr-status-pill st-locked"><span class="dot"></span>Active &amp; Locked</span>
+            {% elif active.status == 'removal_pending' %}<span class="qr-status-pill st-pending"><span class="dot"></span>Removal Pending</span>
+            {% elif active.status == 'removal_rejected' %}<span class="qr-status-pill st-rejected"><span class="dot"></span>Removal Rejected</span>
+            {% endif %}
+          </div>
+          <div class="dash-panel-body">
+            {% if active.status == 'active_locked' %}
+              <div class="qr-banner">
+                <span class="banner-icon"><i class="fas fa-lock"></i></span>
+                <div>This QR code is currently active and locked for Staff. You can replace it any time.</div>
+              </div>
+            {% elif active.status == 'removal_pending' %}
+              <div class="qr-banner is-warning">
+                <span class="banner-icon"><i class="fas fa-hourglass-half"></i></span>
+                <div><strong>Removal Request Pending</strong><br>Staff has flagged this QR code for review. You cannot upload a new one until it's resolved.</div>
+              </div>
+            {% elif active.status == 'removal_rejected' %}
+              <div class="qr-banner is-danger">
+                <span class="banner-icon"><i class="fas fa-circle-xmark"></i></span>
+                <div><strong>Removal Request Rejected</strong><br>{% if latest_request.decision_reason %}{{ latest_request.decision_reason }}{% else %}The current QR code remains active and locked.{% endif %}</div>
+              </div>
+            {% endif %}
+
+            <div class="qr-detail-list">
+              <div class="qr-detail-row"><span class="label">GCash Account Name</span><span class="value">{{ active.account_name|default:"—" }}</span></div>
+              <div class="qr-detail-row"><span class="label">Account Number</span><span class="value">{{ active.account_number|default:"—" }}</span></div>
+              <div class="qr-detail-row"><span class="label">QR Code Status</span><span class="value">{{ active.get_status_display }}</span></div>
+              <div class="qr-detail-row"><span class="label">Last Updated</span><span class="value">{{ active.updated_at|date:"M d, Y · g:i A" }}</span></div>
+              <div class="qr-detail-row"><span class="label">Updated By</span><span class="value">{{ active.uploaded_by.get_full_name|default:active.uploaded_by.username|default:"—" }}</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="qr-pay-card">
+          <div class="qr-pay-card-header">
+            <div class="g-icon">G</div>
+            <div>
+              <div class="title">GCash Payment QR Code</div>
+              <div class="subtitle">Scan this QR code in your GCash app</div>
+            </div>
+          </div>
+          <div class="qr-pay-card-body">
+            <img src="{{ active.image.url }}" alt="Active GCash QR code">
+            <div class="qr-pay-amount"><i class="fas fa-copy"></i> ₱1,234.00</div>
+          </div>
+        </div>
+      </div>
+
+      {% if active.status == 'active_locked' %}
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <div class="icon-badge"><i class="fas fa-gear"></i></div>
+          <h6>QR Code Actions</h6>
+        </div>
+        <div class="dash-panel-body">
+          <div class="qr-actions-row">
+            <div class="qr-banner">
+              <span class="banner-icon"><i class="fas fa-info"></i></span>
+              <div>To replace this QR code, submit a removal request first — it keeps a clean history of changes.</div>
+            </div>
+            <a href="{% url 'dashboard:gcash_qr_request_removal' active.pk %}" class="ds-btn ds-btn-primary">
+              <i class="fas fa-lock me-2"></i>Request QR Code Removal
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+    {% else %}
+      {# ── Upload State ── #}
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <div class="icon-badge"><i class="fas fa-qrcode"></i></div>
+          <div>
+            <h6>Upload GCash QR Code</h6>
+            <div class="subtitle">No active QR code is currently configured.</div>
+          </div>
+        </div>
+        <form method="post" action="{% url 'dashboard:gcash_qr_upload' %}" enctype="multipart/form-data">
+          {% csrf_token %}
+          <div class="dash-panel-body">
+            <div class="ds-form-group">
+              <label class="ds-label" for="qrImage">QR Code Image<span style="color:var(--danger);margin-left:2px;">*</span></label>
+              <input type="file" name="image" id="qrImage" class="form-control" accept=".png,.jpg,.jpeg" required
+                     style="border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 16px;width:100%;">
+              <div class="ds-helper-text" style="font-size:12px;color:var(--text-muted);margin-top:8px;">PNG, JPG, or JPEG only. You'll be asked to confirm before it goes live.</div>
+            </div>
+          </div>
+          <div class="dash-panel-footer">
+            <button type="submit" class="ds-btn ds-btn-primary"><i class="fas fa-upload me-2"></i>Upload &amp; Preview</button>
+          </div>
+        </form>
+      </div>
+    {% endif %}
+
+  </div>
+</div>
+</div>
+{% endblock %}

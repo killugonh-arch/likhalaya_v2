@@ -1,0 +1,423 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}My Orders – Likhalaya{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Hero banner now uses the shared partials/compact_page_header.html
+   component (same one used on Shop/Contact/About) instead of this
+   page's own one-off .mo-hero styles, so the banner matches Shop's
+   dot-grid + straight gold-line style across the site. */
+
+/* ============ Page shell ============ */
+.mo-page-bg { background: #f6f8f7; padding-bottom: 48px; }
+.mo-wrap { max-width: 1140px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 2; }
+
+.mo-back-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px;
+  background: #fff;
+  border: 1.5px solid #dceae1;
+  border-radius: 12px;
+  font-size: 13.5px; font-weight: 700; color: var(--teal);
+  text-decoration: none;
+  margin: 28px 0 18px;
+  box-shadow: 0 2px 10px rgba(15,61,57,.06);
+  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+.mo-back-btn i { font-size: 12px; }
+.mo-back-btn:hover {
+  background: var(--teal);
+  border-color: var(--teal);
+  color: #fff;
+  transform: translateX(-2px);
+}
+
+/* ============ Filters ============ */
+.mo-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+@media (max-width: 575px) {
+  .mo-filters {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+  }
+  .mo-filters .mo-filter-btn { flex-shrink: 0; }
+}
+.mo-filter-btn {
+  height: 42px;
+  min-width: 96px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px;
+  border-radius: 24px;
+  font-size: 13.5px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: all .22s ease;
+  border: 1.5px solid #e2e6e4;
+  color: #5b6663;
+  background: #fff;
+}
+.mo-filter-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  transform: translateY(-1px);
+}
+.mo-filter-btn.active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #fff;
+  box-shadow: 0 6px 16px rgba(201,132,26,.3);
+}
+.mo-filter-btn.active:hover { color: #fff; transform: none; }
+
+/* ============ Card container ============ */
+.mo-card {
+  background: #fff;
+  border-radius: 22px;
+  box-shadow: 0 16px 44px rgba(15,61,57,.10);
+  overflow: hidden;
+}
+
+/* ============ Table (desktop/tablet) ============ */
+.mo-table-scroll { overflow-x: auto; }
+.mo-table { width: 100%; min-width: 640px; font-size: 14.5px; border-collapse: separate; border-spacing: 0; }
+.mo-table thead th {
+  background: #f8f9f8;
+  color: #4b5563;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .4px;
+  font-weight: 700;
+  padding: 18px 18px;
+  border-bottom: 1px solid #eceeec;
+  white-space: nowrap;
+}
+.mo-table th.mo-col-order { padding-left: 28px; }
+.mo-table th.mo-col-total { text-align: right; padding-right: 28px; }
+.mo-table th.mo-col-items,
+.mo-table th.mo-col-status { text-align: center; }
+
+.mo-table tbody tr { transition: background .18s ease; cursor: pointer; }
+.mo-table tbody tr:nth-child(even) { background: #fafbfa; }
+.mo-table tbody tr:hover { background: #f2f6f4; }
+.mo-table tbody td {
+  padding: 18px;
+  border-bottom: 1px solid #f0f1ef;
+  vertical-align: middle;
+}
+.mo-table tbody tr:last-child td { border-bottom: none; }
+.mo-table td.mo-col-order { padding-left: 28px; }
+.mo-table td.mo-col-total { text-align: right; padding-right: 28px; }
+.mo-table td.mo-col-items,
+.mo-table td.mo-col-status { text-align: center; }
+
+.mo-order-link {
+  color: var(--teal);
+  font-weight: 700;
+  text-decoration: none;
+  transition: opacity .15s ease;
+}
+.mo-order-link:hover { text-decoration: underline; opacity: .85; }
+
+.mo-status-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 90px;
+  height: 28px;
+  padding: 0 14px;
+  border-radius: 20px;
+  font-size: 11.5px;
+  font-weight: 700;
+  letter-spacing: .2px;
+}
+.mo-status-pending    { background: rgba(214,158,46,.16); color: #a16207; }
+.mo-status-confirmed  { background: rgba(47,143,206,.14); color: #1f6ca8; }
+.mo-status-processing { background: rgba(94,84,201,.14); color: #5e3fc0; }
+.mo-status-shipped    { background: rgba(139,148,144,.16); color: #5b6663; }
+.mo-status-delivered  { background: rgba(39,174,96,.14); color: #1e8449; }
+.mo-status-cancelled  { background: rgba(192,57,43,.14); color: #c0392b; }
+
+/* ============ Mobile cards ============ */
+.mo-cards { display: none; padding: 14px; }
+.mo-order-card {
+  border: 1px solid #eceeec;
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: box-shadow .18s ease, transform .18s ease;
+}
+.mo-order-card:last-child { margin-bottom: 0; }
+.mo-order-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,.08); transform: translateY(-1px); }
+.mo-order-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+.mo-order-card-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 6px 0; color: #5b6663; }
+.mo-order-card-row .mo-card-label { color: #8b9490; }
+.mo-order-card-row .mo-card-value { font-weight: 700; color: #1a2420; }
+
+/* ============ Pagination ============ */
+.mo-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  padding: 22px 16px;
+  border-top: 1px solid #f0f1ef;
+}
+.mo-page-btn {
+  min-width: 38px;
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 10px;
+  border: 1.5px solid #e2e6e4;
+  background: #fff;
+  color: #5b6663;
+  font-size: 13.5px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all .18s ease;
+  cursor: pointer;
+}
+.mo-page-btn:hover:not(:disabled):not(.active) { border-color: var(--teal); color: var(--teal); }
+.mo-page-btn.active { background: var(--teal); border-color: var(--teal); color: #fff; }
+.mo-page-btn:disabled { opacity: .4; cursor: not-allowed; }
+.mo-page-nav { font-weight: 600; gap: 4px; padding: 0 14px; }
+
+/* ============ Empty state ============ */
+.mo-empty { text-align: center; padding: 64px 24px; }
+
+/* ============ Responsive ============ */
+@media (max-width: 767px) {
+  .mo-table-wrap { display: none; }
+  .mo-cards { display: block; }
+}
+@media (max-width: 576px) {
+  .mo-wrap { width: calc(100% - 32px); max-width: none; }
+  .mo-back-btn { margin: 20px 0 16px; }
+}
+
+/* ===== Compact phone spacing ===== */
+@media (max-width: 575.98px) {
+  body .compact-page-header { min-height: 104px; padding: 16px 0 14px; }
+  body .compact-header-eyebrow { font-size: 10px; margin-bottom: 4px; }
+  body .compact-header-heading { font-size: 22px; margin-bottom: 3px; }
+  body .compact-header-sub { font-size: 12px; line-height: 1.4; }
+  body .compact-header-dots { display: none; }
+  .mo-page-bg { padding-bottom: 20px; }
+  .mo-wrap { width: calc(100% - 20px); }
+  .mo-back-btn { margin: 10px 0 8px; padding: 6px 12px; font-size: 12.5px; border-radius: 10px; }
+  .mo-filters { gap: 6px; margin-bottom: 10px; }
+  .mo-filter-btn { height: 34px; min-width: 0; padding: 0 14px; font-size: 12.5px; }
+  .mo-card { border-radius: 16px; }
+  .mo-cards { padding: 8px; }
+  .mo-order-card { padding: 11px 12px; margin-bottom: 8px; border-radius: 13px; }
+  .mo-order-card-top { margin-bottom: 6px; }
+  .mo-order-card-row { font-size: 12.5px; padding: 3px 0; }
+  .mo-empty { padding: 32px 16px; }
+  .mo-page-btn { height: 34px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'partials/compact_page_header.html' with eyebrow='My Account' eyebrow_icon='fa-box' title='My Orders' subtitle='Track and manage your purchase history.' %}
+
+<div class="mo-page-bg">
+  <div class="mo-wrap">
+    <a href="{% url 'accounts:profile' %}" class="mo-back-btn">
+      <i class="fas fa-arrow-left"></i> Back to Profile
+    </a>
+
+    <div class="mo-filters">
+      <a href="{% url 'orders:my_orders' %}" class="mo-filter-btn {% if not status_filter %}active{% endif %}">All</a>
+      {% for s, l in status_choices %}
+      <a href="?status={{ s }}" class="mo-filter-btn {% if status_filter == s %}active{% endif %}">{{ l }}</a>
+      {% endfor %}
+    </div>
+
+    {% if orders %}
+    <div class="mo-card">
+
+      <!-- ============ DESKTOP / TABLET TABLE ============ -->
+      <div class="mo-table-wrap">
+        <div class="mo-table-scroll">
+          <table class="mo-table">
+            <thead>
+              <tr>
+                <th class="mo-col-order">Order #</th>
+                <th class="mo-col-items">Items</th>
+                <th class="mo-col-total">Total</th>
+                <th>Payment</th>
+                <th class="mo-col-status">Status</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody id="moTableBody">
+              {% for order in orders %}
+              <tr class="mo-order-item" data-idx="{{ forloop.counter0 }}" onclick="window.location='{% url 'orders:order_detail' order.pk %}'">
+                <td class="mo-col-order">
+                  <a href="{% url 'orders:order_detail' order.pk %}" class="mo-order-link" onclick="event.stopPropagation();">{{ order.order_number }}</a>
+                </td>
+                <td class="mo-col-items">{{ order.items.count }} item{{ order.items.count|pluralize }}</td>
+                <td class="mo-col-total fw-bold" style="color:var(--gold);">₱{{ order.total|floatformat:0|intcomma }}</td>
+                <td>{{ order.get_payment_method_display }}</td>
+                <td class="mo-col-status">
+                  <span class="mo-status-badge
+                    {% if order.status == 'pending' %}mo-status-pending
+                    {% elif order.status == 'confirmed' %}mo-status-confirmed
+                    {% elif order.status == 'processing' %}mo-status-processing
+                    {% elif order.status == 'shipped' %}mo-status-shipped
+                    {% elif order.status == 'delivered' %}mo-status-delivered
+                    {% else %}mo-status-cancelled{% endif %}">
+                    {{ order.get_status_display }}
+                  </span>
+                </td>
+                <td class="text-muted">{{ order.created_at|date:"M d, Y" }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============ MOBILE CARDS ============ -->
+      <div class="mo-cards" id="moCardsBody">
+        {% for order in orders %}
+        <div class="mo-order-card mo-order-item" data-idx="{{ forloop.counter0 }}" onclick="window.location='{% url 'orders:order_detail' order.pk %}'">
+          <div class="mo-order-card-top">
+            <a href="{% url 'orders:order_detail' order.pk %}" class="mo-order-link" style="font-size:14.5px;" onclick="event.stopPropagation();">{{ order.order_number }}</a>
+            <span class="mo-status-badge
+              {% if order.status == 'pending' %}mo-status-pending
+              {% elif order.status == 'confirmed' %}mo-status-confirmed
+              {% elif order.status == 'processing' %}mo-status-processing
+              {% elif order.status == 'shipped' %}mo-status-shipped
+              {% elif order.status == 'delivered' %}mo-status-delivered
+              {% else %}mo-status-cancelled{% endif %}">
+              {{ order.get_status_display }}
+            </span>
+          </div>
+          <div class="mo-order-card-row">
+            <span class="mo-card-label">Items</span>
+            <span class="mo-card-value">{{ order.items.count }} item{{ order.items.count|pluralize }}</span>
+          </div>
+          <div class="mo-order-card-row">
+            <span class="mo-card-label">Total</span>
+            <span class="mo-card-value" style="color:var(--gold);">₱{{ order.total|floatformat:0|intcomma }}</span>
+          </div>
+          <div class="mo-order-card-row">
+            <span class="mo-card-label">Payment</span>
+            <span class="mo-card-value">{{ order.get_payment_method_display }}</span>
+          </div>
+          <div class="mo-order-card-row">
+            <span class="mo-card-label">Date</span>
+            <span class="mo-card-value">{{ order.created_at|date:"M d, Y" }}</span>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <!-- ============ PAGINATION (JS-driven, client-side) ============ -->
+      <nav class="mo-pagination" id="moPagination" aria-label="Orders pagination" style="display:none;"></nav>
+    </div>
+    {% else %}
+    <div class="mo-empty mo-card">
+      {% if status_filter %}
+      <h4 class="fw-bold text-muted mb-2">No {{ status_filter|title }} Orders</h4>
+      <p class="text-muted small mb-4">You don't have any orders with this status.</p>
+      <a href="{% url 'orders:my_orders' %}" class="btn btn-outline-secondary rounded-3">Clear Filter</a>
+      {% else %}
+      <h4 class="fw-bold text-muted mb-2">No Orders Yet</h4>
+      <p class="text-muted small mb-4">You haven't placed any orders. Explore our handcrafted products!</p>
+      <a href="{% url 'store:shop' %}" class="btn btn-gold btn-lg px-5 rounded-3">Start Shopping</a>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+(function () {
+  var PAGE_SIZE = 10;
+  // Desktop table rows and mobile cards share the same data-idx per order
+  // (rendered twice — once per breakpoint). Count pages off ONE set only,
+  // then toggle both sets together so they stay in sync.
+  var tableItems = Array.prototype.slice.call(document.querySelectorAll('#moTableBody .mo-order-item'));
+  var cardItems  = Array.prototype.slice.call(document.querySelectorAll('#moCardsBody .mo-order-item'));
+  var allItems = tableItems.concat(cardItems);
+
+  var total = tableItems.length; // number of actual orders, not DOM nodes
+  var paginationEl = document.getElementById('moPagination');
+  if (!total) return;
+
+  // Only paginate once there are more than 15 orders (per spec); otherwise show all.
+  if (total <= 15) return;
+
+  var totalPages = Math.ceil(total / PAGE_SIZE);
+  var currentPage = 1;
+
+  function showPage(page, opts) {
+    currentPage = Math.min(Math.max(page, 1), totalPages);
+    var start = (currentPage - 1) * PAGE_SIZE;
+    var end = start + PAGE_SIZE;
+    allItems.forEach(function (el) {
+      var idx = parseInt(el.getAttribute('data-idx'), 10);
+      el.style.display = (idx >= start && idx < end) ? '' : 'none';
+    });
+    renderPagination();
+    if (opts && opts.scroll) {
+      paginationEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+  }
+
+  function renderPagination() {
+    paginationEl.innerHTML = '';
+    paginationEl.style.display = 'flex';
+
+    var prev = document.createElement('button');
+    prev.type = 'button';
+    prev.className = 'mo-page-btn mo-page-nav';
+    prev.innerHTML = '<i class="fas fa-chevron-left"></i>';
+    prev.setAttribute('aria-label', 'Previous page');
+    prev.disabled = currentPage === 1;
+    prev.addEventListener('click', function () { showPage(currentPage - 1, { scroll: true }); });
+    paginationEl.appendChild(prev);
+
+    for (var p = 1; p <= totalPages; p++) {
+      (function (p) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'mo-page-btn' + (p === currentPage ? ' active' : '');
+        btn.textContent = p;
+        btn.setAttribute('aria-label', 'Go to page ' + p);
+        if (p === currentPage) btn.setAttribute('aria-current', 'page');
+        btn.addEventListener('click', function () { showPage(p, { scroll: true }); });
+        paginationEl.appendChild(btn);
+      })(p);
+    }
+
+    var next = document.createElement('button');
+    next.type = 'button';
+    next.className = 'mo-page-btn mo-page-nav';
+    next.innerHTML = '<i class="fas fa-chevron-right"></i>';
+    next.setAttribute('aria-label', 'Next page');
+    next.disabled = currentPage === totalPages;
+    next.addEventListener('click', function () { showPage(currentPage + 1, { scroll: true }); });
+    paginationEl.appendChild(next);
+  }
+
+  showPage(1);
+})();
+</script>
+{% endblock %}

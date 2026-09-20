@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% block title %}Server Error – Likhalaya{% endblock %}
+{% block content %}
+<div class="container py-5 text-center" style="min-height:60vh;display:flex;align-items:center;justify-content:center;">
+  <div>
+    <div style="font-size:80px;margin-bottom:16px;">⚠️</div>
+    <h1 class="fw-bold mb-2" style="font-family:'Playfair Display',serif;color:var(--teal);font-size:56px;">500</h1>
+    <h4 class="fw-bold text-muted mb-3">Server Error</h4>
+    <p class="text-muted mb-4">Something went wrong on our end. Our team has been notified.</p>
+    <a href="{% url 'store:home' %}" class="btn btn-teal px-4 rounded-3"><i class="fas fa-home me-2"></i>Go Home</a>
+  </div>
+</div>
+{% endblock %}

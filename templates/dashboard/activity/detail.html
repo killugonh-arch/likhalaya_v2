@@ -1,0 +1,590 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block page_title %}Activity Detail{% endblock %}
+{% block sb_activity %}active{% endblock %}
+{% block title %}Activity Detail – Dashboard{% endblock %}
+
+{% block dash_content %}
+<style>
+/* ============ Design tokens ============ */
+.ad-wrap { --ad-radius: 20px; --ad-radius-sm: 14px; --ad-space: 24px; }
+
+/* ============ Header ============ */
+.ad-eyebrow { color: #8b9490; font-size: 13px; margin-bottom: 4px; }
+.ad-title { font-weight: 800; font-size: 28px; letter-spacing: -.02em; color: var(--teal); margin-bottom: 2px; }
+.ad-subtitle { color: #8b9490; font-size: 14.5px; }
+body.dark-mode .ad-eyebrow, body.dark-mode .ad-subtitle { color: #9aa5a3; }
+
+.ad-back-btn {
+  display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600;
+  color: #4b5563; background: #fff; border: 1px solid #e9ebe9; border-radius: 12px;
+  padding: 9px 16px; text-decoration: none; transition: all .15s ease;
+}
+.ad-back-btn:hover { color: var(--teal); border-color: var(--teal); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.06); }
+.ad-back-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+body.dark-mode .ad-back-btn { background: var(--dm-card, #1a1f1e); border-color: var(--dm-border); color: #d5dbd9; }
+
+/* ============ Card base ============ */
+.ad-card {
+  background: #fff; border: none; border-radius: var(--ad-radius);
+  box-shadow: 0 1px 3px rgba(16,24,20,.04), 0 8px 24px rgba(16,24,20,.04);
+  transition: box-shadow .2s ease, transform .2s ease;
+}
+.ad-card.ad-hover:hover { box-shadow: 0 4px 10px rgba(16,24,20,.05), 0 16px 32px rgba(16,24,20,.07); transform: translateY(-2px); }
+body.dark-mode .ad-card { background: var(--dm-card, #1a1f1e); box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+
+.ad-card-title {
+  font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+  color: #8b9490; display: flex; align-items: center; gap: 8px; margin-bottom: 4px;
+}
+.ad-card-title i { color: var(--teal); font-size: 13px; }
+body.dark-mode .ad-card-title { color: #9aa5a3; }
+
+/* ============ Hero card ============ */
+.ad-hero { padding: 28px var(--ad-space); }
+.ad-hero-avatar {
+  width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, var(--teal), #2f8f6e);
+  color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800;
+  flex-shrink: 0; box-shadow: 0 6px 16px rgba(15,107,79,.25);
+}
+.ad-hero-username { font-size: 18px; font-weight: 700; color: #1a2420; }
+body.dark-mode .ad-hero-username { color: #f1f4f2; }
+.ad-hero-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.ad-hero-time { color: #8b9490; font-size: 13.5px; display: flex; align-items: center; gap: 6px; }
+body.dark-mode .ad-hero-time { color: #9aa5a3; }
+
+.ad-role-pill {
+  font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
+  padding: 3px 10px; border-radius: 20px; background: rgba(15,107,79,.1); color: #0F6B4F;
+}
+body.dark-mode .ad-role-pill { background: rgba(79,209,197,.14); color: var(--dm-teal); }
+
+/* Status badge — large, colored, icon + text (color not sole indicator) */
+.ad-status-badge {
+  font-size: 13.5px; padding: 9px 18px; border-radius: 14px; font-weight: 700;
+  display: inline-flex; align-items: center; gap: 8px; letter-spacing: .2px;
+}
+.ad-status-success { background: rgba(39,174,96,.12); color: #1e8449; }
+.ad-status-failed  { background: rgba(192,57,43,.12); color: #c0392b; }
+.ad-status-warning { background: rgba(214,158,46,.14); color: #a16207; }
+.ad-status-info    { background: rgba(47,143,206,.12); color: #1f6ca8; }
+
+/* ============ Action / value badges ============ */
+.ad-action-badge {
+  font-size: 12.5px; font-weight: 700; padding: 5px 12px; border-radius: 8px;
+  display: inline-flex; align-items: center; gap: 6px; letter-spacing: .1px;
+}
+.ad-action-updated  { background: rgba(47,143,206,.12); color: #1f6ca8; }
+.ad-action-created  { background: rgba(39,174,96,.12); color: #1e8449; }
+.ad-action-deleted  { background: rgba(192,57,43,.12); color: #c0392b; }
+.ad-action-login    { background: rgba(15,107,79,.1); color: #0F6B4F; }
+.ad-action-logout   { background: rgba(139,148,144,.14); color: #5b6663; }
+.ad-action-default  { background: rgba(139,148,144,.14); color: #5b6663; }
+
+/* ============ Detail rows (Activity Information / Affected Object) ============ */
+.ad-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 13px 0; border-bottom: 1px solid #f0f1ef; }
+.ad-row:last-child { border-bottom: none; }
+.ad-label { color: #8b9490; font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; flex-shrink: 0; padding-top: 2px; }
+.ad-value { text-align: right; font-size: 14.5px; font-weight: 600; color: #1a2420; word-break: break-word; }
+body.dark-mode .ad-row { border-color: var(--dm-border); }
+body.dark-mode .ad-label { color: #9aa5a3; }
+body.dark-mode .ad-value { color: #f1f4f2; }
+
+.ad-object-icon {
+  width: 38px; height: 38px; border-radius: 11px; background: rgba(15,107,79,.1); color: #0F6B4F;
+  display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+}
+body.dark-mode .ad-object-icon { background: rgba(79,209,197,.14); color: var(--dm-teal); }
+
+/* ============ Change comparison cards ============ */
+.ad-compare-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #6b7280; margin-bottom: 10px; }
+body.dark-mode .ad-compare-label { color: #9aa5a3; }
+
+.ad-change-block { border-radius: var(--ad-radius-sm); background: #fafbfa; padding: 6px; margin-bottom: 12px; }
+.ad-change-block:last-child { margin-bottom: 0; }
+body.dark-mode .ad-change-block { background: rgba(255,255,255,.03); }
+
+.ad-change-field { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px 6px; gap: 10px; flex-wrap: wrap; }
+.ad-change-field-name { font-size: 12.5px; font-weight: 700; color: #4b5563; }
+body.dark-mode .ad-change-field-name { color: #d5dbd9; }
+.ad-change-toggle {
+  background: none; border: none; color: #8b9490; font-size: 12px; cursor: pointer; padding: 4px; border-radius: 6px;
+  transition: transform .18s ease, background .15s ease;
+}
+.ad-change-toggle:hover { background: rgba(0,0,0,.05); }
+.ad-change-toggle:focus-visible { outline: 2px solid var(--teal); outline-offset: 1px; }
+.ad-change-block[data-open="true"] .ad-change-toggle i { transform: rotate(180deg); }
+.ad-change-toggle i { display: inline-block; transition: transform .18s ease; }
+
+.ad-change-values { display: none; padding: 4px 12px 12px; }
+.ad-change-block[data-open="true"] .ad-change-values { display: block; animation: ad-fade-in .18s ease; }
+.ad-change-block.ad-no-toggle .ad-change-values { display: block; }
+.ad-change-block.ad-no-toggle .ad-change-toggle { visibility: hidden; }
+@keyframes ad-fade-in { from { opacity: 0; transform: translateY(-2px);} to { opacity: 1; transform: translateY(0);} }
+
+.ad-value-pair { display: flex; align-items: stretch; gap: 10px; }
+.ad-value-pair.ad-stacked { flex-direction: column; }
+.ad-value-card { flex: 1; min-width: 0; border-radius: 10px; padding: 10px 12px; }
+.ad-value-card-old { background: rgba(139,148,144,.1); }
+.ad-value-card-new { background: rgba(39,174,96,.1); }
+body.dark-mode .ad-value-card-old { background: rgba(255,255,255,.05); }
+body.dark-mode .ad-value-card-new { background: rgba(111,214,201,.1); }
+.ad-value-card-tag { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 3px; display: block; }
+.ad-value-card-old .ad-value-card-tag { color: #7a8480; }
+.ad-value-card-new .ad-value-card-tag { color: #1e8449; }
+body.dark-mode .ad-value-card-new .ad-value-card-tag { color: #6fd6c9; }
+.ad-value-card-text { font-size: 13.5px; font-weight: 600; word-break: break-word; overflow-wrap: anywhere; color: #333; }
+.ad-value-card-new .ad-value-card-text { color: #1e8449; }
+body.dark-mode .ad-value-card-text { color: #d5dbd9; }
+body.dark-mode .ad-value-card-new .ad-value-card-text { color: #6fd6c9; }
+
+.ad-value-arrow-v { display: flex; align-items: center; justify-content: center; color: #8b9490; font-size: 13px; padding: 2px 0; }
+.ad-value-arrow-h { display: flex; align-items: center; justify-content: center; color: #8b9490; font-size: 13px; padding: 0 2px; flex-shrink: 0; }
+
+/* Image change */
+.ad-change-image-pair { display: flex; align-items: center; gap: 14px; justify-content: center; padding: 6px 0 10px; }
+.ad-change-image-block { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.ad-change-thumb { width: 64px; height: 64px; object-fit: cover; border-radius: 10px; border: 2px solid #eee; background: #fff; }
+.ad-change-thumb-old { border-color: #e3e6e3; }
+.ad-change-thumb-new { border-color: #b9e3d4; }
+.ad-change-thumb-placeholder {
+  width: 64px; height: 64px; display: flex; align-items: center; justify-content: center;
+  font-size: 10px; color: #999; text-align: center; border-radius: 10px; border: 1px dashed #ccc; padding: 2px; word-break: break-word;
+}
+body.dark-mode .ad-change-thumb { background: #1a1f1e; border-color: rgba(255,255,255,.1); }
+body.dark-mode .ad-change-thumb-placeholder { border-color: var(--dm-border); color: #9aa5a3; }
+
+/* No-changes empty state */
+.ad-empty { text-align: center; padding: 28px 16px; color: #8b9490; font-size: 13.5px; }
+.ad-empty i { font-size: 22px; margin-bottom: 8px; display: block; color: #c6ccc9; }
+
+/* ============ Description highlight card ============ */
+.ad-desc-card {
+  background: rgba(15,107,79,.06); border-radius: var(--ad-radius-sm); padding: 18px 20px;
+  border: 1px solid rgba(15,107,79,.12);
+}
+body.dark-mode .ad-desc-card { background: rgba(79,209,197,.08); border-color: rgba(79,209,197,.16); }
+.ad-desc-text { font-size: 14.5px; font-weight: 500; color: #1a2420; line-height: 1.55; }
+body.dark-mode .ad-desc-text { color: #e6ebe9; }
+
+/* ============ Timeline ============ */
+.ad-timeline { position: relative; padding-left: 6px; }
+.ad-tl-item { display: flex; gap: 14px; position: relative; padding-bottom: 26px; }
+.ad-tl-item:last-child { padding-bottom: 0; }
+.ad-tl-dot-col { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+.ad-tl-dot { width: 12px; height: 12px; border-radius: 50%; background: var(--teal); box-shadow: 0 0 0 4px rgba(15,107,79,.12); flex-shrink: 0; }
+body.dark-mode .ad-tl-dot { box-shadow: 0 0 0 4px rgba(79,209,197,.14); }
+.ad-tl-line { width: 2px; flex: 1; background: #e9ebe9; margin-top: 4px; min-height: 22px; }
+body.dark-mode .ad-tl-line { background: var(--dm-border); }
+.ad-tl-item:last-child .ad-tl-line { display: none; }
+.ad-tl-title { font-size: 13.5px; font-weight: 700; color: #1a2420; }
+body.dark-mode .ad-tl-title { color: #f1f4f2; }
+.ad-tl-meta { font-size: 12.5px; color: #8b9490; margin-top: 2px; }
+body.dark-mode .ad-tl-meta { color: #9aa5a3; }
+
+/* ============ Technical details accordion ============ */
+.ad-accordion-btn {
+  width: 100%; background: #fafbfa; border: none; border-radius: var(--ad-radius-sm);
+  padding: 14px 18px; display: flex; align-items: center; justify-content: space-between;
+  font-size: 13px; font-weight: 700; color: #4b5563; text-transform: uppercase; letter-spacing: .4px;
+  cursor: pointer; transition: background .15s ease;
+}
+.ad-accordion-btn:hover { background: #f2f4f2; }
+.ad-accordion-btn:focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+.ad-accordion-btn i.ad-chevron { transition: transform .2s ease; color: #8b9490; }
+.ad-accordion-btn[aria-expanded="true"] i.ad-chevron { transform: rotate(180deg); }
+body.dark-mode .ad-accordion-btn { background: rgba(255,255,255,.03); color: #d5dbd9; }
+body.dark-mode .ad-accordion-btn:hover { background: rgba(255,255,255,.06); }
+
+/* ============ Responsive ============ */
+@media (max-width: 991px) {
+  .ad-title { font-size: 23px; }
+  .ad-hero { padding: 22px 18px; }
+}
+</style>
+
+<div class="ad-wrap">
+  <div class="dash-breadcrumb">
+    <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+    <span class="sep">/</span><a href="{% url 'dashboard:activity_log' %}">Activity Log</a>
+    <span class="sep">/</span><span class="current">Details</span>
+  </div>
+
+  <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+    <div>
+      <h1 class="ad-title">Activity Detail</h1>
+      <p class="ad-subtitle mb-0">View complete audit information for this activity.</p>
+    </div>
+    <a href="{% url 'dashboard:activity_log' %}" class="ad-back-btn" onclick="if (window.history.length > 1) { history.back(); return false; }">
+      <i class="fas fa-arrow-left"></i> Back
+    </a>
+  </div>
+
+  <!-- ============ HERO CARD ============ -->
+  <div class="ad-card ad-hero mb-4" role="region" aria-label="Activity overview">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="ad-hero-avatar" aria-hidden="true">{{ log.username|default:"?"|slice:":2"|upper }}</div>
+        <div>
+          <div class="ad-hero-username">{{ log.username|default:"Unknown" }}</div>
+          <div class="ad-hero-meta">
+            <span class="ad-role-pill">{{ log.role|title|default:"—" }}</span>
+            <span class="ad-hero-time"><i class="far fa-clock"></i> {{ log.timestamp|date:"M d, Y · g:i A" }}</span>
+          </div>
+        </div>
+      </div>
+      <span class="ad-status-badge {% if log.status == 'failed' %}ad-status-failed{% else %}ad-status-success{% endif %}">
+        <i class="fas {% if log.status == 'failed' %}fa-circle-xmark{% else %}fa-circle-check{% endif %}"></i>
+        {{ log.get_status_display }}
+      </span>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- ============ LEFT COLUMN ============ -->
+    <div class="col-lg-6">
+
+      <!-- CARD 1: Activity Information -->
+      <div class="ad-card ad-hover mb-4" style="padding: 22px var(--ad-space);" role="region" aria-labelledby="ad-info-heading">
+        <h2 class="ad-card-title" id="ad-info-heading"><i class="fas fa-clipboard-list"></i> Activity Information</h2>
+        <div class="ad-row">
+          <span class="ad-label">Action Performed</span>
+          <span class="ad-value">
+            <span class="ad-action-badge {% if log.action == 'update' %}ad-action-updated{% elif log.action == 'create' %}ad-action-created{% elif log.action == 'delete' %}ad-action-deleted{% elif log.action == 'login' %}ad-action-login{% elif log.action == 'logout' %}ad-action-logout{% else %}ad-action-default{% endif %}">
+              <i class="fas {% if log.action == 'update' %}fa-pen{% elif log.action == 'create' %}fa-plus{% elif log.action == 'delete' %}fa-trash{% elif log.action == 'login' %}fa-right-to-bracket{% elif log.action == 'logout' %}fa-right-from-bracket{% else %}fa-circle-dot{% endif %}"></i>
+              {{ log.get_action_display }}
+            </span>
+          </span>
+        </div>
+        <div class="ad-row">
+          <span class="ad-label">Username</span>
+          <span class="ad-value">{{ log.username|default:"—" }}</span>
+        </div>
+        <div class="ad-row">
+          <span class="ad-label">Role</span>
+          <span class="ad-value">{{ log.role|title|default:"—" }}</span>
+        </div>
+        <div class="ad-row">
+          <span class="ad-label">Status</span>
+          <span class="ad-value">
+            <span class="ad-status-badge {% if log.status == 'failed' %}ad-status-failed{% else %}ad-status-success{% endif %}" style="padding:5px 12px;font-size:12px;">
+              <i class="fas {% if log.status == 'failed' %}fa-circle-xmark{% else %}fa-circle-check{% endif %}"></i>
+              {{ log.get_status_display }}
+            </span>
+          </span>
+        </div>
+        <div class="ad-row">
+          <span class="ad-label">Timestamp</span>
+          <span class="ad-value">{{ log.timestamp|date:"M d, Y · g:i A" }}</span>
+        </div>
+      </div>
+
+      <!-- CARD 2: Affected Object -->
+      <div class="ad-card ad-hover mb-4" style="padding: 22px var(--ad-space);" role="region" aria-labelledby="ad-object-heading">
+        <h2 class="ad-card-title" id="ad-object-heading"><i class="fas fa-cube"></i> Affected Object</h2>
+        {% if log.resource or log.resource_label %}
+        <div class="d-flex align-items-center gap-3 mt-2">
+          <div class="ad-object-icon" aria-hidden="true">
+            <i class="fas
+              {% if log.resource == 'User' %}fa-user
+              {% elif log.resource == 'Product' %}fa-box
+              {% elif log.resource == 'Order' %}fa-bag-shopping
+              {% elif log.resource == 'Category' %}fa-layer-group
+              {% else %}fa-file-lines{% endif %}"></i>
+          </div>
+          <div>
+            <div class="ad-value" style="text-align:left;font-size:15px;">
+              {{ log.resource|default:"—" }}{% if log.resource_label %}: {{ log.resource_label }}{% endif %}
+            </div>
+            <div class="ad-hero-time mt-1"><i class="fas fa-hashtag" style="font-size:10px;"></i> Resource reference</div>
+          </div>
+        </div>
+        {% else %}
+        <div class="ad-empty">
+          <i class="fas fa-cube"></i>
+          No affected object recorded for this activity.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ============ RIGHT COLUMN ============ -->
+    <div class="col-lg-6">
+
+      <!-- CARD 3: Change Summary -->
+      <div class="ad-card ad-hover mb-4" style="padding: 22px var(--ad-space);" role="region" aria-labelledby="ad-changes-heading">
+        <h2 class="ad-card-title" id="ad-changes-heading"><i class="fas fa-code-compare"></i> Change Summary</h2>
+
+        {% if field_changes %}
+        <div class="mt-2">
+          {% for change in field_changes %}
+
+            {% if change.label == "Image" %}
+            <div class="ad-change-block ad-no-toggle">
+              <div class="ad-change-field">
+                <span class="ad-change-field-name">{{ change.label }}</span>
+                <span></span>
+              </div>
+              <div class="ad-change-image-pair">
+                <div class="ad-change-image-block">
+                  <span class="ad-value-card-tag" style="color:#7a8480;">Old</span>
+                  {% if change.old_url %}
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#activityImageModal" data-img-src="{{ change.old_url }}" data-img-label="Previous image">
+                      <img src="{{ change.old_url }}" alt="Previous image" class="ad-change-thumb ad-change-thumb-old">
+                    </a>
+                  {% else %}
+                    <span class="ad-change-thumb-placeholder">{{ change.old }}</span>
+                  {% endif %}
+                </div>
+                <i class="fas fa-arrow-right ad-value-arrow-h"></i>
+                <div class="ad-change-image-block">
+                  <span class="ad-value-card-tag" style="color:#1e8449;">New</span>
+                  {% if change.new_url %}
+                    <a href="#" data-bs-toggle="modal" data-bs-target="#activityImageModal" data-img-src="{{ change.new_url }}" data-img-label="New image">
+                      <img src="{{ change.new_url }}" alt="New image" class="ad-change-thumb ad-change-thumb-new">
+                    </a>
+                  {% else %}
+                    <span class="ad-change-thumb-placeholder">{{ change.new }}</span>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+
+            {% elif change.label == "Description" %}
+            <div class="ad-change-block" data-collapsible="true">
+              <div class="ad-change-field">
+                <span class="ad-change-field-name">{{ change.label }}</span>
+                <button type="button" class="ad-change-toggle" aria-expanded="false" aria-label="Toggle {{ change.label }} change details">
+                  <i class="fas fa-chevron-down"></i>
+                </button>
+              </div>
+              <div class="ad-change-values">
+                <div class="ad-value-pair ad-stacked">
+                  <div class="ad-value-card ad-value-card-old">
+                    <span class="ad-value-card-tag">Old Value</span>
+                    <span class="ad-value-card-text">{{ change.old }}</span>
+                  </div>
+                  <div class="ad-value-arrow-v"><i class="fas fa-arrow-down"></i></div>
+                  <div class="ad-value-card ad-value-card-new">
+                    <span class="ad-value-card-tag">New Value</span>
+                    <span class="ad-value-card-text">{{ change.new }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {% else %}
+            <div class="ad-change-block" data-collapsible="true">
+              <div class="ad-change-field">
+                <span class="ad-change-field-name">{{ change.label }}</span>
+                <button type="button" class="ad-change-toggle" aria-expanded="false" aria-label="Toggle {{ change.label }} change details">
+                  <i class="fas fa-chevron-down"></i>
+                </button>
+              </div>
+              <div class="ad-change-values">
+                <div class="ad-value-pair ad-stacked">
+                  <div class="ad-value-card ad-value-card-old">
+                    <span class="ad-value-card-tag">Old Value</span>
+                    <span class="ad-value-card-text">{{ change.old }}</span>
+                  </div>
+                  <div class="ad-value-arrow-v"><i class="fas fa-arrow-down"></i></div>
+                  <div class="ad-value-card ad-value-card-new">
+                    <span class="ad-value-card-tag">New Value</span>
+                    <span class="ad-value-card-text">{{ change.new }}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endif %}
+
+          {% endfor %}
+        </div>
+
+        {% elif log.previous_value or log.new_value %}
+        <div class="ad-value-pair ad-stacked mt-2">
+          <div class="ad-value-card ad-value-card-old">
+            <span class="ad-value-card-tag">Old Value</span>
+            <span class="ad-value-card-text">{{ log.previous_value|default:"—" }}</span>
+          </div>
+          <div class="ad-value-arrow-v"><i class="fas fa-arrow-down"></i></div>
+          <div class="ad-value-card ad-value-card-new">
+            <span class="ad-value-card-tag">New Value</span>
+            <span class="ad-value-card-text">{{ log.new_value|default:"—" }}</span>
+          </div>
+        </div>
+        {% else %}
+        <div class="ad-empty">
+          <i class="fas fa-code-compare"></i>
+          No field changes recorded for this activity.
+        </div>
+        {% endif %}
+      </div>
+
+      {% if log.description %}
+      <!-- DESCRIPTION -->
+      <div class="ad-card ad-hover mb-4" style="padding: 22px var(--ad-space);" role="region" aria-labelledby="ad-desc-heading">
+        <h2 class="ad-card-title" id="ad-desc-heading"><i class="fas fa-note-sticky"></i> Description</h2>
+        <div class="ad-desc-card mt-2">
+          <p class="ad-desc-text mb-0">{{ log.description }}</p>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ============ TIMELINE ============ -->
+  <div class="ad-card ad-hover mb-4" style="padding: 22px var(--ad-space);" role="region" aria-labelledby="ad-timeline-heading">
+    <h2 class="ad-card-title" id="ad-timeline-heading"><i class="fas fa-timeline"></i> Activity Timeline</h2>
+    <div class="ad-timeline mt-3">
+      <div class="ad-tl-item">
+        <div class="ad-tl-dot-col">
+          <div class="ad-tl-dot"></div>
+          <div class="ad-tl-line"></div>
+        </div>
+        <div>
+          <div class="ad-tl-title">Activity Created</div>
+          <div class="ad-tl-meta">{{ log.timestamp|date:"M d, Y · g:i A" }}</div>
+        </div>
+      </div>
+      <div class="ad-tl-item">
+        <div class="ad-tl-dot-col">
+          <div class="ad-tl-dot"></div>
+          <div class="ad-tl-line"></div>
+        </div>
+        <div>
+          <div class="ad-tl-title">Saved to Audit Log</div>
+          <div class="ad-tl-meta">Recorded with status: {{ log.get_status_display }}</div>
+        </div>
+      </div>
+      <div class="ad-tl-item">
+        <div class="ad-tl-dot-col">
+          <div class="ad-tl-dot"></div>
+        </div>
+        <div>
+          <div class="ad-tl-title">Available for Reporting</div>
+          <div class="ad-tl-meta">Visible in Activity Log &amp; exports</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TECHNICAL DETAILS (collapsible) ============ -->
+  <div class="ad-card mb-4" style="padding: 10px;">
+    <button type="button" class="ad-accordion-btn" id="adTechToggle" aria-expanded="false" aria-controls="adTechPanel">
+      <span><i class="fas fa-microchip me-2"></i>Technical Details</span>
+      <i class="fas fa-chevron-down ad-chevron"></i>
+    </button>
+    <div id="adTechPanel" style="display:none; padding: 16px 18px 8px;">
+      <div class="ad-row">
+        <span class="ad-label">Log ID</span>
+        <span class="ad-value">{{ log.id|default:"—" }}</span>
+      </div>
+      <div class="ad-row">
+        <span class="ad-label">Username</span>
+        <span class="ad-value">{{ log.username|default:"—" }}</span>
+      </div>
+      <div class="ad-row">
+        <span class="ad-label">Role</span>
+        <span class="ad-value">{{ log.role|title|default:"—" }}</span>
+      </div>
+      <div class="ad-row">
+        <span class="ad-label">Action</span>
+        <span class="ad-value">{{ log.get_action_display }}</span>
+      </div>
+      <div class="ad-row">
+        <span class="ad-label">Status</span>
+        <span class="ad-value">{{ log.get_status_display }}</span>
+      </div>
+      <div class="ad-row">
+        <span class="ad-label">Timestamp</span>
+        <span class="ad-value">{{ log.timestamp|date:"M d, Y · g:i A" }}</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Activity Image Full-Size Modal -->
+<div class="modal fade" id="activityImageModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content" style="border-radius:18px; overflow:hidden; border:none;">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" style="color:var(--teal);" id="activityImageModalLabel">Image</h5>
+        <div class="d-flex align-items-center gap-1 ms-auto me-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="activityImgZoomOut" title="Zoom out"><i class="fas fa-magnifying-glass-minus"></i></button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="activityImgZoomReset" title="Reset zoom"><i class="fas fa-magnifying-glass"></i></button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="activityImgZoomIn" title="Zoom in"><i class="fas fa-magnifying-glass-plus"></i></button>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center p-0" id="activityImgZoomWrap" style="overflow:auto; max-height:78vh; background:#f3f1eb; cursor:zoom-in;">
+        <img src="" alt="Full-size image" id="activityImgZoomImg" style="max-width:100%; display:block; margin:0 auto; transition:transform .15s ease; transform:scale(1); transform-origin:center top;">
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  // Change-field toggles (Old/New comparison cards)
+  document.querySelectorAll('.ad-change-block[data-collapsible="true"]').forEach(function (block) {
+    var btn = block.querySelector('.ad-change-toggle');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      var isOpen = block.getAttribute('data-open') === 'true';
+      block.setAttribute('data-open', isOpen ? 'false' : 'true');
+      btn.setAttribute('aria-expanded', isOpen ? 'false' : 'true');
+    });
+  });
+
+  // Technical details accordion
+  var techToggle = document.getElementById('adTechToggle');
+  var techPanel = document.getElementById('adTechPanel');
+  if (techToggle && techPanel) {
+    techToggle.addEventListener('click', function () {
+      var expanded = techToggle.getAttribute('aria-expanded') === 'true';
+      techToggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+      techPanel.style.display = expanded ? 'none' : 'block';
+    });
+  }
+});
+
+(function () {
+  const modalEl = document.getElementById('activityImageModal');
+  const wrap = document.getElementById('activityImgZoomWrap');
+  const img = document.getElementById('activityImgZoomImg');
+  const label = document.getElementById('activityImageModalLabel');
+  const zoomInBtn = document.getElementById('activityImgZoomIn');
+  const zoomOutBtn = document.getElementById('activityImgZoomOut');
+  const zoomResetBtn = document.getElementById('activityImgZoomReset');
+  if (!modalEl || !wrap || !img) return;
+
+  let scale = 1;
+  const MIN = 1, MAX = 4, STEP = 0.5;
+
+  function applyZoom() {
+    img.style.transform = `scale(${scale})`;
+    wrap.style.cursor = scale > 1 ? 'zoom-out' : 'zoom-in';
+  }
+  function zoomIn() { scale = Math.min(MAX, scale + STEP); applyZoom(); }
+  function zoomOut() { scale = Math.max(MIN, scale - STEP); applyZoom(); }
+  function zoomReset() { scale = 1; applyZoom(); wrap.scrollTop = 0; wrap.scrollLeft = 0; }
+
+  zoomInBtn.addEventListener('click', zoomIn);
+  zoomOutBtn.addEventListener('click', zoomOut);
+  zoomResetBtn.addEventListener('click', zoomReset);
+  img.addEventListener('click', () => { scale > 1 ? zoomReset() : (scale = 2, applyZoom()); });
+  wrap.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    e.deltaY < 0 ? zoomIn() : zoomOut();
+  }, { passive: false });
+
+  modalEl.addEventListener('show.bs.modal', (event) => {
+    const trigger = event.relatedTarget;
+    if (!trigger) return;
+    img.src = trigger.getAttribute('data-img-src') || '';
+    label.textContent = trigger.getAttribute('data-img-label') || 'Image';
+  });
+  modalEl.addEventListener('hidden.bs.modal', zoomReset);
+})();
+</script>
+{% endblock %}

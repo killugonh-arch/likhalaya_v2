@@ -1,0 +1,456 @@
+{% extends 'base.html' %}
+{% block title %}Terms of Service – Likhalaya{% endblock %}
+
+{% load static %}
+{% block navbar %}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ============ Page background ============ */
+.terms-page-bg {
+  background: linear-gradient(180deg, #eef6f1 0%, #ffffff 220px);
+}
+
+/* ============ Wide content wrapper ============ */
+.terms-wrap {
+  max-width: 1180px;
+  margin: 0 auto;
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+/* ============ Back button ============ */
+.terms-back-top {
+  display: inline-flex; align-items: center; gap: 8px;
+  margin-bottom: 22px;
+  padding: 10px 20px;
+  background: #fff;
+  border: 1.5px solid #dceae1;
+  border-radius: 12px;
+  font-size: 13.5px; font-weight: 700; color: var(--teal);
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgba(15,61,57,.05);
+  transition: background .18s ease, border-color .18s ease, transform .18s ease, box-shadow .18s ease;
+}
+.terms-back-top i { color: var(--teal); font-size: 12.5px; }
+.terms-back-top:hover {
+  background: #eef5f0; border-color: var(--teal); color: var(--teal);
+  transform: translateX(-2px); box-shadow: 0 4px 14px rgba(15,61,57,.10);
+}
+
+/* ============ Updated pill ============ */
+.terms-updated-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: #eef5f0; color: var(--teal);
+  font-size: 12.5px; font-weight: 600;
+  padding: 6px 16px; border-radius: 20px;
+  border: 1px solid #dceae1;
+}
+
+/* ============ Progress banner ============ */
+.terms-progress-banner {
+  background: linear-gradient(135deg, #0F3D39 0%, #1E5F5A 100%);
+  border-radius: 14px;
+  padding: 18px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 24px rgba(15,61,57,.18);
+  animation: slide-down .4s ease both;
+}
+@keyframes slide-down {
+  from { opacity:0; transform:translateY(-10px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+.terms-progress-banner .banner-icon {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: rgba(255,255,255,.12);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 18px; color: var(--gold, #e8a82a);
+  flex-shrink: 0;
+}
+.terms-progress-banner .banner-text { flex: 1; }
+.terms-progress-banner .banner-text strong { color: #fff; font-size: 14px; display: block; }
+.terms-progress-banner .banner-text span { color: rgba(255,255,255,.75); font-size: 12.5px; }
+.terms-progress-bar-wrap { flex: 0 0 120px; }
+.terms-progress-bar {
+  height: 6px; border-radius: 6px;
+  background: rgba(255,255,255,.2);
+  overflow: hidden;
+}
+.terms-progress-bar-fill {
+  height: 100%; border-radius: 6px;
+  background: linear-gradient(90deg, var(--gold, #e8a82a), #f5c842);
+  width: 0%;
+  transition: width .4s ease;
+}
+.terms-progress-pct {
+  font-size: 11px; font-weight: 700; color: rgba(255,255,255,.7);
+  margin-top: 5px; text-align: right;
+}
+
+/* ============ Terms card ============ */
+.terms-card {
+  background: #fff;
+  border-radius: 18px;
+  padding: 8px 0;
+  box-shadow: 0 12px 40px rgba(15,61,57,.08);
+  border: 1px solid #eef2f0;
+}
+.terms-section {
+  display: flex;
+  gap: 24px;
+  padding: 30px 44px;
+  border-bottom: 1px solid #f0f3f1;
+  transition: background .2s ease;
+  scroll-margin-top: 80px;
+}
+.terms-section:last-child { border-bottom: none; }
+.terms-section.section-read {
+  background: linear-gradient(90deg, rgba(39,174,96,.03), transparent 60%);
+}
+.terms-section-icon {
+  flex-shrink: 0;
+  width: 60px; height: 60px;
+  border-radius: 16px;
+  background: var(--teal);
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  box-shadow: 0 4px 12px rgba(15,61,57,.18);
+  position: relative;
+  transition: transform .2s ease;
+}
+.terms-section:hover .terms-section-icon { transform: scale(1.05); }
+.section-read-tick {
+  position: absolute;
+  top: -6px; right: -6px;
+  width: 20px; height: 20px;
+  border-radius: 50%;
+  background: #27ae60;
+  border: 2px solid #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; color: #fff;
+  opacity: 0;
+  transform: scale(.5);
+  transition: opacity .3s ease, transform .3s ease;
+}
+.terms-section.section-read .section-read-tick { opacity: 1; transform: scale(1); }
+
+.terms-section-body { max-width: 760px; }
+.terms-section-body h2 {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700; font-size: 17px; color: #1a2420; margin-bottom: 8px;
+}
+.terms-section-body p, .terms-section-body li {
+  font-size: 14.5px; color: #4b5563; line-height: 1.75;
+}
+.terms-section-body ul { padding-left: 20px; margin-bottom: 0; }
+.terms-section-body ul li { margin-bottom: 6px; }
+.terms-section-body ul li:last-child { margin-bottom: 0; }
+.terms-section-body a { color: var(--teal); font-weight: 600; text-decoration: none; }
+.terms-section-body a:hover { text-decoration: underline; }
+
+/* ============ Contact / help box ============ */
+.terms-help-box {
+  background: #eef5f0; border: 1px solid #dceae1;
+  border-radius: 12px; padding: 16px 20px; margin-top: 4px; max-width: 420px;
+}
+.terms-help-box .label { font-weight: 700; font-size: 14px; color: #1a2420; margin-bottom: 6px; }
+.terms-help-box a { display: inline-flex; align-items: center; gap: 6px; font-size: 14px; }
+
+/* ============ Sticky CTA bar ============ */
+.terms-accept-bar {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 100;
+  background: rgba(255,255,255,.96);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid #e5e9e7;
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  transform: translateY(100%);
+  transition: transform .35s cubic-bezier(.22,.68,0,1.1);
+  box-shadow: 0 -8px 24px rgba(15,61,57,.08);
+}
+.terms-accept-bar.visible { transform: translateY(0); }
+.terms-accept-bar .bar-text { font-size: 13.5px; color: #4b5563; }
+.terms-accept-bar .bar-text strong { color: #1a2420; }
+.btn-accept {
+  padding: 12px 28px;
+  border-radius: 12px;
+  border: none;
+  background: linear-gradient(135deg, var(--gold), #e8a82a);
+  color: #fff;
+  font-size: 14.5px; font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
+  text-decoration: none;
+  transition: transform .18s ease, box-shadow .18s ease;
+  white-space: nowrap;
+}
+.btn-accept:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(201,132,26,.35);
+  color: #fff;
+}
+.btn-accept:disabled { opacity: .6; transform: none; }
+.btn-decline {
+  padding: 12px 20px;
+  border-radius: 12px;
+  border: 1.5px solid #dce0de;
+  background: #fff;
+  color: #6b7c77;
+  font-size: 14px; font-weight: 600;
+  text-decoration: none;
+  transition: all .18s ease;
+  white-space: nowrap;
+}
+.btn-decline:hover { border-color: #aab5b1; color: #4b5563; }
+
+/* Bottom spacer so sticky bar doesn't cover content */
+.terms-bottom-spacer { height: 80px; }
+
+@media (max-width: 767px) {
+  .terms-section { flex-direction: column; padding: 22px; gap: 14px; }
+  .terms-section-icon { width: 50px; height: 50px; font-size: 19px; border-radius: 14px; }
+  .terms-progress-banner { flex-wrap: wrap; }
+  .terms-progress-bar-wrap { flex: 0 0 100%; }
+  .terms-accept-bar { flex-wrap: wrap; gap: 10px; }
+  .terms-accept-bar .bar-text { font-size: 12.5px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'partials/compact_page_header.html' with eyebrow='Legal' eyebrow_icon='fa-file-contract' title='Terms of Service' subtitle='Please review the terms and conditions for using Likhalaya.' %}
+
+<div class="terms-page-bg">
+  <div class="terms-wrap pt-4">
+    <a href="{% url 'accounts:register' %}" class="terms-back-top">
+      <i class="fas fa-arrow-left"></i> Back to Registration
+    </a>
+    <span class="terms-updated-pill ms-2"><i class="fas fa-calendar-alt"></i> Last Updated &middot; July 2026</span>
+
+    <!-- Reading progress banner -->
+    <div class="terms-progress-banner" id="termsBanner">
+      <div class="banner-icon"><i class="fas fa-book-open"></i></div>
+      <div class="banner-text">
+        <strong>Read all sections to continue</strong>
+        <span id="termsBarSubtext">Scroll through to review the full terms</span>
+      </div>
+      <div class="terms-progress-bar-wrap">
+        <div class="terms-progress-bar">
+          <div class="terms-progress-bar-fill" id="termsBarFill"></div>
+        </div>
+        <div class="terms-progress-pct" id="termsPct">0 of 8 sections</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="terms-wrap pt-2 pb-3" id="termsContent">
+    <div class="terms-card">
+
+      <div class="terms-section" id="section-1" data-section="1">
+        <div class="terms-section-icon">
+          <i class="fas fa-circle-info"></i>
+          <span class="section-read-tick"><i class="fas fa-check"></i></span>
+        </div>
+        <div class="terms-section-body">
+          <h2>1. About Likhalaya</h2>
+          <p>Likhalaya is an online marketplace operated in support of the Persons Deprived of Liberty (PDL) livelihood program at Carigara District Jail, Bureau of Jail Management and Penology. By creating an account or purchasing a product through this site, you agree to the terms described below.</p>
+        </div>
+      </div>
+
+      <div class="terms-section" id="section-2" data-section="2">
+        <div class="terms-section-icon">
+          <i class="fas fa-user"></i>
+          <span class="section-read-tick"><i class="fas fa-check"></i></span>
+        </div>
+        <div class="terms-section-body">
+          <h2>2. Your Account</h2>
+          <ul>
+            <li>You must provide accurate and current information when registering, including a valid name, email address, and shipping details.</li>
+            <li>You are responsible for keeping your password confidential and for all activity under your account.</li>
+            <li>Accounts may not be shared, sold, or transferred to another person.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="terms-section" id="section-3" data-section="3">
+        <div class="terms-section-icon">
+          <i class="fas fa-box"></i>
+          <span class="section-read-tick"><i class="fas fa-check"></i></span>
+        </div>
+        <div class="terms-section-body">
+          <h2>3. Products &amp; Orders</h2>
+          <ul>
+            <li>All items sold on Likhalaya are handcrafted by PDL artisans, so slight variations in color, size, or finish are normal and not considered defects.</li>
+            <li>Stock levels shown on the site are updated regularly but are not guaranteed until an order is confirmed.</li>
+            <li>Prices are listed in Philippine Peso (₱) and may change without prior notice.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="terms-section" id="section-4" data-section="4">
+        <div class="terms-section-icon">
+          <i class="fas fa-truck"></i>
+          <span class="section-read-tick"><i class="fas fa-check"></i></span>
+        </div>
+        <div class="terms-section-body">
+          <h2>4. Payment &amp; Shipping</h2>
+          <ul>
+            <li>Orders are processed once payment or payment arrangement (e.g., cash on delivery) is confirmed.</li>
+            <li>Shipping fees, where applicable, are calculated at checkout based on your order subtotal.</li>
+            <li>Delivery times are estimates and may vary due to circumstances beyond our control.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="terms-section" id="section-5" data-section="5">
+        <div class="terms-section-icon">
+          <i class="fas fa-heart"></i>
+          <span class="section-read-tick"><i class="fas fa-check"></i></span>
+        </div>
+        <div class="terms-section-body">
+          <h2>5. Supporting PDL Artisans</h2>
+          <p>A portion of every purchase supports livelihood and reintegration programs for PDL artisans. By shopping on Likhalaya, you are directly contributing to skills training and rehabilitation efforts within the facility.</p>
+        </div>
+      </div>
+
+      <div class="terms-section" id="section-6" data-section="6">
+        <div class="terms-section-icon">
+          <i class="fas fa-shield-halved"></i>
+          <span class="section-read-tick"><i class="fas fa-check"></i></span>
+        </div>
+        <div class="terms-section-body">
+          <h2>6. Acceptable Use</h2>
+          <p>You agree not to misuse the site — including attempting to disrupt its operation, submitting false information, or using it for any unlawful purpose.</p>
+        </div>
+      </div>
+
+      <div class="terms-section" id="section-7" data-section="7">
+        <div class="terms-section-icon">
+          <i class="fas fa-pen"></i>
+          <span class="section-read-tick"><i class="fas fa-check"></i></span>
+        </div>
+        <div class="terms-section-body">
+          <h2>7. Changes to These Terms</h2>
+          <p>We may update these Terms of Service from time to time. Continued use of Likhalaya after changes are posted constitutes your acceptance of the revised terms.</p>
+        </div>
+      </div>
+
+      <div class="terms-section" id="section-8" data-section="8">
+        <div class="terms-section-icon">
+          <i class="fas fa-phone"></i>
+          <span class="section-read-tick"><i class="fas fa-check"></i></span>
+        </div>
+        <div class="terms-section-body">
+          <h2>8. Contact Us</h2>
+          <p class="mb-3">Questions about these terms can be sent to us using the details below.</p>
+          <div class="terms-help-box">
+            <div class="label">Need help?</div>
+            <a href="mailto:likhalaya@bjmp.gov.ph"><i class="fas fa-envelope"></i> likhalaya@bjmp.gov.ph</a><br>
+            <a href="{% url 'store:contact' %}"><i class="fas fa-arrow-up-right-from-square"></i> Contact Page</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="terms-bottom-spacer"></div>
+</div>
+
+<!-- Sticky accept/decline bar -->
+<div class="terms-accept-bar" id="termsAcceptBar" role="region" aria-label="Terms acceptance">
+  <span class="bar-text" id="termsBarText">
+    <strong>Ready to continue?</strong> — <span id="termsStickyBarSubtext">Scroll to read all sections</span>
+  </span>
+  <a href="{% url 'accounts:register' %}" class="btn-decline">Decline</a>
+  <a href="{% url 'accounts:register' %}?terms_agreed=1" class="btn-accept" id="acceptBtn" aria-disabled="true"
+     style="pointer-events:none;opacity:.6;" tabindex="-1">
+    <i class="fas fa-check-circle"></i> I Agree &amp; Continue
+  </a>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  'use strict';
+
+  var TOTAL_SECTIONS = 8;
+  var readSections   = new Set();
+  var sections       = Array.from(document.querySelectorAll('.terms-section[data-section]'));
+  var fill           = document.getElementById('termsBarFill');
+  var pctEl          = document.getElementById('termsPct');
+  var acceptBtn      = document.getElementById('acceptBtn');
+  var barSubtext       = document.getElementById('termsBarSubtext');
+  var stickyBarSubtext = document.getElementById('termsStickyBarSubtext');
+  var acceptBar      = document.getElementById('termsAcceptBar');
+  var bannerEl       = document.getElementById('termsBanner');
+
+  function updateProgress() {
+    var count = readSections.size;
+    var pct   = Math.round((count / TOTAL_SECTIONS) * 100);
+    fill.style.width = pct + '%';
+    pctEl.textContent = count + ' of ' + TOTAL_SECTIONS + ' sections';
+
+    if (count === TOTAL_SECTIONS) {
+      acceptBtn.style.pointerEvents = '';
+      acceptBtn.style.opacity       = '';
+      acceptBtn.removeAttribute('aria-disabled');
+      acceptBtn.removeAttribute('tabindex');
+      barSubtext.textContent = 'All sections reviewed — you may now agree';
+      if (stickyBarSubtext) stickyBarSubtext.textContent = 'All sections reviewed';
+      bannerEl.style.background = 'linear-gradient(135deg, #1a6a3a 0%, #27ae60 100%)';
+      fill.style.background = 'linear-gradient(90deg, #27ae60, #6fcf97)';
+    } else {
+      barSubtext.textContent = (TOTAL_SECTIONS - count) + ' section' +
+        (TOTAL_SECTIONS - count === 1 ? '' : 's') + ' remaining';
+      if (stickyBarSubtext) stickyBarSubtext.textContent = (TOTAL_SECTIONS - count) + ' section' +
+        (TOTAL_SECTIONS - count === 1 ? '' : 's') + ' remaining';
+      fill.style.background = 'linear-gradient(90deg, var(--gold, #e8a82a), #f5c842)';
+    }
+  }
+
+  /* Intersection Observer: mark a section read when >= 70% visible */
+  if ('IntersectionObserver' in window) {
+    var observer = new IntersectionObserver(function(entries) {
+      entries.forEach(function(entry) {
+        if (entry.isIntersecting && entry.intersectionRatio >= 0.55) {
+          var id = entry.target.getAttribute('data-section');
+          if (!readSections.has(id)) {
+            readSections.add(id);
+            entry.target.classList.add('section-read');
+            updateProgress();
+          }
+        }
+      });
+    }, { threshold: [0.55] });
+
+    sections.forEach(function(s) { observer.observe(s); });
+  } else {
+    /* Fallback: mark all read immediately */
+    sections.forEach(function(s) {
+      readSections.add(s.getAttribute('data-section'));
+      s.classList.add('section-read');
+    });
+    updateProgress();
+  }
+
+  /* Show the sticky bar after a tiny scroll */
+  window.addEventListener('scroll', function() {
+    if (window.scrollY > 120) {
+      acceptBar.classList.add('visible');
+    }
+  }, { passive: true });
+
+  updateProgress();
+})();
+</script>
+{% endblock %}

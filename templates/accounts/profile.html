@@ -1,0 +1,639 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}My Profile – Likhalaya{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ============ Page background ============ */
+body { background: #F6F8FA; }
+
+/* ============ Content container — same width/rhythm as Shop's content area ============ */
+.profile-page-shell { max-width: 1300px; margin: 0 auto; padding: 40px 24px 64px; }
+.profile-page-grid { display: grid; grid-template-columns: 300px 1fr; gap: 28px; align-items: start; }
+
+/* ============ Shared card style — matches Shop's filter panel / product cards:
+   white bg, thin clean border, subtle shadow, moderate radius, no heavy effects ============ */
+.pcard {
+  background: #fff;
+  border: 1px solid #ECECEC;
+  border-radius: 16px;
+  box-shadow: 0 2px 10px rgba(16,24,20,.05);
+}
+
+/* ============ Account nav card ============ */
+.pnav-card { padding: 20px; }
+.pnav-card-title {
+  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
+  color: #8b9490; margin-bottom: 14px; padding: 0 6px;
+}
+.pnav { display: flex; flex-direction: column; gap: 4px; }
+.pnav-link {
+  display: flex; align-items: center; gap: 10px;
+  color: #435047; font-size: 14.5px; font-weight: 600;
+  border-radius: 10px; padding: 11px 14px;
+  text-decoration: none;
+  transition: background .15s ease, color .15s ease;
+}
+.pnav-link i { width: 16px; text-align: center; font-size: 13px; color: #8b9490; transition: color .15s ease; }
+.pnav-link:hover { background: #F2F6F4; color: var(--teal); }
+.pnav-link:hover i { color: var(--teal); }
+.pnav-link.active {
+  background: var(--teal);
+  color: #fff;
+}
+.pnav-link.active i { color: #fff; }
+
+/* ============ Profile summary card (compact — no oversized hero) ============ */
+.psummary-card { padding: 32px; display: flex; align-items: center; gap: 24px; margin-bottom: 24px; }
+.profile-avatar {
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  outline: 1px solid #ECECEC;
+  box-shadow: 0 4px 14px rgba(16,24,20,.12);
+  object-fit: cover;
+  background: var(--gold);
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-size: 34px; font-weight: 700;
+  flex-shrink: 0;
+}
+.psummary-info { min-width: 0; }
+.psummary-name {
+  font-size: 24px; font-weight: 800; color: #1a2420;
+  margin: 0 0 6px; overflow-wrap: break-word;
+}
+.psummary-email {
+  font-size: 15px; color: #6b756f; margin-bottom: 12px;
+  display: flex; align-items: center; gap: 7px; overflow-wrap: break-word;
+}
+.psummary-email i { color: var(--gold); font-size: 13px; }
+.psummary-meta { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.profile-role-badge {
+  background: var(--gold);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 6px 16px;
+  border-radius: 20px;
+  letter-spacing: .3px;
+  display: inline-flex;
+  align-items: center;
+}
+.psummary-joined { color: #8b9490; font-size: 13.5px; }
+
+/* ============ Profile info card ============ */
+.pinfo-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 22px 28px 0;
+  flex-wrap: wrap; gap: 12px;
+}
+.pinfo-card-title { font-size: 19px; font-weight: 800; color: #1a2420; margin: 0; }
+.pinfo-card-body { padding: 18px 28px 24px; }
+
+.pfield-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 32px; }
+.pfield { padding: 14px 0; border-bottom: 1px solid #f0f1ef; }
+.pfield.pfield-full { grid-column: 1 / -1; }
+.pfield:nth-last-child(-n+2) { border-bottom: none; }
+.pfield-label { font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #8b9490; margin-bottom: 5px; }
+.pfield-value { font-size: 15px; font-weight: 600; color: #1a2420; }
+.pfield-value .text-danger { font-size: 13px; font-weight: 600; }
+
+/* ============ Buttons — teal primary, gold used only as accent ============ */
+.btn-teal-premium {
+  background: var(--teal);
+  color: #fff; border: none;
+  border-radius: 10px;
+  padding: 9px 18px;
+  font-weight: 700; font-size: 13px;
+  box-shadow: 0 3px 10px rgba(15,107,79,.20);
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+.btn-teal-premium:hover { background: #1a6f5f; transform: translateY(-1px); box-shadow: 0 6px 16px rgba(15,107,79,.26); color: #fff; }
+.btn-teal-premium:active { transform: translateY(0); }
+
+/* ============ Form (edit mode) ============ */
+.form-control { border-radius: 10px; font-size: 14px; }
+.form-control:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(30,95,90,.12); }
+
+.loc-search-wrap { position: relative; }
+.loc-search-input:disabled { background: #f3f1ec; cursor: not-allowed; }
+.loc-suggest-box {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  max-height: 220px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e2ddd3;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,.12);
+  margin-top: 4px;
+}
+.loc-suggest-box.show { display: block; }
+.loc-suggest-item { padding: 8px 14px; font-size: 13.5px; cursor: pointer; }
+.loc-suggest-item:hover, .loc-suggest-item.active {
+  background: rgba(30,95,90,.08);
+  color: var(--teal);
+}
+.loc-suggest-empty { padding: 8px 14px; font-size: 13px; color: #999; }
+
+/* ============ Responsive ============ */
+@media (max-width: 992px) {
+  .profile-page-grid { grid-template-columns: 240px 1fr; gap: 20px; }
+}
+@media (max-width: 767px) {
+  .profile-page-shell { padding: 28px 16px 48px; }
+  .profile-page-grid { grid-template-columns: 1fr; }
+  .pnav { flex-direction: row; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; }
+  .pnav::-webkit-scrollbar { display: none; }
+  .pnav-link { flex-shrink: 0; }
+  .pnav-card-title { display: none; }
+  .psummary-card { flex-direction: column; text-align: center; }
+  .psummary-meta { justify-content: center; }
+  .pinfo-card-header { padding: 20px 20px 0; }
+  .pinfo-card-body { padding: 16px 20px 20px; }
+  .pfield-grid { grid-template-columns: 1fr; }
+  .pfield:nth-last-child(-n+2) { border-bottom: 1px solid #f0f1ef; }
+  .pfield:last-child { border-bottom: none; }
+}
+
+/* ===== Compact phone spacing ===== */
+@media (max-width: 575.98px) {
+  .profile-page-shell { padding: 12px 10px 28px; }
+  .profile-page-grid { gap: 12px; }
+  .pcard { border-radius: 14px; }
+  .pnav-card { padding: 8px 10px; }
+  .pnav-link { padding: 8px 12px; font-size: 13px; }
+  .psummary-card { padding: 14px; gap: 12px; margin-bottom: 12px; }
+  .profile-avatar { width: 64px; height: 64px; font-size: 22px; border-width: 3px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'partials/compact_page_header.html' with eyebrow='My Account' eyebrow_icon='fa-user' title='Profile' subtitle='Manage your account information and preferences.' %}
+
+<div class="profile-page-shell">
+  <div class="profile-page-grid">
+
+    <!-- ============ Left: Account Navigation ============ -->
+    <div>
+      <div class="pcard pnav-card">
+        <div class="pnav-card-title">Account</div>
+        <nav class="pnav">
+          <a class="pnav-link active" href="javascript:void(0)" onclick="showEditProfile()"><i class="fas fa-user-edit"></i>Edit Profile</a>
+          <a class="pnav-link" href="{% url 'accounts:change_password' %}"><i class="fas fa-lock"></i>Change Password</a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- ============ Right: Profile Content ============ -->
+    <div class="tab-content">
+      <div class="tab-pane fade show active" id="edit">
+
+        <!-- Compact profile summary — no oversized hero, just avatar + name/email/badge -->
+        <div class="pcard psummary-card">
+          {% if user.avatar %}
+          <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="profile-avatar">
+          {% else %}
+          <div class="profile-avatar d-flex align-items-center justify-content-center">
+            {{ user.first_name|first|upper }}{{ user.last_name|first|upper }}
+          </div>
+          {% endif %}
+          <div class="psummary-info">
+            <h3 class="psummary-name">{{ user.get_full_name|default:user.username }}</h3>
+            <div class="psummary-email"><i class="fas fa-envelope"></i>{{ user.email }}</div>
+            <div class="psummary-meta">
+              <span class="profile-role-badge">{{ user.get_role_display }}</span>
+              <span class="psummary-joined">Joined {{ user.date_joined|date:"F Y" }}</span>
+            </div>
+          </div>
+        </div>
+
+        {% if needs_contact_info %}
+        <div class="alert alert-warning d-flex align-items-start gap-2 mb-4 rounded-4" role="alert">
+          <i class="fas fa-exclamation-triangle mt-1"></i>
+          <div>
+            <strong>Phone number and complete address required.</strong>
+            We need your phone, street address, city, and province on file to ship your order — please fill them in below to continue.
+          </div>
+        </div>
+        {% endif %}
+
+        <div id="profileFormArea">
+
+          <!-- VIEW MODE -->
+          <div class="pcard {% if show_edit %}d-none{% endif %}" id="profileViewCard">
+            <div class="pinfo-card-header">
+              <h2 class="pinfo-card-title">Profile Information</h2>
+              <button type="button" class="btn btn-teal-premium" onclick="showEditProfile()">
+                <i class="fas fa-user-edit me-1"></i>Edit Profile
+              </button>
+            </div>
+            <div class="pinfo-card-body">
+              <div class="pfield-grid">
+                <div class="pfield">
+                  <div class="pfield-label">First Name</div>
+                  <div class="pfield-value">{{ user.first_name|default:"—" }}</div>
+                </div>
+                <div class="pfield">
+                  <div class="pfield-label">Last Name</div>
+                  <div class="pfield-value">{{ user.last_name|default:"—" }}</div>
+                </div>
+                <div class="pfield">
+                  <div class="pfield-label">Email</div>
+                  <div class="pfield-value">{{ user.email|default:"—" }}</div>
+                </div>
+                <div class="pfield">
+                  <div class="pfield-label">Phone</div>
+                  <div class="pfield-value">
+                    {% if user.phone %}{{ user.phone }}{% else %}<span class="text-danger">Not set</span>{% endif %}
+                  </div>
+                </div>
+                <div class="pfield pfield-full">
+                  <div class="pfield-label">Street Address</div>
+                  <div class="pfield-value">
+                    {% if user.address %}{{ user.address }}{% else %}<span class="text-danger">Not set</span>{% endif %}
+                  </div>
+                </div>
+                <div class="pfield">
+                  <div class="pfield-label">Barangay</div>
+                  <div class="pfield-value">
+                    {% if user.barangay %}{{ user.barangay }}{% else %}<span class="text-danger">Not set</span>{% endif %}
+                  </div>
+                </div>
+                <div class="pfield">
+                  <div class="pfield-label">City/Municipality</div>
+                  <div class="pfield-value">
+                    {% if user.city %}{{ user.city }}{% else %}<span class="text-danger">Not set</span>{% endif %}
+                  </div>
+                </div>
+                <div class="pfield">
+                  <div class="pfield-label">Province</div>
+                  <div class="pfield-value">
+                    {% if user.province %}{{ user.province }}{% else %}<span class="text-danger">Not set</span>{% endif %}
+                  </div>
+                </div>
+                <div class="pfield">
+                  <div class="pfield-label">ZIP Code</div>
+                  <div class="pfield-value">{{ user.zip_code|default:"—" }}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- EDIT MODE -->
+          <div class="pcard {% if not show_edit %}d-none{% endif %}" id="profileEditCard">
+            <div class="pinfo-card-header">
+              <h2 class="pinfo-card-title">Edit Profile Information</h2>
+              {% if next %}
+              <a href="{{ next }}" class="btn btn-outline-secondary btn-sm px-3 rounded-3">
+                <i class="fas fa-arrow-left me-1"></i>Back{% if not needs_contact_info %} without editing{% endif %}
+              </a>
+              {% elif not needs_contact_info %}
+              <button type="button" class="btn btn-outline-secondary btn-sm px-3 rounded-3" onclick="showProfileView()">Cancel</button>
+              {% endif %}
+            </div>
+            <div class="pinfo-card-body">
+              <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+                <div class="row g-3">
+                  <div class="col-sm-6">
+                    <label class="form-label fw-semibold small">First Name</label>
+                    {{ form.first_name }}
+                  </div>
+                  <div class="col-sm-6">
+                    <label class="form-label fw-semibold small">Last Name</label>
+                    {{ form.last_name }}
+                  </div>
+                  <div class="col-sm-6">
+                    <label class="form-label fw-semibold small">Email</label>
+                    <input type="text" class="form-control" value="{{ user.email }}" disabled readonly>
+                  </div>
+                  <div class="col-sm-6">
+                    <label class="form-label fw-semibold small">Phone <span class="text-danger">*</span></label>
+                    {{ form.phone }}
+                  </div>
+                  <div class="col-sm-4 position-relative loc-search-wrap">
+                    <label class="form-label fw-semibold small">Province <span class="text-danger">*</span></label>
+                    {{ form.province }}
+                    <input type="text" id="provinceSearch" class="form-control loc-search-input" autocomplete="off" placeholder="Search Philippine province...">
+                    <div class="loc-suggest-box" id="provinceSuggestBox"></div>
+                  </div>
+                  <div class="col-sm-4 position-relative loc-search-wrap">
+                    <label class="form-label fw-semibold small">City/Municipality <span class="text-danger">*</span></label>
+                    {{ form.city }}
+                    <input type="text" id="citySearch" class="form-control loc-search-input" autocomplete="off" placeholder="Select a province first" disabled>
+                    <div class="loc-suggest-box" id="citySuggestBox"></div>
+                  </div>
+                  <div class="col-sm-4 position-relative loc-search-wrap">
+                    <label class="form-label fw-semibold small">Barangay <span class="text-danger">*</span></label>
+                    {{ form.barangay }}
+                    <input type="text" id="barangaySearch" class="form-control loc-search-input" autocomplete="off" placeholder="Select a city first" disabled>
+                    <div class="loc-suggest-box" id="barangaySuggestBox"></div>
+                  </div>
+                  <div class="col-sm-8">
+                    <label class="form-label fw-semibold small">Street Address <span class="text-danger">*</span></label>
+                    {{ form.address }}
+                  </div>
+                  <div class="col-sm-4">
+                    <label class="form-label fw-semibold small">ZIP Code</label>
+                    {{ form.zip_code }}
+                  </div>
+                  <div class="col-12">
+                    <label class="form-label fw-semibold small">Profile Picture</label>
+                    <div class="d-flex align-items-center gap-3">
+                      {% if user.avatar %}
+                      <img src="{{ user.avatar.url }}" style="width:60px;height:60px;border-radius:50%;object-fit:cover;flex-shrink:0;" alt="Avatar">
+                      {% else %}
+                      <div style="width:60px;height:60px;border-radius:50%;background:var(--sand);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;">🧑</div>
+                      {% endif %}
+                      <div class="flex-grow-1">
+                        {{ form.avatar }}
+                        <div class="form-text">JPG or PNG. Uploading a new photo replaces the current one.</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-12">
+                    <button type="submit" class="btn btn-teal-premium"><i class="fas fa-save me-1"></i>Save Changes</button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+
+        </div>
+        <!-- /#profileFormArea -->
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function showEditProfile() {
+  document.getElementById('profileViewCard').classList.add('d-none');
+  document.getElementById('profileEditCard').classList.remove('d-none');
+}
+function showProfileView() {
+  document.getElementById('profileEditCard').classList.add('d-none');
+  document.getElementById('profileViewCard').classList.remove('d-none');
+}
+
+/* ── Philippine location search (PSGC API) ──
+   Custom search-as-you-type dropdowns for Province / City-Municipality /
+   Barangay, backed by the public Philippine Standard Geographic Code API
+   (psgc.gitlab.io/api). Only real PH provinces/cities/barangays ever
+   appear as suggestions. The real form fields (id_province / id_city /
+   id_barangay) are hidden inputs kept in sync by this widget, so Django
+   still receives plain text values on submit. */
+(function() {
+  var PSGC_BASE = 'https://psgc.gitlab.io/api';
+
+  var provinceHidden = document.getElementById('id_province');
+  var cityHidden = document.getElementById('id_city');
+  var barangayHidden = document.getElementById('id_barangay');
+  var provinceSearch = document.getElementById('provinceSearch');
+  var citySearch = document.getElementById('citySearch');
+  var barangaySearch = document.getElementById('barangaySearch');
+  var provinceBox = document.getElementById('provinceSuggestBox');
+  var cityBox = document.getElementById('citySuggestBox');
+  var barangayBox = document.getElementById('barangaySuggestBox');
+  if (!provinceHidden || !cityHidden || !provinceSearch || !citySearch) return;
+
+  var provinces = [];          // [{code, name, isRegion}]
+  var cityCache = {};          // provinceCode -> [{code, name}, ...]
+  var barangayCache = {};      // cityCode -> [name, ...]
+  var currentCities = [];      // [{code, name}, ...] for the selected province
+  var currentBarangays = [];   // [name, ...] for the selected city
+
+  function labelOf(item) { return item.name || item.description || ''; }
+
+  function renderSuggestions(box, items, onPick) {
+    box.innerHTML = '';
+    if (!items.length) {
+      box.innerHTML = '<div class="loc-suggest-empty">No matches found</div>';
+      box.classList.add('show');
+      return;
+    }
+    items.slice(0, 30).forEach(function(item) {
+      var row = document.createElement('div');
+      row.className = 'loc-suggest-item';
+      row.textContent = item;
+      row.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        onPick(item);
+      });
+      box.appendChild(row);
+    });
+    box.classList.add('show');
+  }
+
+  function hideBox(box) { if (box) box.classList.remove('show'); }
+
+  function resetBarangayField(placeholder) {
+    if (!barangaySearch) return;
+    barangaySearch.disabled = true;
+    barangaySearch.value = '';
+    barangaySearch.placeholder = placeholder;
+    barangayHidden.value = '';
+    currentBarangays = [];
+  }
+
+  function loadBarangaysFor(city) {
+    if (!barangaySearch) return;
+    barangaySearch.disabled = true;
+    barangaySearch.value = '';
+    barangaySearch.placeholder = 'Loading barangays...';
+    barangayHidden.value = '';
+
+    function apply(names) {
+      currentBarangays = names;
+      barangaySearch.disabled = false;
+      barangaySearch.placeholder = 'Search barangay...';
+    }
+
+    if (barangayCache[city.code]) { apply(barangayCache[city.code]); return; }
+
+    fetch(PSGC_BASE + '/cities-municipalities/' + city.code + '/barangays/')
+      .then(function(res) { return res.ok ? res.json() : []; })
+      .then(function(data) {
+        var names = (data || []).map(labelOf).filter(Boolean).sort();
+        barangayCache[city.code] = names;
+        apply(names);
+      })
+      .catch(function() {
+        barangaySearch.placeholder = 'Type your barangay';
+        barangaySearch.disabled = false;
+      });
+  }
+
+  function loadCitiesFor(province) {
+    citySearch.disabled = true;
+    citySearch.value = '';
+    citySearch.placeholder = 'Loading cities...';
+    cityHidden.value = '';
+    resetBarangayField('Select a city first');
+
+    function apply(items) {
+      currentCities = items;
+      citySearch.disabled = false;
+      citySearch.placeholder = 'Search city/municipality...';
+    }
+
+    if (cityCache[province.code]) { apply(cityCache[province.code]); return; }
+
+    var endpoint = province.isRegion
+      ? PSGC_BASE + '/regions/' + province.code + '/cities-municipalities/'
+      : PSGC_BASE + '/provinces/' + province.code + '/cities-municipalities/';
+    fetch(endpoint)
+      .then(function(res) { return res.ok ? res.json() : []; })
+      .then(function(data) {
+        var items = (data || [])
+          .filter(function(c) { return labelOf(c); })
+          .map(function(c) { return { code: c.code, name: labelOf(c) }; })
+          .sort(function(a, b) { return a.name.localeCompare(b.name); });
+        cityCache[province.code] = items;
+        apply(items);
+      })
+      .catch(function() {
+        citySearch.placeholder = 'Type your city/municipality';
+        citySearch.disabled = false;
+      });
+  }
+
+  function pickProvince(name) {
+    var match = provinces.find(function(p) { return labelOf(p) === name; });
+    provinceSearch.value = name;
+    provinceHidden.value = name.replace(' (Metro Manila)', '');
+    hideBox(provinceBox);
+    if (match) loadCitiesFor(match);
+  }
+
+  function pickCity(name) {
+    var match = currentCities.find(function(c) { return c.name === name; });
+    citySearch.value = name;
+    cityHidden.value = name;
+    hideBox(cityBox);
+    if (match) loadBarangaysFor(match);
+  }
+
+  function pickBarangay(name) {
+    barangaySearch.value = name;
+    barangayHidden.value = name;
+    hideBox(barangayBox);
+  }
+
+  provinceSearch.addEventListener('input', function() {
+    var q = provinceSearch.value.trim().toLowerCase();
+    provinceHidden.value = '';
+    if (!q) { hideBox(provinceBox); return; }
+    var matches = provinces.map(labelOf).filter(function(n) {
+      return n.toLowerCase().indexOf(q) !== -1;
+    }).sort();
+    renderSuggestions(provinceBox, matches, pickProvince);
+  });
+  provinceSearch.addEventListener('focus', function() {
+    if (provinceSearch.value.trim()) provinceSearch.dispatchEvent(new Event('input'));
+  });
+  provinceSearch.addEventListener('blur', function() { setTimeout(function() { hideBox(provinceBox); }, 120); });
+
+  citySearch.addEventListener('input', function() {
+    var q = citySearch.value.trim().toLowerCase();
+    cityHidden.value = '';
+    if (!q) { hideBox(cityBox); return; }
+    var matches = currentCities.map(function(c) { return c.name; }).filter(function(n) {
+      return n.toLowerCase().indexOf(q) !== -1;
+    });
+    renderSuggestions(cityBox, matches, pickCity);
+  });
+  citySearch.addEventListener('focus', function() {
+    if (citySearch.value.trim()) citySearch.dispatchEvent(new Event('input'));
+  });
+  citySearch.addEventListener('blur', function() { setTimeout(function() { hideBox(cityBox); }, 120); });
+
+  if (barangaySearch) {
+    barangaySearch.addEventListener('input', function() {
+      var q = barangaySearch.value.trim().toLowerCase();
+      barangayHidden.value = '';
+      if (!q) { hideBox(barangayBox); return; }
+      var matches = currentBarangays.filter(function(n) {
+        return n.toLowerCase().indexOf(q) !== -1;
+      });
+      renderSuggestions(barangayBox, matches, pickBarangay);
+    });
+    barangaySearch.addEventListener('focus', function() {
+      if (barangaySearch.value.trim()) barangaySearch.dispatchEvent(new Event('input'));
+    });
+    barangaySearch.addEventListener('blur', function() { setTimeout(function() { hideBox(barangayBox); }, 120); });
+  }
+
+  // Load the full province list once (~85 entries incl. NCR).
+  fetch(PSGC_BASE + '/provinces/')
+    .then(function(res) { return res.ok ? res.json() : []; })
+    .then(function(data) {
+      provinces = (data || []).filter(function(p) { return labelOf(p); });
+      provinces.push({ code: '130000000', name: 'NCR (Metro Manila)', isRegion: true });
+
+      // Pre-fill from existing saved values (edit mode).
+      var savedProvince = provinceHidden.value;
+      var savedCity = cityHidden.value;
+      var savedBarangay = barangayHidden ? barangayHidden.value : '';
+      if (savedProvince) {
+        var match = provinces.find(function(p) {
+          return labelOf(p).toLowerCase() === savedProvince.toLowerCase();
+        });
+        provinceSearch.value = savedProvince;
+        if (match) {
+          loadCitiesFor(match);
+          // Give the city fetch a moment, then restore the saved city text
+          // and kick off the barangay fetch for it too.
+          setTimeout(function() {
+            citySearch.value = savedCity || '';
+            cityHidden.value = savedCity || '';
+            var cityMatch = currentCities.find(function(c) {
+              return c.name.toLowerCase() === (savedCity || '').toLowerCase();
+            });
+            if (cityMatch) {
+              loadBarangaysFor(cityMatch);
+              setTimeout(function() {
+                if (barangaySearch) {
+                  barangaySearch.value = savedBarangay || '';
+                  barangayHidden.value = savedBarangay || '';
+                }
+              }, 500);
+            } else if (barangaySearch) {
+              barangaySearch.disabled = false;
+              barangaySearch.value = savedBarangay || '';
+              barangaySearch.placeholder = 'Search barangay...';
+            }
+          }, 500);
+        } else {
+          citySearch.disabled = false;
+          citySearch.value = savedCity || '';
+          citySearch.placeholder = 'Search city/municipality...';
+          if (barangaySearch) {
+            barangaySearch.disabled = false;
+            barangaySearch.value = savedBarangay || '';
+            barangaySearch.placeholder = 'Search barangay...';
+          }
+        }
+      }
+    })
+    .catch(function() {
+      // PSGC API unreachable — unlock the fields so the form still works.
+      citySearch.disabled = false;
+      citySearch.placeholder = 'Type your city/municipality';
+      if (barangaySearch) {
+        barangaySearch.disabled = false;
+        barangaySearch.placeholder = 'Type your barangay';
+      }
+    });
+})();
+</script>
+{% endblock %}

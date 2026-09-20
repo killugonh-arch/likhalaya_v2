@@ -1,0 +1,428 @@
+{% extends 'base.html' %}
+{% block title %}Verify Email – Likhalaya{% endblock %}
+
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block flash_messages %}{% endblock %}
+
+{% load static %}
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&display=swap" rel="stylesheet">
+<style>
+.auth-page {
+  min-height: 100vh; min-height: 100dvh;
+  display: flex; align-items: center; justify-content: center;
+  position: relative; overflow-x: hidden; overflow-y: auto;
+  padding: clamp(16px,4vw,40px) clamp(12px,4vw,20px);
+  background:
+    radial-gradient(circle at 8% 12%, rgba(30,95,90,.10), transparent 40%),
+    radial-gradient(circle at 92% 18%, rgba(232,168,42,.10), transparent 38%),
+    radial-gradient(circle at 85% 88%, rgba(30,95,90,.09), transparent 42%),
+    linear-gradient(135deg, #f4f8f6 0%, #ffffff 50%, #eef6f1 100%);
+}
+.auth-page::before {
+  content:''; position:absolute; inset:0;
+  background-image: radial-gradient(rgba(30,95,90,.14) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 72%);
+  -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 72%);
+}
+.auth-split-card {
+  position:relative; z-index:2; display:flex; width:100%; max-width:1180px;
+  min-height:min(560px,82dvh); background:#fff; border-radius:24px;
+  box-shadow:0 25px 70px rgba(15,61,57,.14); overflow:hidden;
+  animation: auth-fade-up .5s ease both;
+}
+@keyframes auth-fade-up {
+  from { opacity:0; transform:translateY(18px); }
+  to   { opacity:1; transform:translateY(0); }
+}
+
+/* ============ Left brand panel ============ */
+.auth-brand-panel {
+  flex:0 0 40%; position:relative; overflow:hidden;
+  padding:48px 44px 56px; display:flex; flex-direction:column;
+  justify-content:center;
+  background:linear-gradient(150deg,#0F3D39 0%,#1E5F5A 55%,#2D7A73 100%);
+  color:#fff;
+}
+.auth-brand-panel::before {
+  content:''; position:absolute; inset:0;
+  background:url("{% static 'imgs/likhalaya_bg.png' %}") center/cover no-repeat;
+  opacity:.07;
+}
+.auth-brand-panel::after {
+  content:''; position:absolute; width:420px; height:420px; border-radius:50%;
+  background:radial-gradient(circle, rgba(232,168,42,.22), transparent 70%);
+  top:-140px; right:-140px; filter:blur(2px);
+}
+.auth-shape-ring {
+  position:absolute; width:320px; height:320px;
+  border:1px solid rgba(255,255,255,.10); border-radius:50%;
+  bottom:-110px; left:-90px;
+}
+.auth-brand-content { position:relative; z-index:2; }
+.auth-brand-logos {
+  display:flex; align-items:center; justify-content:center; gap:16px; margin-bottom:30px;
+}
+.auth-brand-logos .logo-chip { width:88px; height:88px; display:flex; align-items:center; justify-content:center; }
+.auth-brand-logos .logo-chip img { width:100%; height:100%; object-fit:contain; filter:drop-shadow(0 3px 8px rgba(0,0,0,.25)); }
+.auth-brand-logos .logo-divider { width:1px; height:38px; background:rgba(255,255,255,.28); }
+.auth-brand-heading {
+  font-family:'Fraunces',serif; font-weight:800;
+  font-size:clamp(27px,15px + 3vw,52px); line-height:1.1;
+  letter-spacing:-.5px; margin-bottom:18px;
+}
+.auth-brand-sub { font-size:14.5px; color:rgba(255,255,255,.8); line-height:1.6; max-width:320px; margin-bottom:0; }
+.auth-brand-footer { position:relative; z-index:2; font-size:12px; color:rgba(255,255,255,.55); margin-top:40px; }
+
+.auth-mobile-brand { display:none; align-items:center; justify-content:center; gap:14px; }
+.auth-mobile-brand .logo-chip { display:flex; align-items:center; justify-content:center; width:46px; height:46px; }
+.auth-mobile-brand .logo-chip img { height:100%; width:100%; object-fit:contain; }
+.auth-mobile-brand .logo-divider { width:1px; height:30px; background:#e0e0e0; }
+
+/* ============ Right form panel ============ */
+.auth-form-panel {
+  flex:1; background:#fff; padding:56px 60px;
+  display:flex; flex-direction:column; justify-content:center; overflow-y:auto;
+}
+.auth-form-inner { width:100%; max-width:400px; margin:0 auto; }
+.auth-form-heading { font-family:'Fraunces',serif; font-weight:700; font-size:26px; color:#1a2420; margin-bottom:6px; }
+.auth-form-sub { font-size:14px; color:#8b9490; margin-bottom:28px; line-height:1.6; }
+.auth-form-sub strong { color:#1a2420; word-break:break-all; }
+.auth-input-label { font-size:12.5px; font-weight:600; color:#4b5563; margin-bottom:10px; display:block; }
+.auth-field-error { color:#c0392b; font-size:12px; margin-top:8px; display:flex; align-items:center; gap:5px; }
+.auth-alert { border-radius:10px; font-size:13px; }
+
+/* OTP input group */
+.otp-group { display:flex; gap:10px; justify-content:space-between; }
+.otp-box {
+  flex:1 1 0; min-width:0; width:100%; height:56px;
+  border:1.5px solid #E5E5E5; border-radius:12px;
+  text-align:center; font-size:22px; font-weight:700; color:#1a2420;
+  background:#fff; caret-color:var(--teal);
+  transition:border-color .18s ease, box-shadow .18s ease, background .18s ease;
+  -moz-appearance:textfield;
+}
+.otp-box::-webkit-outer-spin-button,
+.otp-box::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+.otp-box:focus { outline:none; border-color:var(--teal); box-shadow:0 0 0 4px rgba(30,95,90,.10); }
+.otp-box.otp-filled { border-color:#27ae60; background:#f0faf4; }
+.otp-box.otp-error {
+  border-color:#c0392b; box-shadow:0 0 0 3px rgba(192,57,43,.12);
+  animation:shake .4s ease;
+}
+@keyframes shake {
+  0%,100% { transform:translateX(0); }
+  20%,60% { transform:translateX(-5px); }
+  40%,80% { transform:translateX(5px); }
+}
+#id_code { display:none; }
+
+.otp-status {
+  text-align:center; font-size:12.5px; font-weight:600;
+  min-height:18px; margin-top:12px; transition:color .2s ease;
+}
+.otp-status.ok  { color:#27ae60; }
+.otp-status.err { color:#c0392b; }
+
+.otp-timer {
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  font-size:12.5px; color:#8b9490; margin:6px 0 22px;
+}
+.otp-timer .timer-val { font-weight:700; color:var(--teal); font-variant-numeric:tabular-nums; }
+.otp-timer.urgent .timer-val { color:#e74c3c; }
+
+.btn-auth {
+  height:56px; width:100%; border-radius:12px; border:none;
+  background:linear-gradient(135deg,var(--gold),#e8a82a); color:#fff;
+  font-size:15px; font-weight:700; letter-spacing:.2px;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+  transition:transform .18s ease, box-shadow .18s ease;
+}
+.btn-auth:hover { transform:translateY(-2px); box-shadow:0 10px 26px rgba(201,132,26,.35); color:#fff; }
+.btn-auth:disabled { opacity:.7; transform:none; box-shadow:none; cursor:not-allowed; }
+
+.resend-row { text-align:center; margin-top:20px; font-size:13px; color:#8b9490; }
+.btn-resend {
+  background:none; border:none; color:var(--teal);
+  font-size:13px; font-weight:700; padding:0; margin-left:4px;
+}
+.btn-resend:hover { text-decoration:underline; }
+.btn-resend:disabled { opacity:.5; cursor:not-allowed; text-decoration:none; }
+
+.auth-back-link {
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  margin-top:22px; font-size:13px; font-weight:600; color:#8b9490;
+  text-decoration:none; transition:color .18s ease;
+  background:none; border:none; padding:0; width:100%;
+}
+.auth-back-link:hover { color:var(--teal); }
+.auth-back-link.tight { margin-top:12px; }
+
+/* Success overlay */
+.verify-success-overlay {
+  display:none; position:absolute; inset:0; z-index:10;
+  background:linear-gradient(135deg,#0F3D39 0%,#1E5F5A 100%);
+  align-items:center; justify-content:center; flex-direction:column;
+  text-align:center; padding:40px; border-radius:24px;
+}
+.verify-success-overlay.show { display:flex; animation:fade-in .4s ease both; }
+@keyframes fade-in { from{opacity:0} to{opacity:1} }
+.success-checkmark {
+  width:72px; height:72px; border-radius:50%;
+  background:rgba(255,255,255,.15);
+  display:flex; align-items:center; justify-content:center;
+  font-size:32px; color:#fff; margin-bottom:20px;
+}
+
+@media (max-width:1199px) { .auth-split-card { max-width:760px; min-height:unset; } .auth-brand-panel { flex:0 0 38%; padding:42px 32px; } .auth-form-panel { padding:44px 34px; } }
+@media (max-width:899px)  { .auth-split-card { max-width:620px; } .auth-brand-panel { flex:0 0 36%; padding:34px 26px; } .auth-form-panel { padding:38px 30px; } }
+@media (max-width:599px)  {
+  .auth-split-card { border-radius:18px; max-width:480px; }
+  .auth-brand-panel { display:none; }
+  .auth-mobile-brand { display:flex; padding:clamp(20px,6vw,28px) 0 0; }
+  .auth-form-panel { padding:8px clamp(16px,5vw,24px) clamp(28px,7vw,36px); }
+  .auth-form-heading, .auth-form-sub { text-align:center; }
+  .otp-group { gap:7px; }
+  .otp-box { height:48px; font-size:18px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-split-card">
+
+    <!-- Success overlay -->
+    <div class="verify-success-overlay" id="successOverlay" aria-live="polite">
+      <div class="success-checkmark"><i class="fas fa-check"></i></div>
+      <h4 class="text-white fw-bold mb-2">Email Verified!</h4>
+      <p style="color:rgba(255,255,255,.8);font-size:14px;margin:0;">Redirecting you to Likhalaya…</p>
+    </div>
+
+    <!-- LEFT BRAND PANEL -->
+    <div class="auth-brand-panel">
+      <div class="auth-shape-ring"></div>
+      <div class="auth-brand-content">
+        <div class="auth-brand-logos">
+          <span class="logo-chip"><img src="{% static 'imgs/likhalaya.png' %}" alt="Likhalaya" onerror="this.parentElement.style.display='none'"></span>
+          <span class="logo-divider"></span>
+          <span class="logo-chip"><img src="{% static 'imgs/c_logo.png' %}" alt="BJMP" onerror="this.parentElement.style.display='none'"></span>
+        </div>
+        <h2 class="auth-brand-heading">Verify your<br>Email</h2>
+        <p class="auth-brand-sub">One last step. Enter the 6-digit code we sent to your email to finish creating your Likhalaya account.</p>
+      </div>
+      <div class="auth-brand-footer">© 2026 Likhalaya</div>
+    </div>
+
+    <!-- RIGHT FORM PANEL -->
+    <div class="auth-form-panel">
+      <div class="auth-mobile-brand">
+        <span class="logo-chip"><img src="{% static 'imgs/likhalaya.png' %}" alt="Likhalaya" onerror="this.parentElement.style.display='none'"></span>
+        <span class="logo-divider"></span>
+        <span class="logo-chip"><img src="{% static 'imgs/c_logo.png' %}" alt="BJMP" onerror="this.parentElement.style.display='none'"></span>
+      </div>
+
+      <div class="auth-form-inner">
+        <h1 class="auth-form-heading">Enter Verification Code</h1>
+        <p class="auth-form-sub">We sent a 6-digit code to <strong>{{ email }}</strong></p>
+
+        {% if messages %}
+        {% for msg in messages %}
+        <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show auth-alert py-2 mb-3">
+          {{ msg }}<button type="button" class="btn-close btn-sm" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        <form method="post" novalidate id="verifyForm">
+          {% csrf_token %}
+
+          <label class="auth-input-label">6-digit code</label>
+
+          <!-- Digit boxes -->
+          <div class="otp-group" id="otpGroup" role="group" aria-label="Enter 6-digit verification code">
+            <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 1" autocomplete="one-time-code">
+            <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 2">
+            <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 3">
+            <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 4">
+            <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 5">
+            <input class="otp-box" type="text" inputmode="numeric" pattern="[0-9]" maxlength="1" aria-label="Digit 6">
+          </div>
+          <div class="otp-status" id="otpStatus"></div>
+
+          <!-- Hidden real input for Django form -->
+          {{ form.code }}
+          {% if form.code.errors %}<div class="auth-field-error" style="justify-content:center;"><i class="fas fa-circle-exclamation"></i>{{ form.code.errors.0 }}</div>{% endif %}
+          {% if form.non_field_errors %}<div class="auth-field-error" style="justify-content:center;"><i class="fas fa-circle-exclamation"></i>{{ form.non_field_errors.0 }}</div>{% endif %}
+
+          <!-- Countdown timer -->
+          <div class="otp-timer" id="otpTimer">
+            <i class="fas fa-clock"></i>
+            Code expires in <span class="timer-val" id="timerVal">2:00</span>
+          </div>
+
+          <button type="submit" class="btn-auth" id="verifySubmitBtn" disabled>
+            <i class="fas fa-check-circle" id="verifyBtnIcon"></i>
+            <span id="verifyBtnText">Verify &amp; Continue</span>
+          </button>
+        </form>
+
+        <form method="post" class="resend-row" id="resendForm">
+          {% csrf_token %}
+          Didn't get the code? Check your spam folder or
+          <button type="submit" name="resend" value="1" class="btn-resend" id="resendSubmitBtn">Resend Code</button>
+        </form>
+
+        <form method="post">
+          {% csrf_token %}
+          <button type="submit" name="cancel" value="1" class="auth-back-link"
+                  onclick="return confirm('Cancel this signup? You will need to register again.');">
+            <i class="fas fa-arrow-left"></i>Cancel signup
+          </button>
+        </form>
+        <a href="{% url 'store:home' %}" class="auth-back-link tight">
+          <i class="fas fa-store"></i>Back to Store
+        </a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  'use strict';
+
+  /* ---- OTP box wiring ---- */
+  const boxes      = Array.from(document.querySelectorAll('.otp-box'));
+  const hiddenCode = document.getElementById('id_code');
+  const statusEl   = document.getElementById('otpStatus');
+  const submitBtn  = document.getElementById('verifySubmitBtn');
+
+  function readCode() {
+    return boxes.map(function(b) { return b.value; }).join('');
+  }
+
+  function syncHidden() {
+    const code = readCode();
+    hiddenCode.value = code;
+    const done = code.length === 6;
+    submitBtn.disabled = !done;
+    if (done) {
+      statusEl.textContent = 'Code entered — ready to verify';
+      statusEl.className   = 'otp-status ok';
+    } else {
+      statusEl.textContent = '';
+      statusEl.className   = 'otp-status';
+    }
+  }
+
+  boxes.forEach(function(box, i) {
+    box.addEventListener('input', function() {
+      this.value = this.value.replace(/\D/g, '').slice(-1);
+      this.classList.toggle('otp-filled', this.value.length === 1);
+      if (this.value.length === 1 && i < boxes.length - 1) {
+        boxes[i + 1].focus();
+      }
+      syncHidden();
+    });
+
+    box.addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && this.value === '' && i > 0) {
+        boxes[i - 1].value = '';
+        boxes[i - 1].classList.remove('otp-filled');
+        boxes[i - 1].focus();
+        syncHidden();
+      }
+      if (e.key === 'ArrowLeft'  && i > 0)               { e.preventDefault(); boxes[i-1].focus(); }
+      if (e.key === 'ArrowRight' && i < boxes.length - 1) { e.preventDefault(); boxes[i+1].focus(); }
+    });
+
+    box.addEventListener('paste', function(e) {
+      e.preventDefault();
+      const text = (e.clipboardData || window.clipboardData).getData('text').replace(/\D/g, '');
+      text.slice(0, 6).split('').forEach(function(ch, j) {
+        if (boxes[j]) {
+          boxes[j].value = ch;
+          boxes[j].classList.add('otp-filled');
+        }
+      });
+      syncHidden();
+      const next = Math.min(text.length, 5);
+      boxes[next].focus();
+    });
+
+    box.addEventListener('focus', function() { this.select(); });
+  });
+
+  /* Shake boxes on server-side error */
+  {% if form.code.errors or form.non_field_errors %}
+  boxes.forEach(function(b) { b.classList.add('otp-error'); });
+  setTimeout(function() { boxes.forEach(function(b) { b.classList.remove('otp-error'); }); }, 500);
+  {% endif %}
+
+  /* ---- Countdown timer (must match EmailOTP.OTP_VALID_MINUTES = 2) ---- */
+  var seconds = 2 * 60;
+  var timerEl = document.getElementById('timerVal');
+  var timerWrap = document.getElementById('otpTimer');
+  function tick() {
+    if (seconds <= 0) {
+      timerEl.textContent = '0:00';
+      timerWrap.classList.add('urgent');
+      statusEl.textContent = 'Code expired — please resend';
+      statusEl.className   = 'otp-status err';
+      submitBtn.disabled   = true;
+      return;
+    }
+    var m = Math.floor(seconds / 60);
+    var s = seconds % 60;
+    timerEl.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    if (seconds <= 60) timerWrap.classList.add('urgent');
+    seconds--;
+    setTimeout(tick, 1000);
+  }
+  tick();
+
+  /* ---- Anti-double-submit ---- */
+  document.getElementById('verifyForm').addEventListener('submit', function() {
+    if (submitBtn.disabled) return false;
+    submitBtn.disabled = true;
+    document.getElementById('verifyBtnIcon').className = 'fas fa-spinner fa-spin';
+    document.getElementById('verifyBtnText').textContent = 'Verifying…';
+  });
+  document.getElementById('resendForm').addEventListener('submit', function() {
+    var btn = document.getElementById('resendSubmitBtn');
+    if (btn.disabled) return false;
+    btn.disabled    = true;
+    btn.textContent = 'Sending…';
+  });
+
+  /* ---- Resend cooldown: disable button + count down ---- */
+  (function () {
+    var resendRemaining = {{ resend_cooldown_remaining|default:0 }};
+    var resendBtn = document.getElementById('resendSubmitBtn');
+    if (!resendBtn) return;
+    var resendDefaultText = 'Resend Code';
+    function tickResend() {
+      if (resendRemaining <= 0) {
+        resendBtn.disabled = false;
+        resendBtn.textContent = resendDefaultText;
+        return;
+      }
+      resendBtn.disabled = true;
+      resendBtn.textContent = 'Resend in ' + resendRemaining + 's';
+      resendRemaining -= 1;
+      setTimeout(tickResend, 1000);
+    }
+    tickResend();
+  })();
+
+  /* Auto-focus first box on load */
+  boxes[0].focus();
+})();
+</script>
+{% endblock %}

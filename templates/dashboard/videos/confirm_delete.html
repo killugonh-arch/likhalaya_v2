@@ -1,0 +1,8 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block page_title %}Archive Video{% endblock %}
+{% block sb_videos %}active{% endblock %}
+
+{% block dash_content %}
+{% url 'dashboard:video_list' as cancel_url %}
+{% include 'partials/confirm_delete_card.html' with title='Archive Video' message_prefix='Move the video' item_name=video.title message_suffix='to the Archive? It will be hidden from the site, and an admin can restore it anytime from the Archive page.' cancel_url=cancel_url submit_icon='fa-box-archive' submit_label='Archive' %}
+{% endblock %}

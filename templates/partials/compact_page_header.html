@@ -1,0 +1,75 @@
+{% comment %}
+Reusable "CompactPageHeader" component — a slim, understated page header
+used on Contact, About, Shop (and any other internal page that wants a
+simple green banner instead of the older large page_hero).
+
+Usage:
+  {% include 'partials/compact_page_header.html' with eyebrow='Contact & Support' eyebrow_icon='fa-comment-dots' title='How Can We Help?' subtitle='Short one/two-line description.' %}
+
+Params:
+  eyebrow       (required) small uppercase label shown above the heading
+  eyebrow_icon  (optional) Font Awesome icon suffix shown beside the eyebrow, e.g. "fa-comment-dots"
+  title         (required) heading text
+  subtitle      (optional) short supporting line under the heading
+{% endcomment %}
+<style>
+/* ============ Shared CompactPageHeader (master reference: Contact page) ============ */
+.compact-page-header {
+  position: relative;
+  background: linear-gradient(135deg, #0F3D39 0%, var(--teal) 60%, #235f59 100%);
+  padding: 34px 0 30px;
+  min-height: 200px;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center;
+  overflow: hidden;
+  isolation: isolate;
+}
+.compact-page-header::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+  background: linear-gradient(90deg, var(--gold) 0%, var(--gold-lt) 50%, var(--gold) 100%);
+}
+/* faint woven-pattern texture, very low opacity — nods to handcrafted textile work */
+.compact-page-header::before {
+  content: '';
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background-image:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.035) 0, rgba(255,255,255,.035) 1px, transparent 1px, transparent 14px),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,.035) 0, rgba(255,255,255,.035) 1px, transparent 1px, transparent 14px);
+}
+.compact-header-dots {
+  position: absolute; top: 18px; right: 6%; z-index: 0; pointer-events: none;
+  display: grid; grid-template-columns: repeat(4, 6px); gap: 8px;
+}
+.compact-header-dots span { width: 4px; height: 4px; border-radius: 50%; background: rgba(232,168,42,.5); }
+.compact-header-inner { position: relative; z-index: 1; max-width: 560px; margin: 0 auto; padding: 0 16px; }
+.compact-header-eyebrow {
+  display: inline-flex; align-items: center; gap: 7px;
+  font-size: 11.5px; font-weight: 700; letter-spacing: 1.6px; color: var(--gold-lt);
+  margin-bottom: 10px; text-transform: uppercase;
+}
+.compact-header-eyebrow i { font-size: 11px; }
+.compact-header-heading {
+  font-family: 'Playfair Display', serif; font-weight: 800; color: #fff;
+  font-size: 32px; letter-spacing: -.3px; margin-bottom: 8px; line-height: 1.15;
+}
+.compact-header-sub { color: rgba(255,255,255,.82); font-size: 14px; line-height: 1.6; margin: 0 auto; }
+
+@media (max-width: 575px) {
+  .compact-page-header { min-height: 104px; padding: 16px 0 14px; }
+  .compact-header-eyebrow { font-size: 10px; margin-bottom: 4px; }
+  .compact-header-heading { font-size: 22px; margin-bottom: 3px; }
+  .compact-header-sub { font-size: 12px; line-height: 1.4; }
+  .compact-header-dots { display: none; }
+}
+</style>
+
+<div class="compact-page-header">
+  <span class="compact-header-dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span>
+  <div class="compact-header-inner">
+    {% if eyebrow %}
+    <div class="compact-header-eyebrow">{% if eyebrow_icon %}<i class="fas {{ eyebrow_icon }}"></i>{% endif %}{{ eyebrow }}</div>
+    {% endif %}
+    <h1 class="compact-header-heading">{{ title }}</h1>
+    {% if subtitle %}<p class="compact-header-sub mb-0">{{ subtitle }}</p>{% endif %}
+  </div>
+</div>

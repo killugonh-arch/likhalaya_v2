@@ -1,0 +1,284 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block page_title %}Messages{% endblock %}
+{% block sb_messages %}active{% endblock %}
+{% block title %}Messages – Dashboard{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+:root {
+  --brand-green: #0F6B4F;
+  --brand-green-hover: #0C5940;
+  --brand-green-light: #E6F4EF;
+  --surface-white: #FFFFFF;
+  --surface-subtle: #F9FAF9;
+  --border: #E4E7E4;
+  --text-primary: #1A1D1B;
+  --text-secondary: #5B615D;
+  --text-muted: #9AA09C;
+  --danger: #C0362C;
+  --danger-bg: #FBEAE8;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgba(16,24,20,0.06);
+  --space-1: 4px; --space-2: 8px; --space-3: 16px; --space-4: 24px;
+}
+.ds-breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: var(--space-2); display: flex; align-items: center; gap: 6px; }
+.ds-breadcrumb a { color: var(--text-muted); text-decoration: none; }
+.ds-breadcrumb .current { color: var(--brand-green); font-weight: 600; }
+.ds-breadcrumb .sep { color: var(--border); }
+
+.ds-page-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-4); }
+.ds-page-header h1 { font-size: 24px; font-weight: 800; color: #10131e; margin: 0; }
+.ds-page-header p { font-size: 13px; color: var(--text-muted); margin: 4px 0 0; }
+.ds-page-header-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+
+.ds-btn { font-size: 13.5px; font-weight: 600; border-radius: var(--radius-sm); padding: 10px 16px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; white-space: nowrap; }
+.ds-btn-primary { background: var(--brand-green); color: #fff; }
+.ds-btn-primary:hover { background: var(--brand-green-hover); color: #fff; }
+.ds-btn-secondary { background: var(--surface-white); color: var(--text-primary); border-color: var(--border); }
+.ds-btn-secondary:hover { background: var(--surface-subtle); }
+
+.msg-toolbar { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); padding: var(--space-3); margin-bottom: var(--space-3); }
+.msg-toolbar form { display: flex; gap: var(--space-2); flex-wrap: wrap; }
+.msg-search-wrap { flex: 1 1 260px; position: relative; }
+.msg-search-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 13px; }
+.msg-search-wrap input { width: 100%; padding: 10px 14px 10px 36px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13.5px; background: var(--surface-subtle); }
+.msg-search-wrap input:focus { outline: none; border-color: var(--brand-green); background: #fff; }
+.msg-select-wrap { flex: 0 1 220px; position: relative; }
+.msg-select-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 13px; pointer-events: none; }
+.msg-select-wrap select { width: 100%; padding: 10px 14px 10px 36px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13.5px; background: var(--surface-subtle); appearance: none; }
+
+.dash-panel { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden; }
+.msg-list-header { display: flex; justify-content: space-between; align-items: center; padding: 12px var(--space-4); border-bottom: 1px solid var(--border); background: var(--surface-subtle); font-size: 13px; gap: 12px; flex-wrap: wrap; }
+.msg-list-header .left-group { display: flex; align-items: center; gap: 14px; }
+.msg-list-header label { display: flex; align-items: center; gap: 8px; color: var(--text-primary); font-weight: 600; cursor: pointer; margin: 0; }
+.msg-list-header .count { color: var(--text-muted); }
+.msg-check { width: 16px; height: 16px; accent-color: var(--brand-green); cursor: pointer; }
+.msg-edit-btn { display: none; }
+.msg-edit-btn.is-visible { display: inline-flex; }
+
+.msg-row { display: flex; align-items: flex-start; gap: 14px; padding: 16px var(--space-4); border-bottom: 1px solid var(--border); cursor: pointer; transition: background 120ms ease; }
+.msg-row:last-child { border-bottom: none; }
+.msg-row:hover { background: var(--surface-subtle); }
+.msg-row.is-unread { background: #fbfdfc; }
+.msg-checkbox { padding-top: 3px; }
+.msg-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px; font-weight: 700; flex-shrink: 0; }
+.msg-body { flex: 1; min-width: 0; }
+.msg-top-line { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.msg-name-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.msg-name { font-weight: 700; font-size: 13.5px; color: var(--text-primary); }
+.msg-badge { font-size: 10.5px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+.msg-email { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+.msg-subject { font-weight: 600; font-size: 13px; color: var(--text-primary); margin-top: 6px; }
+.msg-snippet { font-size: 12.5px; color: var(--text-muted); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.msg-meta { text-align: right; flex-shrink: 0; }
+.msg-status { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; }
+.msg-status .dot { width: 7px; height: 7px; border-radius: 50%; }
+.msg-status.is-unread { color: #1e7e42; }
+.msg-status.is-unread .dot { background: #27ae60; }
+.msg-status.is-read { color: var(--text-muted); }
+.msg-status.is-read .dot { background: #b7bdb8; }
+.msg-date { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+.msg-actions { display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end; }
+.btn-icon-action { width: 30px; height: 30px; border-radius: 8px; border: none; display: inline-flex; align-items: center; justify-content: center; font-size: 12.5px; cursor: pointer; }
+.btn-icon-delete { background: var(--danger-bg); color: var(--danger); }
+.btn-icon-delete:hover { background: #f6d6d2; }
+
+.msg-list-footer { display: flex; justify-content: space-between; align-items: center; padding: 12px var(--space-4); border-top: 1px solid var(--border); font-size: 12.5px; color: var(--text-muted); flex-wrap: wrap; gap: 8px; }
+
+body.dark-mode .msg-toolbar, body.dark-mode .dash-panel { background: var(--dm-surface); border-color: var(--dm-border); }
+body.dark-mode .msg-list-header, body.dark-mode .msg-list-footer { background: var(--dm-surface-2); border-color: var(--dm-border); }
+body.dark-mode .msg-row { border-color: var(--dm-border); }
+body.dark-mode .msg-row:hover, body.dark-mode .msg-row.is-unread { background: var(--dm-surface-2); }
+body.dark-mode .msg-search-wrap input, body.dark-mode .msg-select-wrap select { background: var(--dm-surface-2); border-color: var(--dm-border); color: var(--dm-text); }
+</style>
+{% endblock %}
+
+{% block dash_content %}
+<nav class="ds-breadcrumb" aria-label="Breadcrumb">
+  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+  <span class="sep">/</span><span class="current">Messages</span>
+</nav>
+
+<div class="ds-page-header">
+  <div>
+    <h1>Messages</h1>
+    <p>View and manage all system messages, inquiries, and notifications.</p>
+  </div>
+  <div class="ds-page-header-actions">
+    <form method="post" action="{% url 'dashboard:message_mark_all_read' %}">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <button type="submit" class="ds-btn ds-btn-primary"><i class="fas fa-check"></i>Mark All as Read</button>
+    </form>
+    <a href="{{ request.path }}" class="ds-btn ds-btn-secondary"><i class="fas fa-rotate"></i>Refresh</a>
+  </div>
+</div>
+
+<div class="msg-toolbar">
+  <form method="get">
+    <div class="msg-search-wrap">
+      <i class="fas fa-search"></i>
+      <input type="text" name="q" placeholder="Search name, email, subject or message…" value="{{ search }}">
+    </div>
+    <div class="msg-select-wrap">
+      <i class="fas fa-comment-dots"></i>
+      <select name="read">
+        <option value="">All Messages</option>
+        <option value="false" {% if read_filter == 'false' %}selected{% endif %}>Unread</option>
+        <option value="true" {% if read_filter == 'true' %}selected{% endif %}>Read</option>
+      </select>
+    </div>
+    <button type="submit" class="ds-btn ds-btn-primary"><i class="fas fa-search"></i>Search</button>
+    <a href="{% url 'dashboard:message_list' %}" class="ds-btn ds-btn-secondary"><i class="fas fa-rotate-left"></i>Clear</a>
+  </form>
+</div>
+
+<div class="dash-panel">
+  <div class="msg-list-header">
+    <span class="count ms-auto">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} messages</span>
+  </div>
+
+  {% for msg in messages_list %}
+  {% url 'dashboard:message_detail' msg.pk as msg_detail_url %}
+  <div class="msg-row {% if not msg.is_read %}is-unread{% endif %}" data-href="{{ msg_detail_url }}">
+    <div class="msg-avatar" style="background:{% cycle '#5FBF9F' '#8B8FD9' '#E0A85B' '#6FA8DC' '#D98594' as avatar_color %};">
+      {{ msg.name|first|upper }}
+    </div>
+    <div class="msg-body">
+      <div class="msg-top-line">
+        <div>
+          <div class="msg-name-line">
+            <span class="msg-name">{{ msg.name }}</span>
+            {% if msg.inquiry_type == 'bulk_order' %}
+              <span class="msg-badge" style="background:#e6f0fd;color:#2563eb;">{{ msg.get_inquiry_type_display }}</span>
+            {% elif msg.inquiry_type == 'donate_materials' %}
+              <span class="msg-badge" style="background:#f1ecfd;color:#7c3aed;">{{ msg.get_inquiry_type_display }}</span>
+            {% elif msg.inquiry_type == 'custom_order' or msg.inquiry_type == 'product_request' %}
+              <span class="msg-badge" style="background:#fdf1e6;color:#c9841a;">{{ msg.get_inquiry_type_display }}</span>
+            {% else %}
+              <span class="msg-badge" style="background:var(--brand-green-light);color:var(--brand-green);">{{ msg.get_inquiry_type_display }}</span>
+            {% endif %}
+          </div>
+          <div class="msg-email">{{ msg.email }}</div>
+          <div class="msg-subject">{{ msg.subject }}</div>
+          <div class="msg-snippet">{{ msg.message|truncatechars:80 }}</div>
+        </div>
+        <div class="msg-meta">
+          {% if not msg.is_read %}
+            <span class="msg-status is-unread"><span class="dot"></span>Unread</span>
+          {% else %}
+            <span class="msg-status is-read"><span class="dot"></span>Read</span>
+          {% endif %}
+          <div class="msg-date">{{ msg.created_at|date:"M d, Y H:i" }}</div>
+          <div class="msg-actions">
+            {% if request.user.is_admin_user %}
+            <button type="button" class="btn-icon-action btn-icon-delete" title="Delete" onclick="event.stopPropagation();"
+                    data-bs-toggle="modal" data-bs-target="#deleteMsgModal"
+                    data-delete-url="{% url 'dashboard:message_delete' msg.pk %}"
+                    data-msg-name="{{ msg.name }}">
+              <i class="fas fa-trash"></i>
+            </button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% empty %}
+  <div class="text-center py-5 text-muted">
+    <i class="fas fa-envelope-open fa-2x mb-3 d-block opacity-25"></i>No messages found.
+  </div>
+  {% endfor %}
+
+  {% if page_obj.has_other_pages %}
+  <div class="msg-list-footer">
+    <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+    <nav><ul class="pagination pagination-sm mb-0">
+      {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">‹</a></li>{% endif %}
+      {% for n in page_obj.paginator.page_range %}
+      <li class="page-item {% if n == page_obj.number %}active{% endif %}"><a class="page-link" href="?page={{ n }}">{{ n }}</a></li>
+      {% endfor %}
+      {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">›</a></li>{% endif %}
+    </ul></nav>
+  </div>
+  {% endif %}
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteMsgModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" style="color:var(--brand-green);">Archive Message</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Move the message from <strong id="deleteMsgName"></strong> to the Archive? It will be hidden from the list, and an admin can restore it anytime from the Archive page.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form id="deleteMsgForm" method="post" action="">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-danger">Archive</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.msg-row').forEach(function (row) {
+  row.addEventListener('click', function (e) {
+    if (!e.target.closest('.msg-actions') && !e.target.closest('.msg-checkbox')) {
+      window.location = row.dataset.href;
+    }
+  });
+});
+
+var deleteMsgModal = document.getElementById('deleteMsgModal');
+if (deleteMsgModal) {
+  deleteMsgModal.addEventListener('show.bs.modal', function (event) {
+    var btn = event.relatedTarget;
+    var url = btn.getAttribute('data-delete-url');
+    var name = btn.getAttribute('data-msg-name');
+    document.getElementById('deleteMsgForm').setAttribute('action', url);
+    document.getElementById('deleteMsgName').textContent = name;
+  });
+}
+
+var selectAll = document.getElementById('selectAll');
+var selectedCount = document.getElementById('selectedCount');
+var editBtn = document.getElementById('editSelectedBtn');
+
+function updateCount() {
+  var checked = document.querySelectorAll('.row-check:checked');
+  if (selectedCount) selectedCount.textContent = checked.length;
+  if (!editBtn) return;
+  if (checked.length === 1) {
+    editBtn.href = checked[0].dataset.href;
+    editBtn.classList.add('is-visible');
+  } else {
+    editBtn.classList.remove('is-visible');
+    editBtn.removeAttribute('href');
+  }
+}
+
+if (selectAll) {
+  selectAll.addEventListener('change', function () {
+    document.querySelectorAll('.row-check').forEach(function (cb) { cb.checked = selectAll.checked; });
+    updateCount();
+  });
+}
+
+// Delegated listener: works even if rows are re-rendered, and doesn't
+// depend on being wired up before the DOM is fully ready.
+document.addEventListener('change', function (e) {
+  if (e.target.classList && e.target.classList.contains('row-check')) {
+    updateCount();
+  }
+});
+
+updateCount();
+</script>
+{% endblock %}

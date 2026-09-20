@@ -1,0 +1,50 @@
+{% comment %}
+Reusable "ConfirmDeleteModal" — plain Bootstrap modal (same structure as
+the working Messages delete modal), meant to be rendered once per row
+inside a list page and triggered from that row's trash/archive icon.
+
+Usage (inside a {% for %} loop on a list page):
+  {% url 'app:some_delete' obj.pk as obj_delete_url %}
+  {% include 'partials/confirm_delete_modal.html' with
+      id_prefix='delete-video-'
+      obj_pk=video.pk
+      title='Delete Video'
+      message_prefix='Are you sure you want to delete the video'
+      item_name=video.title
+      message_suffix='from your library? This action cannot be undone.'
+      form_action=obj_delete_url
+      submit_label='Delete' %}
+
+Then the trigger button/icon in the row:
+  <button type="button" class="btn-icon-action btn-icon-delete" data-bs-toggle="modal" data-bs-target="#{{ id_prefix }}{{ obj_pk }}"><i class="fas fa-trash"></i></button>
+
+Params:
+  id_prefix       (required) prefix for this row's modal id, e.g. "delete-video-"
+  obj_pk          (required) the row's primary key, appended to id_prefix to form the modal id
+  title           (required) modal heading, e.g. "Delete Video" / "Archive Category"
+  message_prefix  (required) text before the bolded item name
+  item_name       (required) bolded subject of the action
+  message_suffix  (required) text after the bolded item name
+  form_action     (required) URL the confirm form posts to
+  submit_label    (required) action button text, e.g. "Delete" / "Archive"
+{% endcomment %}
+<div class="modal fade" id="{{ id_prefix }}{{ obj_pk }}" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" style="color:var(--teal);">{{ title }}</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        {{ message_prefix }} <strong>{{ item_name }}</strong> {{ message_suffix }}
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+        <form method="post" action="{{ form_action }}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-danger">{{ submit_label }}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>

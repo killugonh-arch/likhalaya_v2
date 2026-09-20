@@ -1,0 +1,130 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block page_title %}Users{% endblock %}
+{% block sb_users %}active{% endblock %}
+{% block title %}Users – Dashboard{% endblock %}
+
+{% block dash_content %}
+<div class="dash-breadcrumb">
+  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+  <span class="sep">/</span><span class="current">Users</span>
+</div>
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+  <h4 class="fw-bold mb-0" style="color:var(--teal);">User Management</h4>
+  <span class="text-muted small">{{ page_obj.paginator.count }} users total</span>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-sm-5">
+        <input type="text" name="q" class="form-control form-control-sm" placeholder="Search name, username, email…" value="{{ search }}">
+      </div>
+      <div class="col-sm-3">
+        <select name="role" class="form-select form-select-sm">
+          <option value="">All Roles</option>
+          {% for r, l in role_choices %}
+          <option value="{{ r }}" {% if r == role_filter %}selected{% endif %}>{{ l }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-sm-2 d-flex gap-2">
+        <button type="submit" class="btn btn-sm btn-teal flex-fill">Search</button>
+        <a href="{% url 'dashboard:user_list' %}" class="btn btn-sm btn-outline-secondary flex-fill">Clear</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table dash-table mb-0">
+      <thead><tr>
+        <th>User</th><th>Role</th><th>Status</th><th>Joined</th><th>Actions</th>
+      </tr></thead>
+      <tbody>
+        {% for u in users %}
+        {% url 'dashboard:user_detail' u.pk as user_detail_url %}
+        <tr class="user-row" style="cursor:pointer;" data-href="{{ user_detail_url }}">
+          <td>
+            <div class="d-flex align-items-center gap-3">
+              <div style="width:38px;height:38px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0;">
+                {{ u.first_name|first|upper }}{{ u.last_name|first|upper }}
+              </div>
+              <div>
+                <div class="fw-semibold" style="font-size:13px;">{{ u.get_full_name|default:u.username }}</div>
+                <div class="text-muted" style="font-size:11px;">{{ u.email }}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="badge
+              {% if u.role == 'admin' %}bg-danger
+              {% elif u.role == 'staff' %}bg-primary
+              {% else %}bg-secondary{% endif %}" style="font-size:11px;">
+              {{ u.get_role_display }}
+            </span>
+          </td>
+          <td>
+            <span class="badge {% if u.is_active %}bg-success{% else %}bg-danger{% endif %}" style="font-size:10px;">
+              {% if u.is_active %}Active{% else %}Inactive{% endif %}
+            </span>
+          </td>
+          <td class="text-muted small">{{ u.date_joined|date:"M d, Y" }}</td>
+          <td>
+            {% if user.is_admin_user %}
+            <div class="user-toggle-form d-flex gap-1">
+              {% if u.role != 'admin' %}
+              <form method="post" action="{% url 'dashboard:user_toggle' u.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn-icon-action {% if u.is_active %}btn-icon-suspend{% else %}btn-icon-activate{% endif %}" title="{% if u.is_active %}Suspend{% else %}Activate{% endif %}">
+                  {% if u.is_active %}<i class="fas fa-ban"></i>{% else %}<i class="fas fa-check"></i>{% endif %}
+                </button>
+              </form>
+              {% endif %}
+              {% if u.pk != user.pk and u.role != 'staff' %}
+              <button type="button" class="btn-icon-action btn-icon-delete" title="Archive" data-bs-toggle="modal" data-bs-target="#delete-user-{{ u.pk }}"><i class="fas fa-box-archive"></i></button>
+              {% endif %}
+            </div>
+            {% endif %}
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center py-5 text-muted">No users found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.has_other_pages %}
+  <div class="card-footer bg-white border-0 d-flex justify-content-between align-items-center py-3 px-4">
+    <small class="text-muted">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</small>
+    <nav><ul class="pagination pagination-sm mb-0">
+      {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search }}">‹</a></li>{% endif %}
+      {% for n in page_obj.paginator.page_range %}
+      <li class="page-item {% if n == page_obj.number %}active{% endif %}"><a class="page-link" href="?page={{ n }}&q={{ search }}">{{ n }}</a></li>
+      {% endfor %}
+      {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search }}">›</a></li>{% endif %}
+    </ul></nav>
+  </div>
+  {% endif %}
+</div>
+
+{% if user.is_admin_user %}
+{% for u in users %}
+{% if u.pk != user.pk and u.role != 'staff' %}
+{% url 'dashboard:user_delete' u.pk as u_delete_url %}
+{% include 'partials/confirm_delete_modal.html' with id_prefix="delete-user-" obj_pk=u.pk title='Archive Account' message_prefix='Move' item_name=u.get_full_name|default:u.username message_suffix="'s account to the Archive? They'll be signed out and won't be able to log in until an admin restores the account from the Archive page." form_action=u_delete_url submit_label='Archive' %}
+{% endif %}
+{% endfor %}
+{% endif %}
+
+<script>
+document.querySelectorAll('.user-row').forEach(function (row) {
+  row.addEventListener('click', function (e) {
+    if (!e.target.closest('.user-toggle-form')) {
+      window.location = row.dataset.href;
+    }
+  });
+});
+</script>
+{% endblock %}

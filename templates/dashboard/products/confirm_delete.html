@@ -1,0 +1,8 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block page_title %}Archive Product{% endblock %}
+{% block sb_products %}active{% endblock %}
+
+{% block dash_content %}
+{% url 'dashboard:product_list' as cancel_url %}
+{% include 'partials/confirm_delete_card.html' with title='Archive Product' message_prefix='Move' item_name=product.name message_suffix='to the Archive? It will be hidden from the store and product list, and an admin can restore it anytime from the Archive page.' cancel_url=cancel_url submit_icon='fa-box-archive' submit_label='Archive' %}
+{% endblock %}

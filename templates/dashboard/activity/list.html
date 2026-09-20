@@ -1,0 +1,202 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block page_title %}Activity Log{% endblock %}
+{% block sb_activity %}active{% endblock %}
+{% block title %}Activity Log – Dashboard{% endblock %}
+
+{% block dash_content %}
+<style>
+.session-card { border-radius: 12px; overflow: hidden; }
+.session-summary-row {
+  padding: 16px 20px; display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 14px;
+}
+.session-avatar {
+  width: 40px; height: 40px; border-radius: 50%; background: var(--teal); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700;
+  flex-shrink: 0;
+}
+.session-live-badge {
+  display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700;
+  color: #27ae60; text-transform: uppercase; letter-spacing: .5px;
+}
+.session-live-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #27ae60;
+  box-shadow: 0 0 0 0 rgba(39,174,96,.6); animation: pulseDot 1.6s infinite;
+}
+@keyframes pulseDot {
+  0% { box-shadow: 0 0 0 0 rgba(39,174,96,.5); }
+  70% { box-shadow: 0 0 0 7px rgba(39,174,96,0); }
+  100% { box-shadow: 0 0 0 0 rgba(39,174,96,0); }
+}
+.session-username-link {
+  background: none; border: none; padding: 0; margin: 0; font: inherit;
+  color: var(--teal); font-weight: 600; cursor: pointer; text-align: left;
+}
+.session-username-link:hover { text-decoration: underline; }
+body.dark-mode .session-username-link { color: #6fd6c9; }
+.session-card.session-clickable { cursor: pointer; transition: box-shadow .15s ease; }
+.session-card.session-clickable:hover { box-shadow: 0 .5rem 1rem rgba(0,0,0,.1) !important; }
+</style>
+
+<div class="dash-breadcrumb">
+  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+  <span class="sep">/</span><span class="current">Activity Log</span>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+  <h4 class="fw-bold mb-0" style="color:var(--teal);">Staff Activity Log</h4>
+  <a href="{% url 'dashboard:activity_log_export_csv' %}?q={{ search }}&staff={{ staff_filter }}&from={{ date_from }}&to={{ date_to }}" class="btn btn-sm btn-outline-success">
+    <i class="fas fa-file-csv me-1"></i>Export CSV
+  </a>
+</div>
+
+<!-- Summary Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm p-3 text-center">
+      <div class="text-muted small mb-1">Total Sessions</div>
+      <div class="fw-bold" style="font-size:24px;color:var(--teal);">{{ stats.total_sessions }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm p-3 text-center">
+      <div class="text-muted small mb-1">Sessions Today</div>
+      <div class="fw-bold" style="font-size:24px;color:var(--gold);">{{ stats.sessions_today }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm p-3 text-center">
+      <div class="text-muted small mb-1">Active Now</div>
+      <div class="fw-bold" style="font-size:24px;color:#27ae60;">{{ stats.active_now }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card border-0 shadow-sm p-3 text-center">
+      <div class="text-muted small mb-1">Failed Logins Today</div>
+      <div class="fw-bold" style="font-size:24px;color:#e74c3c;">{{ stats.failed_today }}</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body py-3">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-sm-3">
+        <label class="form-label small text-muted mb-1">Search</label>
+        <input type="text" name="q" class="form-control form-control-sm" placeholder="Username, description, IP…" value="{{ search }}">
+      </div>
+      <div class="col-sm-3">
+        <label class="form-label small text-muted mb-1">Staff</label>
+        <select name="staff" class="form-select form-select-sm">
+          <option value="">All Staff</option>
+          {% for u in staff_choices %}
+          <option value="{{ u }}" {% if u == staff_filter %}selected{% endif %}>{{ u }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label small text-muted mb-1">From</label>
+        <input type="date" name="from" class="form-control form-control-sm" value="{{ date_from }}">
+      </div>
+      <div class="col-sm-2">
+        <label class="form-label small text-muted mb-1">To</label>
+        <input type="date" name="to" class="form-control form-control-sm" value="{{ date_to }}">
+      </div>
+      <div class="col-sm-2 d-flex gap-2">
+        <button type="submit" class="btn btn-sm btn-teal flex-fill">Filter</button>
+        <a href="{% url 'dashboard:activity_log' %}" class="btn btn-sm btn-outline-secondary flex-fill">Clear</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if failed_logins %}
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white border-0 pt-3 px-4">
+    <span class="fw-semibold small text-danger"><i class="fas fa-triangle-exclamation me-1"></i>Recent Failed Login Attempts</span>
+  </div>
+  <div class="table-responsive">
+    <table class="table dash-table mb-0">
+      <thead><tr><th>Time</th><th>Attempted Username</th><th>IP Address</th></tr></thead>
+      <tbody>
+        {% for f in failed_logins %}
+        <tr class="clickable" style="cursor:pointer;" data-href="{% url 'dashboard:activity_log_detail' f.id %}">
+          <td class="text-muted small" style="white-space:nowrap;">{{ f.timestamp|date:"M d, Y · g:i A" }}</td>
+          <td class="small">{{ f.username|default:"—" }}</td>
+          <td class="text-muted small">{{ f.ip_address|default:"—" }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+<!-- Users -->
+{% for row in user_rows %}
+<div class="card border-0 shadow-sm mb-3 session-card{% if row.username %} session-clickable{% endif %}"
+     {% if row.username %}data-href="{% url 'dashboard:activity_log_user' row.username %}"{% endif %}>
+  <div class="session-summary-row">
+    <div class="d-flex align-items-center gap-3">
+      <div class="session-avatar">{{ row.username|default:"?"|slice:":2"|upper }}</div>
+      <div>
+        <div class="d-flex align-items-center gap-2">
+          {% if row.username %}
+          <span class="session-username-link" style="font-size:14px;cursor:default;">{{ row.username }}</span>
+          {% else %}
+          <span class="fw-semibold" style="font-size:14px;">Unknown</span>
+          {% endif %}
+          {% if row.role %}
+          <span class="badge
+            {% if row.role == 'admin' %}bg-danger
+            {% elif row.role == 'staff' %}bg-primary
+            {% else %}bg-secondary{% endif %}" style="font-size:10px;">{{ row.role|title }}</span>
+          {% endif %}
+          {% if row.is_active_now %}
+          <span class="session-live-badge"><span class="session-live-dot"></span>Active</span>
+          {% endif %}
+        </div>
+        <div class="text-muted small mt-1">
+          <i class="fas fa-clock me-1"></i>
+          Last active {{ row.latest_sort_time|date:"M d, Y · g:i A" }}
+        </div>
+      </div>
+    </div>
+    <div class="d-flex align-items-center gap-3">
+      <span class="badge bg-light text-dark border" style="font-size:11px;">{{ row.session_count }} session{{ row.session_count|pluralize }}</span>
+      <span class="badge bg-light text-dark border" style="font-size:11px;">{{ row.action_count }} action{{ row.action_count|pluralize }}</span>
+      <i class="fas fa-chevron-right text-muted" style="font-size:12px;"></i>
+    </div>
+  </div>
+</div>
+{% empty %}
+<div class="card border-0 shadow-sm">
+  <div class="text-center py-5 text-muted">No activity recorded yet.</div>
+</div>
+{% endfor %}
+
+{% if page_obj.has_other_pages %}
+<div class="d-flex justify-content-between align-items-center mt-3">
+  <small class="text-muted">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} staff members</small>
+  <nav><ul class="pagination pagination-sm mb-0">
+    {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search }}&staff={{ staff_filter }}&from={{ date_from }}&to={{ date_to }}">‹</a></li>{% endif %}
+    {% for n in page_obj.paginator.page_range %}
+    <li class="page-item {% if n == page_obj.number %}active{% endif %}"><a class="page-link" href="?page={{ n }}&q={{ search }}&staff={{ staff_filter }}&from={{ date_from }}&to={{ date_to }}">{{ n }}</a></li>
+    {% endfor %}
+    {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search }}&staff={{ staff_filter }}&from={{ date_from }}&to={{ date_to }}">›</a></li>{% endif %}
+  </ul></nav>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('[data-href]').forEach(function (el) {
+    el.addEventListener('click', function (e) {
+      if (el.dataset.stop) e.stopPropagation();
+      window.location.href = el.dataset.href;
+    });
+  });
+});
+</script>
+{% endblock %}

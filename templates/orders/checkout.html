@@ -1,0 +1,220 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}Checkout – Likhalaya{% endblock %}
+
+{% block extra_css %}
+<style>
+.form-control, .form-select { border-radius: 8px; font-size: 13px; border-color: #ddd; padding: 6px 10px; }
+.form-control:focus, .form-select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(30,95,90,.12); }
+.form-label.small { font-size: 12px; margin-bottom: 2px; }
+.order-summary-item { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid #f0ede8; }
+.payment-option { border: 2px solid #e0e0e0; border-radius: 12px; padding: 14px; cursor: pointer; transition: all .18s; }
+.payment-option:hover, .payment-option.selected { border-color: var(--teal); background: rgba(30,95,90,.04); }
+.payment-option input[type="radio"] { display: none; }
+.shipping-locked { background: #f6f5f2 !important; color: #555; cursor: not-allowed; }
+.shipping-note { background: #fff8e6; border: 1px solid #f0e0b0; border-radius: 8px; padding: 6px 12px; font-size: 11px; color: #8a6d1f; margin-bottom: 12px; }
+.shipping-note a { color: var(--teal); font-weight: 600; text-decoration: underline; }
+.delivery-info-card { background: #ffffff; border: 1px solid #eee; border-radius: 14px; padding: 14px 18px; }
+
+/* Mobile default: plain stacked block, DOM order = delivery, summary, payment */
+.checkout-grid .gi-summary { position: static; }
+
+@media (min-width: 992px) {
+  .checkout-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    grid-template-areas: "delivery summary" "payment summary";
+    gap: 24px;
+    align-items: start;
+  }
+  .checkout-grid .gi-delivery { grid-area: delivery; }
+  .checkout-grid .gi-payment { grid-area: payment; }
+  .checkout-grid .gi-summary { grid-area: summary; position: sticky; top: 90px; }
+}
+
+@media (max-width: 767.98px) {
+  .container.py-5 { padding-left: 14px !important; padding-right: 14px !important; }
+  .card.border-0.shadow-sm.rounded-4.p-3, .card.border-0.shadow-sm.rounded-4.p-4 { padding: 16px !important; }
+  .delivery-info-card { padding: 12px 14px; }
+  .delivery-info-card .fw-bold { font-size: 13.5px; }
+  .delivery-info-card .d-flex.flex-wrap.gap-3 { gap: 8px !important; font-size: 11.5px !important; }
+  .payment-option { padding: 10px; }
+  .payment-option span[style*="font-size:28px"] { font-size: 22px !important; }
+  .payment-option .fw-bold { font-size: 13.5px; }
+  .payment-option .text-muted.small { font-size: 11px; }
+  h5.fw-bold { font-size: 15px; }
+  .btn.btn-gold.btn-lg { font-size: 14px; padding: 12px 0; }
+
+  /* Order summary */
+  h6.fw-bold.mb-3 { font-size: 14px; }
+  .order-summary-item { gap: 8px; padding: 8px 0; flex-wrap: wrap; }
+  .order-summary-item img,
+  .order-summary-item div[style*="width:80px"] { width: 64px !important; height: 58px !important; }
+  .order-summary-item .fw-semibold[style*="font-size:18px"] { font-size: 13.5px !important; }
+  .order-summary-item form .btn { padding: 2px 6px !important; font-size: 12px !important; }
+  .order-summary-item span[style*="font-size:15px"] { font-size: 12.5px !important; }
+  .order-summary-item .fw-bold[style*="font-size:16px"] { font-size: 13px !important; }
+  .d-flex.justify-content-between.fw-bold span[style*="font-size:18px"] { font-size: 16px !important; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+
+  {% if checkout_source == 'buy_now' %}
+  <a href="{% url 'orders:buy_now_cancel' %}" class="btn btn-outline-secondary btn-sm rounded-3 mb-3">
+    <i class="fas fa-arrow-left me-1"></i>Back to Shop
+  </a>
+  {% else %}
+  <a href="{% url 'orders:cart_detail' %}" class="btn btn-outline-secondary btn-sm rounded-3 mb-3">
+    <i class="fas fa-arrow-left me-1"></i>Back to Cart
+  </a>
+  {% endif %}
+
+  {% include 'orders/_checkout_stepper.html' with current_step=1 %}
+
+  <div class="checkout-grid">
+
+    <!-- Delivery Information (mobile order 1 / desktop left-top) -->
+    <div class="gi-delivery card border-0 shadow-sm rounded-4 p-3 mb-3">
+      <div class="delivery-info-card">
+        <div class="fw-bold mb-1" style="color:var(--teal);">
+          <i class="fas fa-map-marker-alt me-1" style="color:var(--gold);"></i>Delivery Information
+        </div>
+        <div class="d-flex flex-wrap gap-3 small text-muted">
+          <span>Name: <span class="fw-bold text-dark">{{ user.get_full_name }}</span></span>
+          <span>Phone: <span class="fw-bold text-dark">{{ user.phone|default:'' }}</span></span>
+          <span>Payment: <span class="fw-bold text-dark" id="paymentMethodLabel">Cash on Delivery</span></span>
+          <span>Address: <span class="fw-bold text-dark">{{ user.address|default:'' }}, {{ user.city|default:'' }}, {{ user.province|default:'' }} {{ user.zip_code|default:'' }}</span></span>
+        </div>
+        <div class="mt-2">
+          <a href="{% url 'accounts:profile' %}?next={% url 'orders:checkout' %}&edit=1" class="small" style="color:var(--teal);font-weight:600;text-decoration:underline;">
+            <i class="fas fa-lock me-1"></i>Edit your Profile
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Summary (mobile order 2 / desktop right column, sticky) -->
+    <div class="gi-summary card border-0 shadow-sm rounded-4 p-4 mb-3">
+      <h6 class="fw-bold mb-3">
+        Order Summary
+        {% if checkout_source == 'buy_now' %}
+        <span class="badge rounded-pill" style="background:rgba(30,95,90,.1);color:var(--teal);font-size:11px;font-weight:600;">Buying Now</span>
+        {% endif %}
+      </h6>
+          {% for item in cart %}
+          <div class="order-summary-item">
+            {% if item.design.image %}
+            <img src="{{ item.design.image.url }}" style="width:100px;height:85px;border-radius:12px;object-fit:cover;flex-shrink:0;" alt="">
+            {% elif item.product.image %}
+            <img src="{{ item.product.image.url }}" style="width:100px;height:85px;border-radius:12px;object-fit:cover;flex-shrink:0;" alt="">
+            {% else %}
+            <div style="width:80px;height:80px;border-radius:12px;background:var(--sand);display:flex;align-items:center;justify-content:center;font-size:32px;flex-shrink:0;">🎨</div>
+            {% endif %}
+            <div style="flex:1;min-width:0;">
+              <div class="fw-semibold" style="font-size:18px;">
+                {{ item.product.name|truncatechars:30 }}
+                {% if item.size_display %}<span class="badge bg-light text-dark border ms-1" style="font-size:11px;">{{ item.size_display }}</span>{% endif %}
+                {% if item.design_name %}<span class="badge bg-light text-dark border ms-1" style="font-size:11px;">{{ item.design_name }}</span>{% endif %}
+              </div>
+              <form method="post" action="{% url 'orders:cart_update' item.key %}" class="d-flex align-items-center gap-2 mt-2">
+                {% csrf_token %}
+                <button type="submit" name="action" value="decrease" class="btn btn-outline-secondary fw-bold py-1 px-2" style="font-size:15px;line-height:1;" {% if item.quantity <= 1 %}disabled{% endif %}>−</button>
+                <span class="text-muted fw-bold" style="font-size:15px;">x{{ item.quantity }}</span>
+                <button type="submit" name="action" value="increase" class="btn btn-outline-secondary fw-bold py-1 px-2" style="font-size:15px;line-height:1;" {% if item.quantity >= item.product.stock %}disabled{% endif %}>+</button>
+              </form>
+            </div>
+            <div class="fw-bold" style="font-size:16px;color:var(--gold);">₱{{ item.price|floatformat:0|intcomma }}</div>
+            <form method="post" action="{% url 'orders:cart_remove' item.key %}">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-danger rounded-rectangle p-0 d-flex align-items-center justify-content-center" style="width:24px;height:24px;font-size:12px;line-height:1;" title="Remove item">
+                <i class="fas fa-times"></i>
+              </button>
+            </form>
+          </div>
+          {% endfor %}
+          <hr>
+          <div class="d-flex justify-content-between mb-2"><span class="text-muted fw-bold">Subtotal</span><span class="fw-bold">₱{{ cart_total|floatformat:0|intcomma }}</span></div>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted fw-bold">Shipping</span>
+            <span class="fw-bold {% if shipping_fee == 0 %}text-success{% endif %}">
+              {% if shipping_fee == 0 %}FREE{% else %}₱{{ shipping_fee|floatformat:0 }}{% endif %}
+            </span>
+          </div>
+          <hr>
+          <div class="d-flex justify-content-between fw-bold">
+            <span>Total</span>
+            <span style="color:var(--gold);font-size:18px;">₱{{ grand_total|floatformat:0|intcomma }}</span>
+          </div>
+          <div class="mt-3 p-3 rounded-3" style="background:#eafaf1;font-size:12px;color:#27ae60;">
+            <i class="fas fa-shield-alt me-1"></i>Your order is protected and secure.
+          </div>
+    </div>
+
+    <!-- Payment Method (mobile order 3 / desktop left-bottom) -->
+    <form method="post" id="checkoutForm" class="gi-payment card border-0 shadow-sm rounded-4 p-3">
+      {% csrf_token %}
+      <input type="hidden" name="full_name" value="{{ user.get_full_name }}">
+      <input type="hidden" name="email" value="{{ user.email }}">
+      <input type="hidden" name="phone" value="{{ user.phone|default:'' }}">
+      <input type="hidden" name="address" value="{{ user.address|default:'' }}">
+      <input type="hidden" name="city" value="{{ user.city|default:'' }}">
+      <input type="hidden" name="province" value="{{ user.province|default:'' }}">
+      <input type="hidden" name="zip_code" value="{{ user.zip_code|default:'' }}">
+
+      <div class="mb-3">
+        <label class="form-label fw-semibold small">Order Notes (optional)</label>
+        <textarea name="notes" class="form-control" rows="2" placeholder="Any special instructions…"></textarea>
+      </div>
+
+      <h5 class="fw-bold mb-3" style="color:var(--teal);">Payment Method</h5>
+      <div class="row g-2 mb-4">
+        <div class="col-12">
+          <label class="payment-option d-flex align-items-center gap-3">
+            <input type="radio" name="payment_method" value="cod" checked>
+            <span style="font-size:28px;">💵</span>
+            <div>
+              <div class="fw-bold">Cash on Delivery</div>
+              <div class="text-muted small">Pay when you receive your order</div>
+            </div>
+          </label>
+        </div>
+        <div class="col-12">
+          <label class="payment-option d-flex align-items-center gap-3">
+            <input type="radio" name="payment_method" value="gcash">
+            <span style="font-size:28px;">📱</span>
+            <div>
+              <div class="fw-bold">GCash</div>
+              <div class="text-muted small">Pay via GCash mobile wallet</div>
+            </div>
+          </label>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-gold btn-lg w-100 rounded-3">
+        <i class="fas fa-check-circle me-2"></i>Place Order
+      </button>
+    </form>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Payment option visual selection
+const paymentLabels = { cod: 'Cash on Delivery', gcash: 'GCash' };
+const paymentMethodLabel = document.getElementById('paymentMethodLabel');
+document.querySelectorAll('.payment-option').forEach(label => {
+  const radio = label.querySelector('input[type="radio"]');
+  if (radio.checked) label.classList.add('selected');
+  label.addEventListener('click', () => {
+    document.querySelectorAll('.payment-option').forEach(l => l.classList.remove('selected'));
+    label.classList.add('selected');
+    if (paymentMethodLabel) paymentMethodLabel.textContent = paymentLabels[radio.value] || radio.value;
+  });
+});
+</script>
+{% endblock %}

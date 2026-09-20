@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+{% block title %}My Messages – Likhalaya{% endblock %}
+
+{% block extra_css %}
+<style>
+/* ============ Page shell (same look as My Orders) ============ */
+.mm-page-bg { background: #f6f8f7; padding-bottom: 48px; }
+.mm-wrap { max-width: 1140px; margin: 0 auto; padding: 0 20px; position: relative; z-index: 2; }
+
+.mm-back-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px;
+  background: #fff;
+  border: 1.5px solid #dceae1;
+  border-radius: 12px;
+  font-size: 13.5px; font-weight: 700; color: var(--teal);
+  text-decoration: none;
+  margin: 28px 0 18px;
+  box-shadow: 0 2px 10px rgba(15,61,57,.06);
+  transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+}
+.mm-back-btn i { font-size: 12px; }
+.mm-back-btn:hover { background: var(--teal); border-color: var(--teal); color: #fff; transform: translateX(-2px); }
+
+/* ============ Card container ============ */
+.mm-card { background: #fff; border-radius: 22px; box-shadow: 0 16px 44px rgba(15,61,57,.10); overflow: hidden; }
+
+/* ============ Table (desktop/tablet) ============ */
+.mm-table-scroll { overflow-x: auto; }
+.mm-table { width: 100%; min-width: 640px; font-size: 14.5px; border-collapse: separate; border-spacing: 0; }
+.mm-table thead th {
+  background: #f8f9f8; color: #4b5563;
+  font-size: 12px; text-transform: uppercase; letter-spacing: .4px; font-weight: 700;
+  padding: 18px; border-bottom: 1px solid #eceeec; white-space: nowrap;
+}
+.mm-table th.mm-col-subject { padding-left: 28px; }
+.mm-table th.mm-col-status { text-align: center; padding-right: 28px; }
+.mm-table tbody tr { transition: background .18s ease; cursor: pointer; }
+.mm-table tbody tr:nth-child(even) { background: #fafbfa; }
+.mm-table tbody tr:hover { background: #f2f6f4; }
+.mm-table tbody td { padding: 18px; border-bottom: 1px solid #f0f1ef; vertical-align: middle; }
+.mm-table tbody tr:last-child td { border-bottom: none; }
+.mm-table td.mm-col-subject { padding-left: 28px; }
+.mm-table td.mm-col-status { text-align: center; padding-right: 28px; }
+
+.mm-subject-link { color: var(--teal); font-weight: 700; text-decoration: none; transition: opacity .15s ease; }
+.mm-subject-link:hover { text-decoration: underline; opacity: .85; }
+.mm-preview { color: #8b9490; font-size: 13px; margin-top: 3px; max-width: 420px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Type pill */
+.mm-type-badge {
+  display: inline-block; font-size: 11.5px; font-weight: 700; white-space: nowrap;
+  padding: 4px 12px; border-radius: 20px;
+  background: rgba(39,174,96,.12); color: #14584A;
+}
+.mm-type-badge.type-bulk    { background: #E6F0FD; color: #2563EB; }
+.mm-type-badge.type-donate  { background: #F1ECFD; color: #7C3AED; }
+.mm-type-badge.type-request { background: #FDF1E6; color: #C9841A; }
+
+/* Status badge */
+.mm-status-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 90px; height: 28px; padding: 0 14px;
+  border-radius: 20px; font-size: 11.5px; font-weight: 700; letter-spacing: .2px;
+}
+.mm-status-new     { background: rgba(214,158,46,.16); color: #a16207; }
+.mm-status-default { background: rgba(139,148,144,.16); color: #5b6663; }
+
+/* ============ Mobile cards ============ */
+.mm-cards { display: none; padding: 14px; }
+.mm-msg-card {
+  display: block; text-decoration: none;
+  border: 1px solid #eceeec; border-radius: 16px; padding: 18px; margin-bottom: 12px;
+  transition: box-shadow .18s ease, transform .18s ease;
+}
+.mm-msg-card:last-child { margin-bottom: 0; }
+.mm-msg-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,.08); transform: translateY(-1px); }
+.mm-msg-card-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 12px; }
+.mm-msg-card-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 13.5px; padding: 6px 0; color: #5b6663; }
+.mm-card-label { color: #8b9490; }
+.mm-card-value { font-weight: 700; color: #1a2420; text-align: right; }
+
+/* ============ Empty state ============ */
+.mm-empty { text-align: center; padding: 64px 24px; }
+
+/* ============ Responsive ============ */
+@media (max-width: 767px) {
+  .mm-table-wrap { display: none; }
+  .mm-cards { display: block; }
+}
+@media (max-width: 576px) {
+  .mm-wrap { width: calc(100% - 32px); max-width: none; padding: 0; }
+  .mm-back-btn { margin: 20px 0 16px; }
+}
+
+/* ===== Compact phone spacing ===== */
+@media (max-width: 575.98px) {
+  body .compact-page-header { min-height: 104px; padding: 16px 0 14px; }
+  body .compact-header-eyebrow { font-size: 10px; margin-bottom: 4px; }
+  body .compact-header-heading { font-size: 22px; margin-bottom: 3px; }
+  body .compact-header-sub { font-size: 12px; line-height: 1.4; }
+  body .compact-header-dots { display: none; }
+  .mm-page-bg { padding-bottom: 20px; }
+  .mm-wrap { width: calc(100% - 20px); }
+  .mm-back-btn { margin: 10px 0 8px; padding: 6px 12px; font-size: 12.5px; border-radius: 10px; }
+  .mm-card { border-radius: 16px; }
+  .mm-cards { padding: 8px; }
+  .mm-msg-card { padding: 11px 12px; margin-bottom: 8px; border-radius: 13px; }
+  .mm-msg-card-top { margin-bottom: 6px; }
+  .mm-msg-card-row { font-size: 12.5px; padding: 3px 0; }
+  .mm-empty { padding: 32px 16px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'partials/compact_page_header.html' with eyebrow='My Account' eyebrow_icon='fa-envelope' title='My Messages' subtitle='Follow up on your inquiries and replies from our team.' %}
+
+<div class="mm-page-bg">
+  <div class="mm-wrap">
+    <a href="{% url 'accounts:profile' %}" class="mm-back-btn">
+      <i class="fas fa-arrow-left"></i> Back to Profile
+    </a>
+
+    {% if threads %}
+    <div class="mm-card">
+
+      <!-- ============ DESKTOP / TABLET TABLE ============ -->
+      <div class="mm-table-wrap">
+        <div class="mm-table-scroll">
+          <table class="mm-table">
+            <thead>
+              <tr>
+                <th class="mm-col-subject">Subject</th>
+                <th>Type</th>
+                <th>Date</th>
+                <th class="mm-col-status">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for thread in threads %}
+              <tr onclick="window.location='{% url 'store:my_message_detail' thread.pk %}'">
+                <td class="mm-col-subject">
+                  <a href="{% url 'store:my_message_detail' thread.pk %}" class="mm-subject-link" onclick="event.stopPropagation();">{{ thread.subject }}</a>
+                  <div class="mm-preview">{{ thread.message|truncatechars:90 }}</div>
+                </td>
+                <td><span class="mm-type-badge {% if thread.inquiry_type == 'bulk_order' %}type-bulk{% elif thread.inquiry_type == 'donate_materials' %}type-donate{% elif thread.inquiry_type == 'custom_order' or thread.inquiry_type == 'product_request' %}type-request{% endif %}">{{ thread.get_inquiry_type_display }}</span></td>
+                <td class="text-muted">{{ thread.created_at|date:"M d, Y" }}</td>
+                <td class="mm-col-status">
+                  {% if thread.has_unread_for_customer %}
+                  <span class="mm-status-badge mm-status-new">New</span>
+                  {% else %}
+                  <span class="mm-status-badge mm-status-default">{{ thread.get_status_display }}</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ============ MOBILE CARDS ============ -->
+      <div class="mm-cards">
+        {% for thread in threads %}
+        <a href="{% url 'store:my_message_detail' thread.pk %}" class="mm-msg-card">
+          <div class="mm-msg-card-top">
+            <span class="mm-subject-link" style="font-size:14.5px;">{{ thread.subject }}</span>
+            {% if thread.has_unread_for_customer %}
+            <span class="mm-status-badge mm-status-new">New</span>
+            {% else %}
+            <span class="mm-status-badge mm-status-default">{{ thread.get_status_display }}</span>
+            {% endif %}
+          </div>
+          <div class="mm-msg-card-row">
+            <span class="mm-card-label">Type</span>
+            <span class="mm-type-badge {% if thread.inquiry_type == 'bulk_order' %}type-bulk{% elif thread.inquiry_type == 'donate_materials' %}type-donate{% elif thread.inquiry_type == 'custom_order' or thread.inquiry_type == 'product_request' %}type-request{% endif %}">{{ thread.get_inquiry_type_display }}</span>
+          </div>
+          <div class="mm-msg-card-row">
+            <span class="mm-card-label">Message</span>
+            <span class="mm-card-value" style="font-weight:500;color:#5b6663;">{{ thread.message|truncatechars:40 }}</span>
+          </div>
+          <div class="mm-msg-card-row">
+            <span class="mm-card-label">Date</span>
+            <span class="mm-card-value">{{ thread.created_at|date:"M d, Y" }}</span>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% else %}
+    <div class="mm-empty mm-card">
+      <div style="font-size:64px;margin-bottom:16px;">✉️</div>
+      <h4 class="fw-bold text-muted mb-2">No Messages Yet</h4>
+      <p class="text-muted small mb-4">You haven't sent any inquiries yet.</p>
+      <a href="{% url 'store:contact' %}" class="btn btn-gold btn-lg px-5 rounded-3">Contact Us</a>
+    </div>
+    {% endif %}
+
+  {% if page_obj.has_other_pages %}
+  <nav aria-label="Messages pagination" class="mt-3">
+    <ul class="pagination justify-content-center">
+      {% if page_obj.has_previous %}
+      <li class="page-item"><a class="page-link rounded-start-3" href="?page={{ page_obj.previous_page_number }}">‹ Prev</a></li>
+      {% endif %}
+      {% for n in page_obj.paginator.page_range %}
+      {% if n >= page_obj.number|add:'-2' and n <= page_obj.number|add:'2' %}
+      <li class="page-item {% if n == page_obj.number %}active{% endif %}">
+        <a class="page-link" href="?page={{ n }}">{{ n }}</a>
+      </li>
+      {% endif %}
+      {% endfor %}
+      {% if page_obj.has_next %}
+      <li class="page-item"><a class="page-link rounded-end-3" href="?page={{ page_obj.next_page_number }}">Next ›</a></li>
+      {% endif %}
+    </ul>
+  </nav>
+  {% endif %}
+  </div>
+</div>
+{% endblock %}

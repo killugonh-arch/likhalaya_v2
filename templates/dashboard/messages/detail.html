@@ -1,0 +1,412 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block page_title %}Messages{% endblock %}
+{% block sb_messages %}active{% endblock %}
+{% block title %}Messages – Dashboard{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+:root {
+  --brand-green: #0F6B4F;
+  --brand-green-hover: #0C5940;
+  --brand-green-light: #E6F4EF;
+  --surface-white: #FFFFFF;
+  --surface-subtle: #F9FAF9;
+  --border: #E4E7E4;
+  --text-primary: #1A1D1B;
+  --text-secondary: #5B615D;
+  --text-muted: #9AA09C;
+  --danger: #C0362C;
+  --danger-bg: #FBEAE8;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgba(16,24,20,0.06);
+  --space-1: 4px; --space-2: 8px; --space-3: 16px; --space-4: 24px;
+}
+.ds-breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: var(--space-2); display: flex; align-items: center; gap: 6px; }
+.ds-breadcrumb a { color: var(--text-muted); text-decoration: none; }
+.ds-breadcrumb .current { color: var(--brand-green); font-weight: 600; }
+.ds-breadcrumb .sep { color: var(--border); }
+
+.ds-page-header { display: flex; align-items: center; gap: 12px; margin-bottom: var(--space-3); }
+.ds-page-header .icon { color: var(--brand-green); font-size: 22px; }
+.ds-page-header h1 { font-size: 22px; font-weight: 800; color: #10131e; margin: 0; }
+.ds-page-header p { font-size: 13px; color: var(--text-muted); margin: 2px 0 0; }
+
+.ds-btn { font-size: 13.5px; font-weight: 600; border-radius: var(--radius-sm); padding: 9px 14px; border: 1px solid transparent; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; white-space: nowrap; }
+.ds-btn-primary { background: var(--brand-green); color: #fff; }
+.ds-btn-primary:hover { background: var(--brand-green-hover); color: #fff; }
+.ds-btn-secondary { background: var(--surface-white); color: var(--text-primary); border-color: var(--border); }
+.ds-btn-secondary:hover { background: var(--surface-subtle); }
+.ds-btn-sm { padding: 7px 12px; font-size: 12.5px; }
+
+.dash-panel { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden; }
+
+/* ── Split layout ── */
+.msgs-split { display: flex; gap: 18px; align-items: flex-start; }
+@media (max-width: 991px) { .msgs-split { flex-direction: column; } }
+
+/* Inbox (left) */
+.msgs-inbox { width: 340px; flex-shrink: 0; }
+@media (max-width: 991px) { .msgs-inbox { width: 100%; } }
+.inbox-search { display: flex; gap: 8px; padding: var(--space-3); border-bottom: 1px solid var(--border); }
+.inbox-search-wrap { flex: 1; position: relative; }
+.inbox-search-wrap i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 12.5px; }
+.inbox-search-wrap input { width: 100%; padding: 9px 12px 9px 32px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; background: var(--surface-subtle); }
+.inbox-search-wrap input:focus { outline: none; border-color: var(--brand-green); background: #fff; }
+.inbox-filter { flex-shrink: 0; }
+.inbox-filter select { height: 100%; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 12.5px; background: var(--surface-subtle); }
+.inbox-list { max-height: 640px; overflow-y: auto; }
+.inbox-row { display: flex; align-items: flex-start; gap: 10px; padding: 12px var(--space-3); border-bottom: 1px solid var(--border); cursor: pointer; text-decoration: none; color: inherit; }
+.inbox-row:last-child { border-bottom: none; }
+.inbox-row:hover { background: var(--surface-subtle); }
+.inbox-row.is-active { background: var(--brand-green-light); }
+.inbox-avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.inbox-row-body { flex: 1; min-width: 0; }
+.inbox-row-top { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.inbox-name { font-weight: 700; font-size: 13px; color: var(--text-primary); }
+.inbox-badge { font-size: 9.5px; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+.inbox-snippet { font-size: 12px; color: var(--text-secondary); margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.inbox-date { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+.inbox-row-end { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; margin-top: 2px; }
+.inbox-count { min-width: 20px; height: 20px; padding: 0 5px; border-radius: 20px; background: var(--surface-subtle); color: var(--text-muted); font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.inbox-row.is-active .inbox-count { background: var(--brand-green); color: #fff; }
+.inbox-row-end .chevron { color: var(--text-muted); font-size: 11px; }
+.inbox-empty { padding: 40px 20px; text-align: center; color: var(--text-muted); font-size: 13px; }
+
+/* Conversation (right) */
+.msgs-thread { flex: 1; min-width: 0; }
+.thread-header { display: flex; align-items: center; gap: 10px; padding: 14px var(--space-4); border-bottom: 1px solid var(--border); }
+.thread-header .inbox-avatar { width: 38px; height: 38px; font-size: 14px; }
+.thread-header .name { font-weight: 700; font-size: 14.5px; color: var(--text-primary); }
+.thread-header .email { font-size: 12px; color: var(--text-muted); }
+.thread-header-menu { margin-left: auto; position: relative; }
+.thread-header-menu-btn { background: none; border: none; color: var(--text-muted); font-size: 16px; width: 32px; height: 32px; border-radius: 8px; cursor: pointer; }
+.thread-header-menu-btn:hover { background: var(--surface-subtle); }
+.thread-header-menu-list { display: none; position: absolute; right: 0; top: 36px; background: #fff; border: 1px solid var(--border); border-radius: var(--radius-sm); box-shadow: var(--shadow-sm); min-width: 170px; z-index: 20; overflow: hidden; }
+.thread-header-menu-list.is-open { display: block; }
+.thread-header-menu-list button { width: 100%; text-align: left; padding: 10px 14px; border: none; background: none; font-size: 13px; color: var(--danger); cursor: pointer; display: flex; align-items: center; gap: 8px; }
+.thread-header-menu-list button:hover { background: var(--danger-bg); }
+
+.chat-messages { max-height: 460px; min-height: 220px; overflow-y: auto; padding: 18px var(--space-4); display: flex; flex-direction: column; gap: 12px; background: var(--surface-subtle); }
+.chat-row { display: flex; gap: 10px; max-width: 78%; }
+.chat-row.from-staff { align-self: flex-end; flex-direction: row-reverse; }
+.chat-row.from-customer { align-self: flex-start; }
+.chat-avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; }
+.chat-row.from-staff .chat-avatar { background: var(--brand-green); }
+.chat-row.from-customer .chat-avatar { background: #8B8FD9; }
+.chat-bubble-wrap { display: flex; flex-direction: column; }
+.chat-row.from-staff .chat-bubble-wrap { align-items: flex-end; }
+.chat-sender-label { font-size: 11px; font-weight: 600; color: var(--text-muted); margin-bottom: 3px; padding: 0 4px; }
+.chat-bubble { padding: 10px 14px; border-radius: 16px; font-size: 13.5px; line-height: 1.5; white-space: pre-wrap; word-break: break-word; width: fit-content; max-width: 100%; }
+.chat-row.from-customer .chat-bubble { background: #fff; color: var(--text-primary); border: 1px solid var(--border); border-bottom-left-radius: 4px; }
+.chat-row.from-staff .chat-bubble { background: var(--brand-green); color: #fff; border-bottom-right-radius: 4px; }
+.chat-meta { font-size: 10.5px; color: var(--text-muted); margin-top: 3px; padding: 0 4px; display: flex; gap: 5px; align-items: center; }
+.chat-row.from-staff .chat-meta { justify-content: flex-end; }
+.chat-empty { text-align: center; color: var(--text-muted); font-size: 13px; margin: auto; }
+.chat-inquiry-badge { display: inline-block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; background: var(--surface-subtle); color: var(--text-muted); border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
+.chat-inquiry-badge.is-current { background: var(--brand-green-light); color: var(--brand-green); }
+.chat-reply-target-note { font-size: 11.5px; color: var(--text-muted); text-align: center; padding: 6px 16px 0; }
+
+.chat-input-bar { border-top: 1px solid var(--border); padding: 10px 16px; min-height: 56px; background: #fff; display: flex; align-items: center; gap: 8px; }
+.chat-icon-btn { border: none; background: transparent; color: var(--text-muted); font-size: 16px; width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.chat-icon-btn:hover { background: var(--brand-green-light); color: var(--brand-green); }
+.chat-input-bar textarea { flex: 1; border: 1px solid var(--border); border-radius: 28px; padding: 9px 18px; font-size: 13.5px; resize: none; max-height: 100px; background: var(--surface-subtle); }
+.chat-input-bar textarea:focus { outline: none; border-color: var(--brand-green); background: #fff; }
+.chat-send-btn { width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--brand-green); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.chat-send-btn:hover { background: var(--brand-green-hover); }
+.chat-no-account { padding: 16px 22px; font-size: 12.5px; color: var(--text-muted); text-align: center; }
+
+/* Conversation details panel */
+.conv-details { background: var(--brand-green-light); border-radius: var(--radius-md); padding: var(--space-4); margin-top: 16px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
+.conv-details-title { display: flex; align-items: center; gap: 8px; font-weight: 700; color: var(--brand-green); font-size: 14px; width: 100%; margin-bottom: 4px; }
+.conv-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 40px; flex: 1; min-width: 260px; }
+.conv-details-item .label { font-size: 11.5px; color: var(--text-secondary); margin-bottom: 4px; }
+.conv-details-item .value { font-size: 13.5px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px; }
+.conv-status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+.conv-status-pill .dot { width: 7px; height: 7px; border-radius: 50%; }
+.conv-status-pill.st-new { background: var(--warning-bg, #fdf0d5); color: #8a6d1f; }
+.conv-status-pill.st-new .dot { background: #c9841a; }
+.conv-status-pill.st-review, .conv-status-pill.st-progress { background: #e6f0fd; color: #2563eb; }
+.conv-status-pill.st-review .dot, .conv-status-pill.st-progress .dot { background: #2563eb; }
+.conv-status-pill.st-resolved { background: #e6f6ec; color: #1e7e42; }
+.conv-status-pill.st-resolved .dot { background: #27ae60; }
+.conv-status-pill.st-closed { background: var(--surface-subtle); color: var(--text-muted); }
+.conv-status-pill.st-closed .dot { background: #b7bdb8; }
+.conv-mini-avatar { width: 22px; height: 22px; border-radius: 50%; background: var(--brand-green); color: #fff; display: inline-flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; }
+
+.req-toggle { font-size: 12.5px; font-weight: 600; color: var(--brand-green); cursor: pointer; display: flex; align-items: center; gap: 6px; padding: 10px var(--space-4); border-top: 1px solid var(--border); }
+.req-details-body { padding: 4px var(--space-4) 16px; display: none; font-size: 13px; line-height: 1.6; color: var(--text-secondary); }
+.req-details-body.open { display: block; }
+.req-details-body hr { margin: 10px 0; border-color: var(--border); }
+.req-details-body h6 { color: var(--brand-green); font-size: 11px; text-transform: uppercase; font-weight: 700; margin-bottom: 6px; }
+.req-details-body img { max-width: 200px; border-radius: 10px; border: 1px solid var(--border); }
+
+.status-form-row { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; margin-top: 14px; }
+.status-form-row .field { flex: 1; min-width: 160px; }
+.status-form-row label { font-size: 11.5px; font-weight: 700; color: var(--text-secondary); margin-bottom: 4px; display: block; }
+.status-form-row select, .status-form-row input[type=text] { width: 100%; padding: 8px 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 13px; }
+
+body.dark-mode .dash-panel, body.dark-mode .thread-header-menu-list { background: var(--dm-surface); border-color: var(--dm-border); }
+body.dark-mode .inbox-search, body.dark-mode .inbox-row, body.dark-mode .thread-header, body.dark-mode .chat-input-bar, body.dark-mode .req-toggle { border-color: var(--dm-border); }
+body.dark-mode .inbox-search-wrap input, body.dark-mode .inbox-filter select, body.dark-mode .chat-input-bar textarea, body.dark-mode .status-form-row select, body.dark-mode .status-form-row input { background: var(--dm-surface-2); border-color: var(--dm-border); color: var(--dm-text); }
+body.dark-mode .inbox-row:hover, body.dark-mode .chat-messages, body.dark-mode .inbox-count { background: var(--dm-surface-2); }
+body.dark-mode .chat-row.from-customer .chat-bubble { background: var(--dm-surface-2); color: var(--dm-text); border-color: var(--dm-border); }
+body.dark-mode .chat-input-bar { background: var(--dm-surface); }
+</style>
+{% endblock %}
+
+{% block dash_content %}
+<nav class="ds-breadcrumb" aria-label="Breadcrumb">
+  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+  <span class="sep">/</span><span class="current">Messages</span>
+</nav>
+
+<div class="ds-page-header">
+  <i class="fas fa-comments icon"></i>
+  <div>
+    <h1>Messages</h1>
+    <p>View and manage all system messages, inquiries, and notifications.</p>
+  </div>
+</div>
+
+<div class="msgs-split">
+  <!-- Inbox -->
+  <div class="dash-panel msgs-inbox">
+    <form method="get" class="inbox-search">
+      <div class="inbox-search-wrap">
+        <i class="fas fa-search"></i>
+        <input type="text" name="q" placeholder="Search name, email, subject or message…" value="{{ search }}">
+      </div>
+      <div class="inbox-filter">
+        <select name="read" onchange="this.form.submit()">
+          <option value="">All Messages</option>
+          <option value="false" {% if read_filter == 'false' %}selected{% endif %}>Unread</option>
+          <option value="true" {% if read_filter == 'true' %}selected{% endif %}>Read</option>
+        </select>
+      </div>
+    </form>
+    <div class="inbox-list">
+      {% for row in inbox_messages %}
+      <a href="{% url 'dashboard:message_detail' row.pk %}?{% if search %}q={{ search }}&{% endif %}{% if read_filter %}read={{ read_filter }}{% endif %}"
+         class="inbox-row {% if row.pk == message.pk %}is-active{% endif %}">
+        <div class="inbox-avatar" style="background:{% cycle '#5FBF9F' '#8B8FD9' '#E0A85B' '#6FA8DC' '#D98594' '#4FBFBF' as inbox_avatar_color %};">
+          {{ row.name|first|upper }}
+        </div>
+        <div class="inbox-row-body">
+          <div class="inbox-row-top">
+            <span class="inbox-name">{{ row.name }}</span>
+            {% if row.inquiry_type == 'bulk_order' %}
+              <span class="inbox-badge" style="background:#e6f0fd;color:#2563eb;">{{ row.get_inquiry_type_display }}</span>
+            {% elif row.inquiry_type == 'donate_materials' %}
+              <span class="inbox-badge" style="background:#f1ecfd;color:#7c3aed;">{{ row.get_inquiry_type_display }}</span>
+            {% elif row.status == 'closed' or row.subject|slice:':5' == 'Order' %}
+              <span class="inbox-badge" style="background:var(--danger-bg);color:var(--danger);">{{ row.get_inquiry_type_display }}</span>
+            {% else %}
+              <span class="inbox-badge" style="background:var(--brand-green-light);color:var(--brand-green);">{{ row.get_inquiry_type_display }}</span>
+            {% endif %}
+          </div>
+          <div class="inbox-snippet">{{ row.message|truncatechars:60 }}</div>
+          <div class="inbox-date">{{ row.created_at|date:"M d, H:i" }}</div>
+        </div>
+        <div class="inbox-row-end">
+          <span class="inbox-count">{{ row.replies.count|add:1 }}</span>
+          <i class="fas fa-chevron-right chevron"></i>
+        </div>
+      </a>
+      {% empty %}
+      <div class="inbox-empty"><i class="fas fa-envelope-open fa-2x mb-3 d-block opacity-25"></i>No messages found.</div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Conversation -->
+  <div class="dash-panel msgs-thread">
+    <div class="thread-header">
+      <div class="inbox-avatar" style="background:var(--brand-green);">{{ message.name|first|upper }}</div>
+      <div>
+        <div class="name">
+          {{ message.name }}
+          {% if message.inquiry_type == 'bulk_order' %}
+            <span class="inbox-badge" style="background:#e6f0fd;color:#2563eb;">{{ message.get_inquiry_type_display }}</span>
+          {% elif message.inquiry_type == 'donate_materials' %}
+            <span class="inbox-badge" style="background:#f1ecfd;color:#7c3aed;">{{ message.get_inquiry_type_display }}</span>
+          {% else %}
+            <span class="inbox-badge" style="background:var(--brand-green-light);color:var(--brand-green);">{{ message.get_inquiry_type_display }}</span>
+          {% endif %}
+        </div>
+        <div class="email">{{ message.email }}</div>
+      </div>
+      {% if request.user.is_admin_user %}
+      <div class="thread-header-menu">
+        <button type="button" class="thread-header-menu-btn" id="threadMenuBtn"><i class="fas fa-ellipsis-vertical"></i></button>
+        <div class="thread-header-menu-list" id="threadMenuList">
+          <form method="post" action="{% url 'dashboard:message_delete' message.pk %}" onsubmit="return confirm('Move this message to the Archive?');">
+            {% csrf_token %}
+            <button type="submit"><i class="fas fa-box-archive"></i>Archive Message</button>
+          </form>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+      {% for entry in timeline %}
+      <div class="chat-row {% if entry.is_staff_reply %}from-staff{% else %}from-customer{% endif %}">
+        <div class="chat-avatar">{{ entry.sender_name|default:"S"|first|upper }}</div>
+        <div class="chat-bubble-wrap">
+          <div class="chat-sender-label">
+            {{ entry.sender_name }}
+            {% if account_thread_count > 1 %}
+              <span class="chat-inquiry-badge {% if entry.is_current %}is-current{% endif %}">{{ entry.subject }}</span>
+            {% endif %}
+          </div>
+          <div class="chat-bubble">{{ entry.body }}</div>
+          <div class="chat-meta">
+            <span>{{ entry.created_at|date:"M d, H:i" }}</span>
+            {% if entry.is_staff_reply %}
+              {% if entry.is_read_by_customer %}<i class="fas fa-check-double" style="color:#4fa9e8;"></i>{% else %}<i class="fas fa-check"></i>{% endif %}
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="chat-empty">No messages yet — start the conversation below.</div>
+      {% endfor %}
+    </div>
+
+    {% if account_thread_count > 1 %}
+    <div class="chat-reply-target-note">Your reply below will be sent on the <strong>{{ message.subject }}</strong> inquiry (the one you opened).</div>
+    {% endif %}
+
+    {% if message.customer %}
+    <form method="post" class="chat-input-bar">
+      {% csrf_token %}
+      <input type="hidden" name="form" value="reply">
+      <button type="button" class="chat-icon-btn" title="Attach file"><i class="fas fa-paperclip"></i></button>
+      <button type="button" class="chat-icon-btn" title="Emoji"><i class="far fa-smile"></i></button>
+      <textarea name="reply_body" rows="1" placeholder="Type your reply…" required
+                oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px';"></textarea>
+      <button type="submit" class="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
+    </form>
+    {% else %}
+    <div class="chat-no-account">This request has no linked customer account, so it can't receive in-site replies.</div>
+    {% endif %}
+
+    <!-- Full request details (collapsible) -->
+    <div class="req-toggle" onclick="var d=document.getElementById('reqDetails'); d.classList.toggle('open'); this.querySelector('i').classList.toggle('fa-chevron-down'); this.querySelector('i').classList.toggle('fa-chevron-up');">
+      <i class="fas fa-chevron-down"></i> View full request details
+    </div>
+    <div class="req-details-body" id="reqDetails">
+      <div style="white-space:pre-wrap;">{{ message.message }}</div>
+
+      {% if message.product or message.order or message.order_number_ref %}
+      <hr><h6>Product / Order Reference</h6>
+      {% if message.product %}<div><strong>Product:</strong> {{ message.product.name }}</div>{% endif %}
+      {% if message.order %}<div><strong>Order:</strong> {{ message.order.order_number }}</div>
+      {% elif message.order_number_ref %}<div><strong>Order Number (as entered):</strong> {{ message.order_number_ref }}</div>{% endif %}
+      {% endif %}
+
+      {% if message.item_name or message.quantity %}
+      <hr><h6>Item Details</h6>
+      {% if message.item_name %}<div><strong>Item Name:</strong> {{ message.item_name }}</div>{% endif %}
+      {% if message.quantity %}<div><strong>Quantity:</strong> {{ message.quantity }}</div>{% endif %}
+      {% endif %}
+
+      {% if message.materials_condition %}
+      <hr><h6>Donation Details</h6>
+      <div><strong>Materials Condition:</strong> {{ message.get_materials_condition_display }}</div>
+      {% endif %}
+
+      {% if message.feedback_type or message.related_product %}
+      <hr><h6>Feedback</h6>
+      {% if message.feedback_type %}<div><strong>Feedback Type:</strong> {{ message.get_feedback_type_display }}</div>{% endif %}
+      {% if message.related_product %}<div><strong>Related Product:</strong> {{ message.related_product }}</div>{% endif %}
+      {% endif %}
+
+      {% if message.concern_type %}
+      <hr><h6>Concern</h6>
+      <div><strong>Concern Type:</strong> {{ message.get_concern_type_display }}</div>
+      {% endif %}
+
+      {% if message.additional_details %}
+      <hr><h6>Additional Details</h6>
+      <div style="white-space:pre-wrap;">{{ message.additional_details }}</div>
+      {% endif %}
+
+      <hr>
+      <div class="status-form-row">
+        <form method="post" style="display:flex;gap:10px;flex:1;flex-wrap:wrap;align-items:flex-end;">
+          {% csrf_token %}
+          <div class="field">
+            <label>Status</label>
+            <select name="status">
+              {% for value, label in message.STATUS_CHOICES %}
+              <option value="{{ value }}" {% if message.status == value %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label>Staff Notes (internal only)</label>
+            <input type="text" name="staff_notes" value="{{ message.staff_notes }}">
+          </div>
+          <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">Save</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Conversation details summary -->
+<div class="conv-details">
+  <div class="conv-details-title"><i class="fas fa-circle-info"></i>Conversation Details</div>
+  <div class="conv-details-grid">
+    <div class="conv-details-item">
+      <div class="label">Status</div>
+      <div class="value">
+        {% if message.status == 'resolved' %}<span class="conv-status-pill st-resolved"><span class="dot"></span>{{ message.get_status_display }}</span>
+        {% elif message.status == 'closed' %}<span class="conv-status-pill st-closed"><span class="dot"></span>{{ message.get_status_display }}</span>
+        {% elif message.status == 'in_progress' or message.status == 'under_review' %}<span class="conv-status-pill st-progress"><span class="dot"></span>{{ message.get_status_display }}</span>
+        {% else %}<span class="conv-status-pill st-new"><span class="dot"></span>{{ message.get_status_display }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="conv-details-item">
+      <div class="label">Handled By</div>
+      <div class="value">
+        {% if handled_by %}<span class="conv-mini-avatar">{{ handled_by.get_full_name|default:handled_by.username|first|upper }}</span> {{ handled_by.get_full_name|default:handled_by.username }}
+        {% else %}<span class="text-muted" style="font-weight:600;">Unassigned</span>{% endif %}
+      </div>
+    </div>
+    <div class="conv-details-item">
+      <div class="label">Last Message</div>
+      <div class="value">{{ last_activity_at|date:"M d, Y · H:i" }}</div>
+    </div>
+    <div class="conv-details-item">
+      <div class="label">Request #</div>
+      <div class="value">{{ message.pk }}</div>
+    </div>
+  </div>
+  {% if message.status != 'resolved' %}
+  <form method="post">
+    {% csrf_token %}
+    <input type="hidden" name="status" value="resolved">
+    <button type="submit" class="ds-btn ds-btn-primary"><i class="fas fa-check"></i>Mark as Resolved</button>
+  </form>
+  {% endif %}
+</div>
+
+<script>
+var chatBox = document.getElementById('chatMessages');
+if (chatBox) { chatBox.scrollTop = chatBox.scrollHeight; }
+
+var menuBtn = document.getElementById('threadMenuBtn');
+var menuList = document.getElementById('threadMenuList');
+if (menuBtn && menuList) {
+  menuBtn.addEventListener('click', function (e) {
+    e.stopPropagation();
+    menuList.classList.toggle('is-open');
+  });
+  document.addEventListener('click', function () { menuList.classList.remove('is-open'); });
+}
+</script>
+{% endblock %}

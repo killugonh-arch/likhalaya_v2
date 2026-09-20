@@ -1,0 +1,741 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Likhalaya – PDL Marketplace | Carigara, Leyte{% endblock %}
+{% block nav_home %}active{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@800;900&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   Homepage — light-theme hero + impact section, matched to
+   the approved reference design. Reuses the storefront design
+   system (--teal / --gold / --sand tokens, .product-card,
+   .btn-gold, .section-title, .divider defined in base.html).
+   ========================================================= */
+
+/* ---------- Shared section rhythm ---------- */
+.home-section { padding: 72px 0; }
+.home-section-tight { padding: 56px 0; }
+.home-eyebrow {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 15px; font-weight: 900; letter-spacing: .08em; text-transform: uppercase;
+  color: var(--teal); margin-bottom: 8px;
+}
+.home-section-head { text-align: center; margin-bottom: 40px; }
+.home-section-head .section-title { margin-bottom: 0; }
+.home-section-head p { color: var(--gray); font-size: 14.5px; max-width: 520px; margin: 10px auto 0; }
+
+/* ---------- Hero (light theme) ---------- */
+.hero-section {
+  background: #F7F5EE;
+  min-height: auto;
+  display: flex; align-items: center;
+  position: relative; overflow: hidden;
+  padding: 72px 0 84px;
+}
+/* Full-bleed background image on its own absolutely-positioned layer,
+   sized a hair larger than the section so no sliver of the page's
+   beige background can ever peek through at the edges. */
+.hero-section::before {
+  content: "";
+  position: absolute;
+  top: -2px; left: -2px; right: -2px; bottom: -2px;
+  background: url("{% static 'imgs/hero-bg.jpg' %}") center / cover no-repeat;
+  opacity: .7;
+  -webkit-mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 82%, transparent 100%);
+  z-index: 0;
+}
+.hero-section .container { position: relative; z-index: 1; }
+
+.hero-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: #e4efe6; border: none;
+  color: var(--teal); font-size: 12px; font-weight: 700;
+  padding: 8px 18px; border-radius: 20px; letter-spacing: .04em;
+  text-transform: uppercase; margin-bottom: 26px;
+}
+.hero-badge i { font-size: 12px; color: var(--teal); }
+
+.hero-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(38px, 5vw, 62px);
+  color: var(--charcoal, #1B4332); line-height: 1.15; font-weight: 900;
+  letter-spacing: -.01em;
+}
+.hero-title .hero-title-line { display: block; color: var(--teal); margin-bottom: 2px; }
+.hero-title span.hero-accent { color: var(--gold); }
+
+.hero-sub {
+  color: var(--gray, #5c6b63); font-size: 16px; max-width: 460px;
+  line-height: 1.75; margin-top: 20px; font-weight: 600;
+}
+.hero-cta-row { margin-top: 30px; }
+.hero-cta-row .btn { font-size: 14.5px; font-weight: 600; padding: 13px 26px; transition: transform .2s ease, box-shadow .2s ease; }
+.hero-cta-row .btn-gold:hover, .hero-cta-row .btn-teal:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(27,67,50,.18); }
+.hero-cta-row .btn-hero-outline {
+  border: 1.5px solid #d9d2c2; color: var(--charcoal, #1B4332); background: #fff;
+}
+.hero-cta-row .btn-hero-outline:hover { border-color: var(--teal); background: #f2f7f3; transform: translateY(-2px); }
+
+.hero-trust-row {
+  display: flex; flex-wrap: wrap; gap: 26px; margin-top: 40px;
+}
+.hero-trust-item {
+  display: flex; align-items: center; gap: 9px;
+  color: var(--charcoal, #1B4332); font-size: 13px; font-weight: 500;
+}
+.hero-trust-item i { color: var(--teal); font-size: 15px; width: 16px; text-align: center; }
+
+.hero-slideshow-outer { display: flex; align-items: center; gap: 16px; }
+.hero-slideshow {
+  position: relative; flex: 1 1 auto; min-width: 0;
+  aspect-ratio: 4 / 3; max-height: 460px;
+  border-radius: 24px; overflow: hidden;
+  box-shadow: 0 24px 60px rgba(27,67,50,.14);
+  border: 1px solid #eee6d6;
+  background: #f0ece0;
+}
+.hero-slide {
+  position: absolute; inset: 0; opacity: 0;
+  transition: opacity .8s ease-in-out;
+  width: 100%; height: 100%; object-fit: cover;
+}
+.hero-slide.active { position: relative; opacity: 1; }
+.hero-slide-btn {
+  flex: 0 0 auto; width: 40px; height: 40px; border-radius: 50%; border: none;
+  background: #fff; color: var(--teal); font-size: 13px;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,.12); transition: background .2s, transform .2s, color .2s;
+}
+.hero-slide-btn:hover { background: var(--gold); color: #fff; transform: scale(1.08); }
+.hero-slide-dots { display: flex; justify-content: center; gap: 8px; margin-top: 18px; }
+.hero-slide-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: #ddd5c2;
+  cursor: pointer; transition: background .2s, transform .2s;
+}
+.hero-slide-dot.active { background: var(--teal); transform: scale(1.35); }
+
+/* ---------- Product cards (homepage grid) — reference style ---------- */
+.home-products-section {
+  background: #F7F5EE;
+}
+
+.home-product-card {
+  display: flex; flex-direction: column; height: 100%;
+  background: #e6f0e9;              /* soft green tint for the card box */
+  border: 1px solid #d5e6da;
+  border-radius: 16px;
+  overflow: hidden;
+  transition: all .25s;
+}
+.home-product-card:hover {
+  box-shadow: 0 14px 34px rgba(27,67,50,.10);
+  transform: translateY(-3px);
+}
+
+.home-product-media {
+  position: relative; overflow: hidden;
+  background: #e6f0e9;              /* same soft green as card body */
+  padding: 8px;
+  display: block;
+}
+.home-product-media img,
+.home-product-media .img-placeholder {
+  transition: transform .35s ease;
+  border-radius: 10px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  display: block;
+}
+.home-product-media .img-placeholder {
+  display: flex; align-items: center; justify-content: center;
+  background: #f0ede4; font-size: 28px;
+}
+.home-product-card:hover .home-product-media img { transform: scale(1.06); }
+
+.home-sale-badge {
+  position: absolute; top: 10px; left: 10px;
+  background: var(--gold); color: #fff;
+  font-size: 10.5px; font-weight: 700; letter-spacing: .03em;
+  padding: 4px 12px; border-radius: 20px; text-transform: uppercase;
+  z-index: 2;
+}
+
+.home-product-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 6px; flex: 1 1 auto; }
+
+.home-product-meta {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; color: var(--gray); margin-bottom: 2px;
+}
+.home-product-rating { display: flex; align-items: center; gap: 4px; color: var(--charcoal, #1B4332); font-weight: 600; }
+.home-product-rating i { color: var(--gold); font-size: 11px; }
+.home-product-purchased { font-size: 11.5px; color: var(--gray); }
+
+.home-product-name {
+  font-size: 14.5px; font-weight: 700; color: var(--charcoal);
+  line-height: 1.35; display: -webkit-box;
+  -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  margin-bottom: 0;
+}
+.home-product-name a { color: inherit; text-decoration: none; }
+
+.home-product-footer {
+  margin-top: 0; padding-top: 6px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.home-product-price-wrap { display: flex; flex-direction: column; line-height: 1.15; }
+.home-product-price-label {
+  font-size: 9.5px; font-weight: 600; color: var(--gray);
+  text-transform: uppercase; letter-spacing: .04em;
+}
+.home-product-price { font-family: 'Poppins', sans-serif; font-size: 19px; color: var(--gold); font-weight: 800; }
+
+.home-add-cart-btn {
+  width: 100%; margin-top: 6px;
+  background: var(--teal); color: #fff; border: none;
+  font-size: 12.5px; font-weight: 600; padding: 7px 0;
+  border-radius: 8px; display: flex; align-items: center; justify-content: center; gap: 6px;
+  transition: background .2s, transform .2s;
+}
+.home-add-cart-btn:hover { background: #163c29; transform: translateY(-1px); color: #fff; }
+.home-add-cart-btn:disabled { background: #9a9a9a; cursor: not-allowed; }
+
+.products-empty {
+  text-align: center; padding: 56px 20px; color: var(--gray);
+  border: 1.5px dashed #e0ece4; border-radius: 14px; background: #fbfaf7;
+}
+.products-empty i { font-size: 34px; color: #d8cfc0; margin-bottom: 12px; display: block; }
+
+/* Shrink card internals to match the smaller 2-up column on phones */
+@media (max-width: 575.98px) {
+  .home-product-body { padding: 9px 10px 10px; gap: 4px; }
+  .home-product-name { font-size: 12.5px; }
+  .home-product-price { font-size: 15px; }
+  .home-product-price-label { font-size: 8.5px; }
+  .home-product-meta { font-size: 10.5px; }
+  .home-add-cart-btn { font-size: 11px; padding: 6px 0; }
+  .home-sale-badge { font-size: 9px; padding: 3px 9px; }
+}
+
+/* ---------- Category pills (icon + label) ---------- */
+.home-categories-row {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+  margin-bottom: 36px;
+}
+.home-category-pill {
+  display: flex; align-items: center; gap: 6px;
+  background: #fff; border: 1px solid #e6e0d2;
+  padding: 6px 14px 6px 8px; border-radius: 24px;
+  color: var(--charcoal, #1B4332); text-decoration: none;
+  font-size: 12px; font-weight: 600;
+  transition: all .2s ease;
+}
+.home-category-pill:hover {
+  background: var(--teal); border-color: var(--teal); color: #fff;
+  transform: translateY(-2px); box-shadow: 0 6px 16px rgba(27,67,50,.16);
+}
+.home-category-pill:hover .home-category-icon { background: #fff; color: var(--teal); }
+.home-category-icon {
+  flex: 0 0 auto; width: 22px; height: 22px; border-radius: 50%;
+  background: #e6f0e9; color: var(--teal);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; transition: all .2s ease;
+}
+.home-category-pill.active {
+  background: var(--teal); border-color: var(--teal); color: #fff;
+}
+.home-category-pill.active .home-category-icon { background: #fff; color: var(--teal); }
+
+/* ---------- Impact / feature cards (circle icon style, matches reference) ---------- */
+.impact-section { background: #F7F5EE; }
+.impact-card {
+  display: flex; align-items: flex-start; gap: 16px;
+  background: #fff; border-radius: 16px; padding: 22px;
+  height: 100%; transition: all .25s;
+}
+.impact-card:hover { box-shadow: 0 14px 34px rgba(0,0,0,.06); transform: translateY(-3px); }
+.impact-icon {
+  flex: 0 0 auto; width: 56px; height: 56px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: #fff;
+}
+.impact-icon.icon-green { background: var(--teal); }
+.impact-icon.icon-copper { background: #a8623a; }
+.impact-icon.icon-gold { background: var(--gold); }
+.impact-card h6 { font-size: 15px; margin-bottom: 6px; }
+.impact-card p { font-size: 13px; line-height: 1.6; color: var(--gray); margin-bottom: 0; }
+
+/* ---------- Promo / video cards ---------- */
+.promo-card {
+  background: #fff; border: 1px solid #ece5d8; border-radius: 16px;
+  padding: 22px; height: 100%; transition: all .25s;
+}
+.promo-card:hover { box-shadow: 0 14px 34px rgba(0,0,0,.08); transform: translateY(-3px); }
+.promo-card video, .promo-card img {
+  width: 100%; border-radius: 10px; display: block; margin-bottom: 14px;
+}
+.promo-label {
+  display: inline-block; background: rgba(201,132,26,.15); color: #c9841a;
+  font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+  padding: 4px 13px; border-radius: 20px; margin-bottom: 12px;
+}
+
+/* ---------- Mission banner ---------- */
+.mission-banner-section {
+  /* This section sits right after another section with the same light
+     background, so the two 72px paddings stacked (144px total) with no
+     visual divider read as one giant blank gap. Tighten the top only. */
+  padding-top: 20px;
+}
+.mission-banner {
+  background: linear-gradient(135deg, var(--teal), #1B4332);
+  border-radius: 22px; padding: 52px; overflow: hidden; position: relative;
+}
+.mission-banner-circle-img {
+  position: absolute; right: 48px; top: 50%; transform: translateY(-50%);
+  width: 220px; height: 220px; border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid rgba(255,255,255,.25);
+  box-shadow: 0 12px 30px rgba(0,0,0,.25);
+}
+.mission-banner h3 { font-family: 'Poppins', sans-serif; font-size: 26px; }
+.mission-banner p { color: rgba(255,255,255,.82); font-size: 15px; max-width: 540px; line-height: 1.7; margin-bottom: 26px; }
+
+/* ---------- Fix: remove white gap before footer ---------- */
+body { background-color: #F7F5EE; }
+.home-section:last-of-type {
+  padding-bottom: 0;
+  margin-bottom: 0;
+}
+
+/* ---------- Responsiveness ---------- */
+@media (max-width: 991.98px) {
+  .home-section { padding: 56px 0; }
+  .hero-section { padding: 48px 0 56px; }
+  .hero-title { font-size: clamp(30px, 7vw, 44px); }
+  .hero-trust-row { gap: 16px; }
+  .mission-banner { padding: 36px 28px; text-align: center; }
+  .mission-banner::after { display: none; }
+}
+@media (max-width: 575.98px) {
+  .home-section { padding: 44px 0; }
+  .hero-cta-row .btn { width: auto; }
+  .hero-cta-row { flex-direction: row; }
+  .hero-trust-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px 10px; }
+  .hero-sub { max-width: 100%; }
+  .section-title { font-size: 22px; }
+  .home-product-name { min-height: unset; }
+  .impact-card { flex-direction: column; text-align: center; align-items: center; }
+
+  /* Center the hero content on phones */
+  .hero-section .col-lg-6 { text-align: center; }
+  .hero-cta-row { justify-content: center; }
+  .hero-trust-row { justify-items: center; }
+  .hero-trust-item { justify-content: center; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+<!-- ═══ HERO (light theme) ═══ -->
+<section class="hero-section">
+  <div class="container position-relative">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-6" data-aos="fade-right">
+        <div class="hero-badge"><i class="fas fa-map-marker-alt"></i>Carigara District Jail - BJMP</div>
+        <h1 class="hero-title">
+          <span class="hero-title-line">PDL Marketplace</span>
+          <span>Purpose &amp; <span class="hero-accent">Pride</span></span>
+        </h1>
+        <p class="hero-sub">
+          Every purchase from Likhalaya supports rehabilitation and livelihood for PDL artisans. Genuine craftsmanship from Carigara, Leyte.
+        </p>
+        <div class="d-flex gap-3 flex-wrap hero-cta-row">
+          <a href="{% url 'store:shop' %}" class="btn btn-teal px-4 rounded-3">
+            <i class="fas fa-briefcase me-2"></i>Shop Now
+          </a>
+          <a href="{% url 'store:about' %}" class="btn btn-hero-outline px-4 rounded-3">
+            <i class="fas fa-play-circle me-2"></i>Our Story
+          </a>
+        </div>
+        <div class="hero-trust-row d-none d-md-flex">
+          <div class="hero-trust-item"><i class="fas fa-seedling"></i>Supports PDL Rehabilitation</div>
+          <div class="hero-trust-item"><i class="fas fa-shield-heart"></i>Authentic, Handmade Goods</div>
+          <div class="hero-trust-item"><i class="fas fa-truck-fast"></i>Ships Nationwide</div>
+        </div>
+      </div>
+      <div class="col-lg-6 d-none d-lg-block" data-aos="fade-left" data-aos-delay="200">
+        <div class="hero-slideshow-outer">
+          <button type="button" class="hero-slide-btn hero-slide-prev" aria-label="Previous slide">
+            <i class="fas fa-chevron-left"></i>
+          </button>
+
+          <div class="hero-slideshow">
+            <img src="{% static 'imgs/t2.png' %}" alt="Handcrafted products" class="hero-slide active">
+            <img src="{% static 'imgs/hero-slide2.jpg' %}" alt="Handcrafted products" class="hero-slide">
+            <img src="{% static 'imgs/hero-slide3.jpg' %}" alt="Handcrafted products" class="hero-slide">
+            <img src="{% static 'imgs/hero-slide4.jpg' %}" alt="Handcrafted products" class="hero-slide">
+            <img src="{% static 'imgs/hero-slide5.jpg' %}" alt="Handcrafted products" class="hero-slide">
+            <img src="{% static 'imgs/hero-slide6.png' %}" alt="Handcrafted products" class="hero-slide">
+          </div>
+
+          <button type="button" class="hero-slide-btn hero-slide-next" aria-label="Next slide">
+            <i class="fas fa-chevron-right"></i>
+          </button>
+        </div>
+
+        <div class="hero-slide-dots">
+          <span class="hero-slide-dot active" data-slide="0"></span>
+          <span class="hero-slide-dot" data-slide="1"></span>
+          <span class="hero-slide-dot" data-slide="2"></span>
+          <span class="hero-slide-dot" data-slide="3"></span>
+          <span class="hero-slide-dot" data-slide="4"></span>
+          <span class="hero-slide-dot" data-slide="5"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ LATEST PRODUCTS ═══ -->
+<section class="home-section home-products-section">
+  <div class="container">
+    <div class="home-section-head" data-aos="fade-up">
+      <div class="home-eyebrow">Fresh From the Workshop</div>
+      <div class="section-title">Our Products</div>
+      <div class="divider mx-auto"></div>
+      <p>Newest handcrafted pieces made by PDL artisans — each one a step toward a second chance.</p>
+    </div>
+
+    {% if categories %}
+    <div class="home-categories-row" data-aos="fade-up">
+      <button type="button" class="home-category-pill active" data-filter="all">
+        <span class="home-category-icon"><i class="fas fa-border-all"></i></span> All
+      </button>
+      {% for category in categories %}
+      <button type="button" class="home-category-pill" data-filter="{{ category.slug }}">
+        <span class="home-category-icon">
+          <i class="{{ category.icon|default:'fas fa-tag' }}"></i>
+        </span>
+        {{ category.name }}
+      </button>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if latest_products %}
+    <div class="row g-4">
+      {% for product in latest_products|slice:":8" %}
+      <div class="col-6 col-md-4 col-xl-3 home-product-col" data-category="{{ product.category.slug|default:'uncategorized' }}" data-aos="fade-up">
+        <div class="home-product-card">
+          <a href="{{ product.get_absolute_url }}" class="home-product-media">
+            {% if product.on_sale %}
+            <span class="home-sale-badge">Sale</span>
+            {% endif %}
+            {% if product.image %}
+            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-img">
+            {% else %}
+            <div class="img-placeholder"><i class="fas fa-image text-muted"></i></div>
+            {% endif %}
+          </a>
+          <div class="home-product-body">
+            <script type="application/json" id="imgs-{{ product.pk }}">{{ product.images_by_size_json|safe }}</script>
+            <script type="application/json" id="variants-{{ product.pk }}">{{ product.variant_json|safe }}</script>
+            <div class="product-tag">{{ product.category.name|default:"Craft" }}</div>
+            <h6 class="home-product-name">
+              <a href="{{ product.get_absolute_url }}">{{ product.name }}</a>
+            </h6>
+            <div class="home-product-footer">
+              <div class="home-product-price-wrap">
+                <span class="home-product-price-label">Starts at</span>
+                <div class="home-product-price">{{ product.price_display }}</div>
+              </div>
+            </div>
+            {% if product.in_stock %}
+            <button type="button" class="home-add-cart-btn js-open-size-modal" title="Add to cart"
+              data-url="{% url 'orders:cart_add' product.pk %}"
+              data-name="{{ product.name }}"
+              data-mode="cart"
+              data-has-size-pricing="{% if product.has_size_pricing %}1{% else %}0{% endif %}"
+              data-stock="{{ product.stock }}"
+              data-price-s="{{ product.price_small }}"
+              data-price-m="{{ product.price_medium }}"
+              data-price-l="{{ product.price_large }}"
+              data-preselect-size="M"
+              data-images-id="imgs-{{ product.pk }}"
+              data-has-variants="{% if product.has_variants %}1{% else %}0{% endif %}"
+              data-variants-id="variants-{{ product.pk }}">
+              <i class="fas fa-cart-plus"></i> Add to Cart
+            </button>
+            {% else %}
+            <button class="home-add-cart-btn" disabled>Sold Out</button>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="products-empty d-none" id="home-category-empty">
+      <i class="fas fa-box-open"></i>
+      <div class="fw-bold mb-1">No products in this category yet</div>
+      <p class="small mb-0">Try another category or view all products.</p>
+    </div>
+    <div class="text-center mt-5" data-aos="fade-up">
+      <a href="{% url 'store:shop' %}" class="btn btn-teal px-4 rounded-pill">
+        View All Products <i class="fas fa-arrow-right ms-1"></i>
+      </a>
+    </div>
+    {% else %}
+    <div class="products-empty" data-aos="fade-up">
+      <i class="fas fa-box-open"></i>
+      <div class="fw-bold mb-1">No products yet</div>
+      <p class="small mb-0">New handcrafted items will be listed here soon.</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- ═══ IMPACT / WHY LIKHALAYA (matches reference: circle icons, 4-up) ═══ -->
+<section class="home-section impact-section">
+  <div class="container">
+    <div class="home-section-head" data-aos="fade-up">
+      <div class="home-eyebrow">Crafted With Care. Made With Purpose.</div>
+      <div class="section-title">Supporting Lives, Building Futures</div>
+      <div class="divider mx-auto"></div>
+    </div>
+    <div class="row g-4">
+      <div class="col-sm-6 col-md-3" data-aos="fade-up" data-aos-delay="100">
+        <div class="impact-card">
+          <div class="impact-icon icon-green"><i class="fas fa-user-group"></i></div>
+          <div>
+            <h6 class="fw-bold">Empowering Lives</h6>
+            <p>Every product helps PDL artisans rebuild and empower their future.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-md-3" data-aos="fade-up" data-aos-delay="200">
+        <div class="impact-card">
+          <div class="impact-icon icon-copper"><i class="fas fa-hands"></i></div>
+          <div>
+            <h6 class="fw-bold">Authentic Craftsmanship</h6>
+            <p>Handmade with skills, patience, and pride by local artisans inside the district jail.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-md-3" data-aos="fade-up" data-aos-delay="300">
+        <div class="impact-card">
+          <div class="impact-icon icon-green"><i class="fas fa-heart"></i></div>
+          <div>
+            <h6 class="fw-bold">Social Impact</h6>
+            <p>Your purchase contributes to rehabilitation, dignity, and second chances.</p>
+          </div>
+        </div>
+      </div>
+      <div class="col-sm-6 col-md-3" data-aos="fade-up" data-aos-delay="400">
+        <div class="impact-card">
+          <div class="impact-icon icon-gold"><i class="fas fa-truck-fast"></i></div>
+          <div>
+            <h6 class="fw-bold">Nationwide Delivery</h6>
+            <p>We deliver our products safely and reliably across the Philippines.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ PROMOTIONS ═══ -->
+{% if featured_video or second_video %}
+<section class="home-section" style="background:#F7F5EE;">
+  <div class="container">
+    <div class="home-section-head" data-aos="fade-up">
+      <div class="home-eyebrow">Beyond the Marketplace</div>
+      <div class="section-title">More From BJMP</div>
+      <div class="divider mx-auto"></div>
+    </div>
+    <div class="row g-4">
+
+      {% if featured_video %}
+      <div class="col-md-6" data-aos="fade-up" data-aos-delay="100">
+        <div class="promo-card">
+          <span class="promo-label">Featured Program</span>
+          {% if featured_video.video_url %}
+          <iframe src="{{ featured_video.embed_url }}" style="width:100%;aspect-ratio:16/9;border:0;border-radius:10px;margin-bottom:14px;display:block;" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+          {% elif featured_video.video_file %}
+          <video autoplay muted loop playsinline {% if featured_video.thumbnail %}poster="{{ featured_video.thumbnail.url }}"{% endif %}>
+            <source src="{{ featured_video.video_file.url }}" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          {% endif %}
+          <h6 class="fw-bold mb-1">{{ featured_video.title }}</h6>
+          {% if featured_video.description %}
+          <p class="text-muted small mb-0">{{ featured_video.description }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+      {% if second_video %}
+      <div class="col-md-6" data-aos="fade-up" data-aos-delay="200">
+        <div class="promo-card">
+          <span class="promo-label">Featured Program</span>
+          {% if second_video.video_url %}
+          <iframe src="{{ second_video.embed_url }}" style="width:100%;aspect-ratio:16/9;border:0;border-radius:10px;margin-bottom:14px;display:block;" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+          {% elif second_video.video_file %}
+          <video autoplay muted loop playsinline {% if second_video.thumbnail %}poster="{{ second_video.thumbnail.url }}"{% endif %}>
+            <source src="{{ second_video.video_file.url }}" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          {% endif %}
+          <h6 class="fw-bold mb-1">{{ second_video.title }}</h6>
+          {% if second_video.description %}
+          <p class="text-muted small mb-0">{{ second_video.description }}</p>
+          {% endif %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <div class="text-center mt-5" data-aos="fade-up">
+      <a href="{% url 'store:about' %}#programs" class="btn btn-gold px-4 rounded-pill">
+        See Other Programs <i class="fas fa-arrow-right ms-1"></i>
+      </a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ═══ MISSION BANNER ═══ -->
+<section class="home-section mission-banner-section" style="background:#F7F5EE;">
+  <div class="container">
+    <div class="mission-banner" data-aos="fade-up">
+      <img src="{% static 'imgs/pic02.jpg' %}" alt="Likhalaya artisans" class="mission-banner-circle-img d-none d-md-block">
+      <div class="row align-items-center">
+        <div class="col-lg-8 text-white">
+          <h3 class="fw-bold mb-2">Empowering Lives Behind Bars</h3>
+          <p>
+            Likhalaya is more than a marketplace. It's a movement to provide PDL artisans of Carigara District Jail the opportunity to rebuild their lives through creativity and entrepreneurship.
+          </p>
+          <a href="{% url 'store:about' %}" class="btn px-4 py-2 rounded-3 fw-semibold" style="background:var(--gold);color:#fff;border:none;">
+            Learn Our Mission <i class="fas fa-arrow-right ms-2"></i>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_js %}
+{% include 'partials/size_picker_modal.html' %}
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+<script>AOS.init({ once: true, duration: 700, easing: 'ease-out-cubic' });</script>
+<script>
+  // Safety net for the AOS fade-up animations used across this page.
+  //
+  // AOS hides every [data-aos] element at opacity:0 until it scrolls into
+  // view, then reveals it. Two situations can leave sections permanently
+  // invisible (while still taking up their normal space, which looks like
+  // a giant empty gap):
+  //   1) The page loads already scrolled down (browser scroll-restore on
+  //      refresh, or a fast scroll before AOS finishes its first check) —
+  //      elements above that scroll position never get their one-time
+  //      reveal trigger.
+  //   2) The AOS script itself is slow/blocked (e.g. the unpkg.com CDN),
+  //      so aos.css hides elements but aos.js never runs to reveal them.
+  // Both are fixed the same way: shortly after load, force-reveal any
+  // data-aos element that hasn't been animated in yet.
+  window.addEventListener('load', function () {
+    if (typeof AOS !== 'undefined' && AOS.refresh) {
+      window.dispatchEvent(new Event('scroll'));
+      AOS.refresh();
+    }
+    setTimeout(function () {
+      document.querySelectorAll('[data-aos]:not(.aos-animate)').forEach(function (el) {
+        el.classList.add('aos-animate');
+      });
+    }, 1000);
+  });
+</script>
+<script>
+(function () {
+  const outer = document.querySelector('.hero-slideshow-outer');
+  const slideshow = document.querySelector('.hero-slideshow');
+  if (!outer || !slideshow) return;
+  const slides = slideshow.querySelectorAll('.hero-slide');
+  const dots = document.querySelectorAll('.hero-slide-dots .hero-slide-dot');
+  const prevBtn = outer.querySelector('.hero-slide-prev');
+  const nextBtn = outer.querySelector('.hero-slide-next');
+  if (slides.length < 2) return;
+
+  let current = 0;
+  let timer = null;
+
+  function goTo(index) {
+    slides[current].classList.remove('active');
+    dots[current] && dots[current].classList.remove('active');
+    current = (index + slides.length) % slides.length;
+    slides[current].classList.add('active');
+    dots[current] && dots[current].classList.add('active');
+  }
+
+  function startTimer() {
+    timer = setInterval(function () { goTo(current + 1); }, 3000);
+  }
+
+  function resetTimer() {
+    clearInterval(timer);
+    startTimer();
+  }
+
+  prevBtn && prevBtn.addEventListener('click', function () { goTo(current - 1); resetTimer(); });
+  nextBtn && nextBtn.addEventListener('click', function () { goTo(current + 1); resetTimer(); });
+  dots.forEach(function (dot) {
+    dot.addEventListener('click', function () { goTo(parseInt(dot.dataset.slide, 10)); resetTimer(); });
+  });
+
+  startTimer();
+})();
+</script>
+<script>
+(function () {
+  const pills = document.querySelectorAll('.home-category-pill');
+  const cards = document.querySelectorAll('.home-product-col');
+  const emptyMsg = document.getElementById('home-category-empty');
+  if (!pills.length || !cards.length) return;
+
+  pills.forEach(function (pill) {
+    pill.addEventListener('click', function () {
+      const filter = pill.dataset.filter;
+
+      pills.forEach(function (p) { p.classList.remove('active'); });
+      pill.classList.add('active');
+
+      let visibleCount = 0;
+      cards.forEach(function (card) {
+        const matches = filter === 'all' || card.dataset.category === filter;
+        card.style.display = matches ? '' : 'none';
+        if (matches) visibleCount++;
+      });
+
+      if (emptyMsg) {
+        emptyMsg.classList.toggle('d-none', visibleCount !== 0);
+      }
+
+      if (window.AOS) {
+        AOS.refresh();
+      }
+    });
+  });
+})();
+</script>
+{% endblock %}  

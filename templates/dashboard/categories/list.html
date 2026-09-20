@@ -1,0 +1,60 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block page_title %}Categories{% endblock %}
+{% block sb_categories %}active{% endblock %}
+{% block title %}Categories – Dashboard{% endblock %}
+
+{% block dash_content %}
+<div class="dash-breadcrumb">
+  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+  <span class="sep">/</span><span class="current">Categories</span>
+</div>
+<div class="d-flex justify-content-between align-items-center mb-4">
+  <h4 class="fw-bold mb-0" style="color:var(--teal);">Product Categories</h4>
+  {% if request.user.is_admin_user %}
+  <a href="{% url 'dashboard:category_create' %}" class="btn btn-gold btn-sm px-3"><i class="fas fa-plus me-1"></i>Add Category</a>
+  {% endif %}
+</div>
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table dash-table mb-0">
+      <thead><tr><th>Category</th><th>Description</th><th>Status</th><th>Products</th>{% if request.user.is_staff_user %}<th>Actions</th>{% endif %}</tr></thead>
+      <tbody>
+        {% for cat in categories %}
+        <tr>
+          <td>
+            <div class="fw-semibold">{{ cat.name }}</div>
+          </td>
+          <td>
+            <div class="text-muted" style="font-size:12px;">{{ cat.description|default:"—"|truncatechars:80 }}</div>
+          </td>
+          <td>
+            {% if cat.is_active %}<span class="badge bg-success" style="font-size:10px;">Active</span>
+            {% else %}<span class="badge bg-secondary" style="font-size:10px;">Inactive</span>{% endif %}
+          </td>
+          <td><span class="badge bg-primary" style="font-size:11px;">{{ cat.product_count }}</span></td>
+          {% if request.user.is_staff_user %}
+          <td>
+            <div class="action-btns">
+              <a href="{% url 'dashboard:category_edit' cat.pk %}" class="btn-icon-action btn-icon-edit" title="Edit"><i class="fas fa-pencil-alt"></i></a>
+              {% if request.user.is_admin_user %}
+              <button type="button" class="btn-icon-action btn-icon-delete" title="Archive" data-bs-toggle="modal" data-bs-target="#delete-cat-{{ cat.pk }}"><i class="fas fa-trash"></i></button>
+              {% endif %}
+            </div>
+          </td>
+          {% endif %}
+        </tr>
+        {% empty %}
+        <tr><td colspan="{% if request.user.is_staff_user %}5{% else %}4{% endif %}" class="text-center py-5 text-muted">No categories yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% if request.user.is_admin_user %}
+{% for cat in categories %}
+{% url 'dashboard:category_delete' cat.pk as cat_delete_url %}
+{% include 'partials/confirm_delete_modal.html' with id_prefix="delete-cat-" obj_pk=cat.pk title='Archive Category' message_prefix='Move' item_name=cat.name message_suffix='to the Archive? Its products will keep their category link, and an admin can restore it anytime from the Archive page.' form_action=cat_delete_url submit_label='Archive' %}
+{% endfor %}
+{% endif %}
+{% endblock %}

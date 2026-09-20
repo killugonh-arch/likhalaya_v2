@@ -1,0 +1,1231 @@
+<!-- Product Configurator Modal (shared) -->
+<form id="sizeModalForm" method="post" style="display:none;">
+  {% csrf_token %}
+  <input type="hidden" name="quantity" id="sizeModalQtyInput" value="1">
+  <input type="hidden" name="size" id="sizeModalSizeInput" value="">
+  <input type="hidden" name="design_id" id="sizeModalDesignInput" value="">
+  <input type="hidden" name="buy_now" id="sizeModalBuyNowInput" value="">
+</form>
+
+<div class="modal fade" id="sizePickerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" id="sizePickerDialog">
+    <div class="modal-content spm-content">
+
+      <!-- HEADER -->
+      <div class="spm-header">
+        <div class="flex-grow-1">
+          <h5 class="modal-title fw-bold mb-0" id="sizePickerProductName">Product</h5>
+          <div class="spm-subtitle" id="spmSubtitle">Choose your size and design.</div>
+        </div>
+        <button type="button" class="spm-close-btn" data-bs-dismiss="modal" aria-label="Close">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+
+      <!-- PROGRESS STEPPER (mobile only; hidden entirely when the product only has one step) -->
+      <div class="spm-stepper" id="spmStepper"></div>
+
+      <!-- SCROLLABLE BODY -->
+      <div class="spm-body" id="spmBody">
+
+        <!-- LEFT: product visual — compact, consistent framing, sticky on desktop -->
+        <div class="spm-visual">
+          <div class="spm-image-frame" id="modalImageWrap">
+            <img id="modalImgMain" src="" alt="">
+          </div>
+        </div>
+
+        <!-- RIGHT: guided selection flow -->
+        <div class="spm-options">
+
+          <!-- STEP 1: SIZE -->
+          <div class="spm-step-panel" id="stepPanelSize" data-step-key="size">
+            <div class="spm-step-heading-row">
+              <div>
+                <div class="spm-step-heading">Choose size</div>
+                <div class="spm-step-subheading">Select the size you want.</div>
+              </div>
+            </div>
+            <div class="spm-card-list" id="sizePickerOptions"></div>
+          </div>
+
+          <!-- STEP 2: DESIGN -->
+          <div class="spm-step-panel" id="stepPanelDesign" data-step-key="design" style="display:none;">
+            <div class="spm-step-heading-row">
+              <div>
+                <div class="spm-step-heading">Choose design</div>
+                <div class="spm-step-subheading">Pick the pattern for this size.</div>
+              </div>
+              <div class="spm-context-chip" id="spmDesignContextChip"></div>
+            </div>
+            <div class="spm-design-grid" id="designPickerOptions"></div>
+          </div>
+
+          <!-- STEP 3: CONFIRM -->
+          <div class="spm-step-panel" id="stepPanelConfirm" data-step-key="qty">
+            <div class="spm-step-heading">Your selection</div>
+
+            <div class="spm-summary-card">
+              <div class="spm-summary-row" id="spmSumSizeRow" style="display:none;">
+                <span class="spm-summary-label">Size</span>
+                <span class="spm-summary-value" id="spmSumSize">—</span>
+              </div>
+              <div class="spm-summary-row" id="spmSumDesignRow" style="display:none;">
+                <span class="spm-summary-label">Design</span>
+                <span class="spm-summary-value" id="spmSumDesign">—</span>
+              </div>
+              <div class="spm-summary-row">
+                <span class="spm-summary-label">Price</span>
+                <span class="spm-summary-value spm-summary-price" id="spmSumPrice">₱0</span>
+              </div>
+            </div>
+
+            <div class="spm-qty-row">
+              <div>
+                <div class="spm-qty-title">Quantity</div>
+                <div class="spm-qty-note" id="modalStockNote">available</div>
+              </div>
+              <div class="spm-qty-control">
+                <button type="button" class="spm-qty-btn" id="modalQtyMinus" aria-label="Decrease quantity">−</button>
+                <input type="number" id="modalQtyValue" class="spm-qty-input" value="1" min="1" aria-label="Quantity">
+                <button type="button" class="spm-qty-btn" id="modalQtyPlus" aria-label="Increase quantity">+</button>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- STICKY FOOTER — always reflects the live selection, never stale -->
+      <div class="spm-footer">
+        <div class="spm-footer-price">
+          <span class="spm-footer-label">Total</span>
+          <span id="modalSubtotal" class="spm-footer-total">₱0</span>
+        </div>
+        <div class="spm-footer-summary">
+          <span class="spm-footer-label">Selected</span>
+          <span id="sizePickerSelectionSummary" class="spm-footer-variant">—</span>
+        </div>
+        <div class="spm-footer-actions">
+          <button type="button" class="btn spm-btn-cancel" id="spmBackBtn" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn spm-btn-primary" id="spmNextBtn">
+            Next<i class="fas fa-arrow-right ms-2"></i>
+          </button>
+          <button type="button" class="btn spm-btn-primary" id="sizePickerConfirmBtn" style="display:none;">
+            <i class="fas fa-shopping-cart me-2" id="spmConfirmIcon"></i><span id="spmConfirmLabel">Add to Cart</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ===================================================================
+   PAROL PRODUCT CONFIGURATOR — premium modal redesign
+   Layout: fixed header/footer, single scrollable body, two-column
+   (image + options) on desktop, single column on mobile.
+   =================================================================== */
+
+.spm-content {
+  border-radius: 20px;
+  border: none;
+  box-shadow: 0 24px 70px rgba(18, 73, 68, .22);
+  overflow: hidden;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+}
+
+/* ===== Header ===== */
+.spm-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 20px 26px;
+  border-bottom: 1px solid #ECEAE4;
+  background: #fff;
+  flex-shrink: 0;
+}
+.spm-header .modal-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #202525;
+  letter-spacing: .01em;
+  text-transform: uppercase;
+}
+.spm-subtitle { color: #737C79; font-size: 14px; margin-top: 3px; font-family: 'Inter', sans-serif; }
+.spm-close-btn {
+  width: 38px; height: 38px; flex-shrink: 0;
+  border: none; border-radius: 50%;
+  background: #F3F2ED; color: #737C79;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  transition: background .15s ease, color .15s ease;
+}
+.spm-close-btn:hover { background: #E9E6DC; color: #202525; }
+
+/* ===== Stepper (mobile-only progressive flow) ===== */
+.spm-stepper { display: none; align-items: flex-start; gap: 0; padding: 14px 26px 0; background: #fff; flex-shrink: 0; }
+.spm-stepper.active { display: flex; }
+.spm-stepper-dot { display: flex; flex-direction: column; align-items: center; gap: 6px; flex-shrink: 0; width: 76px; }
+.spm-stepper-circle {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #A39C8C;
+  border: 1.5px solid #DDD6C9; background: #fff;
+  transition: all .15s ease;
+}
+.spm-stepper-label { font-size: 10.5px; font-weight: 700; letter-spacing: .03em; text-transform: uppercase; color: #A39C8C; white-space: nowrap; transition: color .15s ease; }
+.spm-stepper-dot.is-current .spm-stepper-circle { border-color: #1E5F5A; background: #1E5F5A; color: #fff; }
+.spm-stepper-dot.is-current .spm-stepper-label { color: #1E5F5A; }
+.spm-stepper-dot.is-done .spm-stepper-circle { border-color: #1E5F5A; background: #fff; color: #1E5F5A; }
+.spm-stepper-dot.is-done .spm-stepper-label { color: #5A5648; }
+.spm-stepper-line { flex: 1 1 auto; height: 1.5px; background: #E2DDD3; margin-top: 12px; transition: background .15s ease; }
+.spm-stepper-line.is-done { background: #1E5F5A; }
+
+/* ===== Body: single scroll region ===== */
+.spm-body {
+  padding: 22px 26px 6px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1 1 auto;
+  scrollbar-width: thin;
+  scrollbar-color: #D8D3C6 transparent;
+}
+.spm-body::-webkit-scrollbar { width: 7px; }
+.spm-body::-webkit-scrollbar-track { background: transparent; }
+.spm-body::-webkit-scrollbar-thumb { background: #D8D3C6; border-radius: 10px; }
+.spm-body::-webkit-scrollbar-thumb:hover { background: #C4BEAE; }
+
+/* Product visual */
+.spm-visual { margin-bottom: 20px; }
+.spm-image-frame {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  max-height: 210px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #F7F8F6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.spm-image-frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
+
+/* Options column */
+.spm-options { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+
+/* Step panels */
+.spm-step-panel { animation: spmStepIn .18s ease; }
+@keyframes spmStepIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.spm-step-heading-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.spm-step-heading {
+  font-weight: 700; font-size: 15px; color: #202525;
+  text-transform: uppercase; letter-spacing: .03em;
+  font-family: 'Poppins', sans-serif;
+}
+.spm-step-panel > .spm-step-heading { margin-bottom: 12px; }
+.spm-step-subheading { font-size: 12.5px; color: #737C79; margin-top: 2px; font-weight: 500; }
+
+/* Context chip on the design step — "Medium · ₱200" */
+.spm-context-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: rgba(30,95,90,.08); color: #1E5F5A;
+  font-size: 12px; font-weight: 700; white-space: nowrap;
+  padding: 6px 12px; border-radius: 20px; flex-shrink: 0;
+}
+
+/* ===== Size cards (Step 1) ===== */
+.spm-card-list { display: flex; flex-direction: row; gap: 10px; }
+.spm-size-card {
+  display: flex; flex-direction: column; justify-content: space-between; position: relative;
+  flex: 1 1 0; min-height: 108px;
+  border: 1.5px solid #E2DDD3; border-radius: 12px;
+  padding: 14px 16px; cursor: pointer; background: #fff;
+  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.spm-size-card-check { position: absolute; top: 12px; right: 12px; }
+.spm-size-card:hover { border-color: #1E5F5A; }
+.spm-size-card.is-selected { border-color: #1E5F5A; background: rgba(30,95,90,.05); box-shadow: 0 0 0 1px #1E5F5A inset; }
+.spm-size-card.is-disabled { cursor: not-allowed; background: #F5F4F0; border-color: #EAE7DF; opacity: .6; }
+.spm-size-card.is-disabled:hover { border-color: #EAE7DF; }
+.spm-size-card-main { display: flex; flex-direction: column; gap: 4px; }
+.spm-size-card-name { font-weight: 700; font-size: 15px; color: #202525; }
+.spm-size-card.is-selected .spm-size-card-name { color: #124944; }
+.spm-size-card-price { font-size: 14px; color: #C9841A; font-weight: 700; }
+.spm-size-card-note { font-size: 11.5px; color: #737C79; font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 5px; }
+.spm-size-card-note .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; background: #2A9D6F; }
+.spm-size-card-note.is-out { color: #DC3545; }
+.spm-size-card-note.is-out .dot { background: #DC3545; }
+.spm-size-card-check {
+  width: 22px; height: 22px; border-radius: 50%; border: 1.5px solid #CCC; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; color: transparent; font-size: 10px; background: #fff;
+  transition: all .15s ease;
+}
+.spm-size-card.is-selected .spm-size-card-check { border-color: #1E5F5A; background: #1E5F5A; color: #fff; }
+
+/* ===== Design cards (Step 2) ===== */
+.spm-design-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+.design-empty-note {
+  grid-column: 1 / -1;
+  padding: 14px;
+  text-align: center;
+  font-size: 12.5px;
+  color: #DC3545;
+  background: #FDF1EE;
+  border: 1px dashed #F0C4BE;
+  border-radius: 10px;
+}
+.design-option-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  cursor: pointer;
+  border: 1.5px solid #E2DDD3;
+  border-radius: 12px;
+  padding: 8px;
+  background: #fff;
+  transition: border-color .15s ease, background .15s ease, box-shadow .15s ease;
+}
+.design-option-card:hover { border-color: #1E5F5A; }
+.design-option-card.is-selected { border-color: #1E5F5A; background: rgba(30,95,90,.05); box-shadow: 0 0 0 1px #1E5F5A inset; }
+.design-option-thumb {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  background: #F7F8F6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  position: relative;
+}
+.design-option-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.design-option-thumb .no-image-icon { color: #C9C0AD; font-size: 22px; }
+.design-option-name { font-size: 12.5px; font-weight: 700; margin-top: 8px; line-height: 1.3; color: #202525; }
+.design-option-stock {
+  font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 5px; margin-top: 4px;
+}
+.design-option-stock .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.design-option-stock.in-stock { color: #1E5F5A; }
+.design-option-stock.in-stock .dot { background: #2A9D6F; }
+.design-option-stock.out-of-stock { color: #DC3545; }
+.design-option-stock.out-of-stock .dot { background: #DC3545; }
+.design-option-check {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #1E5F5A;
+  color: #fff;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 9.5px;
+  box-shadow: 0 1px 4px rgba(0,0,0,.3);
+}
+.design-option-card.is-selected .design-option-check { display: flex; }
+.design-option-card.is-disabled { cursor: not-allowed; opacity: .55; }
+.design-option-card.is-disabled .design-option-thumb::after {
+  content: 'Sold out';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9.5px;
+  font-weight: 700;
+  color: #8A3B2F;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+}
+
+/* ===== Confirm step: summary card ===== */
+.spm-summary-card {
+  background: #FBFAF7; border: 1px solid #ECE5D8; border-radius: 12px;
+  padding: 4px 16px; margin-bottom: 16px;
+}
+.spm-summary-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
+.spm-summary-row + .spm-summary-row { border-top: 1px solid #EFEAE0; }
+.spm-summary-label { font-size: 12px; color: #737C79; font-weight: 600; text-transform: uppercase; letter-spacing: .02em; }
+.spm-summary-value { font-size: 14px; font-weight: 700; color: #202525; }
+.spm-summary-price { color: #C9841A; font-size: 15px; }
+
+/* Quantity */
+.spm-qty-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.spm-qty-title { font-size: 13px; font-weight: 700; color: #202525; }
+.spm-qty-note { font-size: 12px; color: #737C79; margin-top: 2px; }
+.spm-qty-control { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.spm-qty-btn {
+  width: 34px; height: 34px; border-radius: 9px;
+  border: 1.5px solid #DDD; background: #fff; font-weight: 700; color: #202525;
+  transition: all .15s;
+}
+.spm-qty-btn:disabled { opacity: .4; cursor: not-allowed; }
+.spm-qty-btn:not(:disabled):hover { background: #1E5F5A; color: #fff; border-color: #1E5F5A; }
+.spm-qty-input {
+  width: 48px; height: 34px; text-align: center;
+  border: 1.5px solid #DDD; border-radius: 9px; font-weight: 700; font-size: 14px;
+}
+.spm-qty-input::-webkit-outer-spin-button,
+.spm-qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.spm-qty-input { -moz-appearance: textfield; appearance: textfield; }
+
+/* ===== Sticky footer ===== */
+.spm-footer {
+  display: flex; align-items: center; gap: 18px;
+  padding: 14px 26px;
+  padding-bottom: max(14px, env(safe-area-inset-bottom));
+  border-top: 1px solid #ECEAE4;
+  box-shadow: 0 -4px 14px rgba(0,0,0,.04);
+  background: #fff;
+  flex-shrink: 0;
+}
+.spm-footer-summary, .spm-footer-price { display: flex; flex-direction: column; line-height: 1.3; }
+.spm-footer-price { margin-right: auto; }
+.spm-footer-label { font-size: 10.5px; color: #737C79; text-transform: uppercase; letter-spacing: .03em; font-weight: 600; }
+.spm-footer-variant { font-size: 13.5px; font-weight: 700; color: #202525; }
+.spm-footer-total { font-size: 21px; font-weight: 800; color: #C9841A; }
+.spm-footer-actions { display: flex; gap: 10px; flex-shrink: 0; }
+
+.spm-btn-cancel {
+  background: #fff; border: 1.5px solid #DDD6C9; color: #202525;
+  height: 48px; padding: 0 20px; border-radius: 11px; font-weight: 600; font-size: 14px;
+  transition: all .15s ease;
+}
+.spm-btn-cancel:hover { background: #F7F6F2; border-color: #1E5F5A; color: #1E5F5A; }
+
+.spm-btn-primary {
+  background: #C9841A; border: 1.5px solid #C9841A; color: #fff;
+  height: 48px; padding: 0 24px; border-radius: 11px; font-weight: 700; font-size: 14px;
+  transition: all .15s ease;
+}
+.spm-btn-primary:hover:not(:disabled) { background: #B5760E; border-color: #B5760E; }
+.spm-btn-primary:disabled { background: #E4CBA0; border-color: #E4CBA0; color: #fff; opacity: 1; cursor: not-allowed; }
+
+/* ===== Desktop sizing: two-column configurator ===== */
+#sizePickerDialog { max-width: 640px; margin: 1.75rem auto; }
+
+@media (min-width: 992px) {
+  #sizePickerDialog { max-width: 980px; }
+  .spm-content { max-height: 88vh; min-height: 560px; }
+  .spm-body {
+    display: grid;
+    grid-template-columns: minmax(260px, 34%) 1fr;
+    gap: 30px;
+    align-items: start;
+    padding: 26px 30px 10px;
+  }
+  .spm-visual { position: sticky; top: 0; margin-bottom: 0; align-self: start; }
+  .spm-image-frame { aspect-ratio: 4 / 5; max-height: none; height: 100%; min-height: 340px; }
+  .spm-design-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (min-width: 768px) and (max-width: 991.98px) {
+  /* Tablet: compact two-column, still no bottom-sheet behavior */
+  .spm-content { max-height: 90vh; }
+  .spm-body {
+    display: grid;
+    grid-template-columns: minmax(220px, 32%) 1fr;
+    gap: 22px;
+    padding: 22px 24px 8px;
+  }
+  .spm-image-frame { aspect-ratio: 4 / 5; max-height: none; height: 100%; min-height: 260px; }
+  .spm-design-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ===================================================================
+   MOBILE — proper bottom-sheet redesign for phones (below 768px).
+   Not a scaled-down desktop layout: header/body/footer are each
+   purpose-built for a one-thumb, single-scroll-region phone flow.
+   Progressive tuning at 480px, 390px and 389px-and-below.
+   =================================================================== */
+@media (max-width: 767.98px) {
+
+  /* --- Bottom sheet shell --- */
+  #sizePickerDialog {
+    max-width: 100vw !important;
+    width: 100%;
+    margin: 0;
+    display: flex;
+    align-items: flex-end;
+    min-height: 100dvh;
+  }
+  .spm-content {
+    width: 100%;
+    height: 95dvh;
+    max-height: 96dvh;
+    border-radius: 20px 20px 0 0;
+    box-shadow: 0 -8px 40px rgba(18, 73, 68, .28);
+  }
+
+  /* --- Header: compact, sticky, ~72px --- */
+  .spm-header {
+    padding: 14px 18px;
+    min-height: 70px;
+  }
+  .spm-header .modal-title { font-size: 20px; }
+  .spm-subtitle { font-size: 12.5px; }
+  .spm-close-btn { width: 40px; height: 40px; font-size: 15px; }
+
+  .spm-stepper { padding: 10px 18px 0; }
+  .spm-stepper-dot { width: 62px; }
+  .spm-stepper-circle { width: 22px; height: 22px; font-size: 11px; }
+  .spm-stepper-label { font-size: 9px; }
+
+  /* --- Body: the ONLY scroll region --- */
+  .spm-body { padding: 14px 16px 4px; }
+  .spm-options { gap: 18px; }
+
+  /* --- Compact product hero (never eats the screen) --- */
+  .spm-visual { margin-bottom: 14px; }
+  .spm-image-frame {
+    height: 190px;
+    max-height: 220px;
+    aspect-ratio: auto;
+    border-radius: 14px;
+    background: #F6F7F5;
+  }
+
+  .spm-step-heading { font-size: 15px; }
+  .spm-step-subheading { font-size: 12px; }
+
+  /* --- Size cards: 3 across, compact --- */
+  .spm-card-list { gap: 8px; }
+  .spm-size-card {
+    padding: 12px;
+    min-height: 95px;
+    border-radius: 12px;
+  }
+  .spm-size-card-check { top: 8px; right: 8px; width: 18px; height: 18px; }
+  .spm-size-card-name { font-size: 13.5px; }
+  .spm-size-card-price { font-size: 13px; }
+  .spm-size-card-note { font-size: 11px; }
+
+  /* --- Design grid: 2 across --- */
+  .spm-design-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .design-option-card { border-radius: 12px; padding: 8px; }
+  .design-option-name { font-size: 13px; }
+  .design-option-stock { font-size: 11px; }
+  .spm-context-chip { font-size: 11px; padding: 5px 10px; }
+
+  /* --- Confirm step summary card --- */
+  .spm-summary-card { padding: 2px 14px; margin-bottom: 14px; }
+  .spm-summary-row { padding: 9px 0; }
+
+  /* --- Quantity: 44px touch targets --- */
+  .spm-qty-btn { width: 44px; height: 44px; border-radius: 10px; font-size: 16px; }
+  .spm-qty-input { width: 52px; height: 44px; font-size: 15px; }
+  .spm-qty-title { font-size: 13.5px; }
+  .spm-qty-note { font-size: 11.5px; }
+
+  .spm-step-heading-row { flex-direction: column; align-items: flex-start; gap: 8px; }
+
+  /* --- Sticky footer: compact, single scrollbar owner above it --- */
+  .spm-footer {
+    flex-wrap: wrap;
+    padding: 10px 16px;
+    padding-bottom: max(10px, env(safe-area-inset-bottom));
+    gap: 8px 14px;
+    min-height: 72px;
+  }
+  .spm-footer-price { order: 1; margin-right: auto; }
+  .spm-footer-total { font-size: 19px; }
+  .spm-footer-summary { order: 2; text-align: right; }
+  .spm-footer-variant { font-size: 12.5px; }
+  .spm-footer-actions { order: 3; width: 100%; gap: 8px; }
+  .spm-footer-actions .btn {
+    flex: 1;
+    height: 46px;
+    min-height: 44px;
+    min-width: 44px;
+    font-size: 13.5px;
+    border-radius: 10px;
+  }
+  .spm-btn-primary { font-weight: 700; }
+
+  /* subtle, quick feedback only — no heavy animation on phones */
+  .spm-size-card, .design-option-card, .spm-qty-btn, .spm-btn-primary, .spm-btn-cancel {
+    transition: border-color 150ms ease, background 150ms ease, box-shadow 150ms ease, color 150ms ease;
+  }
+}
+
+/* Large phones: 480–767px — 3 size cards / 2 design cards per row (base mobile rules above already match) */
+@media (max-width: 767.98px) and (min-width: 480px) {
+  .spm-design-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Standard phones: 390–479px — tighter spacing, still 2 design cards / 3 size cards */
+@media (max-width: 479.98px) {
+  .spm-header { padding: 12px 16px; min-height: 68px; }
+  .spm-header .modal-title { font-size: 19px; }
+  .spm-body { padding: 12px 14px 4px; }
+  .spm-options { gap: 16px; }
+  .spm-image-frame { height: 180px; }
+  .spm-card-list { gap: 8px; }
+  .spm-size-card { padding: 10px; min-height: 90px; }
+  .spm-size-card-name { font-size: 13px; }
+  .spm-size-card-price { font-size: 12.5px; }
+  .spm-size-card-note { font-size: 10.5px; }
+  .spm-design-grid { gap: 8px; }
+  .spm-footer { padding: 9px 14px; }
+  .spm-footer-actions .btn { font-size: 13px; }
+}
+
+/* Small phones: ≤389px — minimum viable spacing, still no horizontal scroll, still 44px targets */
+@media (max-width: 389.98px) {
+  .spm-header { padding: 10px 14px; min-height: 64px; }
+  .spm-header .modal-title { font-size: 17px; }
+  .spm-subtitle { font-size: 11.5px; }
+  .spm-body { padding: 10px 12px 4px; }
+  .spm-image-frame { height: 165px; }
+  .spm-card-list { gap: 6px; }
+  .spm-size-card { padding: 8px; min-height: 82px; border-radius: 10px; }
+  .spm-size-card-name { font-size: 12px; }
+  .spm-size-card-price { font-size: 11.5px; }
+  .spm-size-card-note { font-size: 10px; gap: 4px; }
+  .spm-design-grid { gap: 6px; }
+  .design-option-name { font-size: 12px; }
+  .design-option-stock { font-size: 10px; }
+  .spm-summary-card { padding: 2px 10px; }
+  .spm-summary-label, .spm-summary-value { font-size: 12px; }
+  .spm-qty-btn { width: 44px; height: 44px; } /* touch target floor never drops below 44px */
+  .spm-footer { padding: 8px 12px; gap: 6px 10px; }
+  .spm-footer-total { font-size: 17px; }
+  .spm-footer-variant { font-size: 11.5px; }
+  .spm-footer-actions .btn { font-size: 12.5px; padding: 0 10px; }
+}
+
+/* ===================================================================
+   COMPACT PHONE SPACING — placed last so it wins over the tiers above
+   (phones <= 575.98px). Touch targets stay >= 40px.
+   =================================================================== */
+@media (max-width: 575.98px) {
+  .spm-content { height: 92dvh; max-height: 94dvh; border-radius: 16px 16px 0 0; }
+
+  /* Header */
+  .spm-header { padding: 9px 12px; min-height: 0; gap: 8px; }
+  .spm-header .modal-title { font-size: 15px; line-height: 1.2; }
+  .spm-subtitle { font-size: 11px; margin-top: 1px; }
+  .spm-close-btn { width: 32px; height: 32px; font-size: 13px; }
+
+  /* Stepper */
+  .spm-stepper { padding: 6px 12px 0; }
+  .spm-stepper-dot { width: 54px; }
+  .spm-stepper-circle { width: 20px; height: 20px; font-size: 10px; }
+  .spm-stepper-label { font-size: 8.5px; }
+
+  /* Body */
+  .spm-body { padding: 8px 12px 2px; }
+  .spm-options { gap: 10px; }
+  .spm-visual { margin-bottom: 8px; }
+  .spm-image-frame { height: 130px; max-height: 150px; border-radius: 12px; }
+
+  .spm-step-heading { font-size: 13.5px; }
+  .spm-step-subheading { font-size: 11px; }
+  .spm-step-heading-row { gap: 4px; margin-bottom: 6px; }
+
+  /* Size cards */
+  .spm-card-list { gap: 6px; }
+  .spm-size-card { padding: 8px; min-height: 66px; border-radius: 10px; }
+  .spm-size-card-check { top: 6px; right: 6px; width: 16px; height: 16px; }
+  .spm-size-card-name { font-size: 12.5px; }
+  .spm-size-card-price { font-size: 12px; }
+  .spm-size-card-note { font-size: 10px; gap: 3px; }
+
+  /* Design cards */
+  .spm-design-grid { gap: 6px; }
+  .design-option-card { padding: 6px; border-radius: 10px; }
+  .design-option-name { font-size: 12px; }
+  .design-option-stock { font-size: 10px; }
+  .spm-context-chip { font-size: 10px; padding: 3px 8px; }
+
+  /* Summary + quantity */
+  .spm-summary-card { padding: 0 10px; margin-bottom: 8px; border-radius: 10px; }
+  .spm-summary-row { padding: 6px 0; }
+  .spm-summary-label, .spm-summary-value { font-size: 12px; }
+  .spm-qty-btn { width: 40px; height: 40px; font-size: 15px; border-radius: 9px; }
+  .spm-qty-input { width: 46px; height: 40px; font-size: 14px; }
+  .spm-qty-title { font-size: 12.5px; }
+  .spm-qty-note { font-size: 10.5px; }
+
+  /* Footer */
+  .spm-footer { padding: 7px 12px; padding-bottom: max(7px, env(safe-area-inset-bottom)); gap: 4px 10px; min-height: 0; }
+  .spm-footer-label { font-size: 9.5px; }
+  .spm-footer-total { font-size: 16px; }
+  .spm-footer-variant { font-size: 11px; }
+  .spm-footer-actions { gap: 6px; }
+  .spm-footer-actions .btn { height: 40px; min-height: 40px; font-size: 12.5px; padding: 0 10px; border-radius: 9px; }
+}
+</style>
+
+<script>
+(function() {
+  var modalEl = document.getElementById('sizePickerModal');
+  var bsModal = new bootstrap.Modal(modalEl);
+  var form = document.getElementById('sizeModalForm');
+  var sizeInput = document.getElementById('sizeModalSizeInput');
+  var qtyHiddenInput = document.getElementById('sizeModalQtyInput');
+  var designInput = document.getElementById('sizeModalDesignInput');
+  var buyNowInput = document.getElementById('sizeModalBuyNowInput');
+  var nameEl = document.getElementById('sizePickerProductName');
+  var subtitleEl = document.getElementById('spmSubtitle');
+  var summaryEl = document.getElementById('sizePickerSelectionSummary');
+  var subtotalEl = document.getElementById('modalSubtotal');
+
+  var sizeOptionsEl = document.getElementById('sizePickerOptions');
+  var designContextChipEl = document.getElementById('spmDesignContextChip');
+  var designOptionsEl = document.getElementById('designPickerOptions');
+
+  var sumSizeRowEl = document.getElementById('spmSumSizeRow');
+  var sumSizeEl = document.getElementById('spmSumSize');
+  var sumDesignRowEl = document.getElementById('spmSumDesignRow');
+  var sumDesignEl = document.getElementById('spmSumDesign');
+  var sumPriceEl = document.getElementById('spmSumPrice');
+
+  var qtyValueEl = document.getElementById('modalQtyValue');
+  var qtyMinusBtn = document.getElementById('modalQtyMinus');
+  var qtyPlusBtn = document.getElementById('modalQtyPlus');
+  var stockNoteEl = document.getElementById('modalStockNote');
+
+  var stepperEl = document.getElementById('spmStepper');
+  var backBtn = document.getElementById('spmBackBtn');
+  var nextBtn = document.getElementById('spmNextBtn');
+  var confirmBtn = document.getElementById('sizePickerConfirmBtn');
+
+  var stepPanelEls = {};
+  document.querySelectorAll('.spm-step-panel').forEach(function(panel) {
+    stepPanelEls[panel.dataset.stepKey] = panel;
+  });
+  var stepLabels = { size: 'Size', design: 'Design', qty: 'Confirm' };
+
+  var imgWrap = document.getElementById('modalImageWrap');
+  var imgMain = document.getElementById('modalImgMain');
+
+  // -----------------------------------------------------------------
+  // SINGLE SOURCE OF TRUTH. Every displayed value (footer total,
+  // "Selected" chip, step 3 summary card, quantity cap, Next/Confirm
+  // enabled state) is derived from this object and only this object —
+  // nothing is read back from stale DOM text, so the footer can never
+  // disagree with the step content again.
+  // -----------------------------------------------------------------
+  var state = {
+    productName: '',
+    hasSizes: false,
+    hasVariants: false,
+    sizeList: [],      // [{code, name, price, stock, designs: [...]}]
+    imgBySize: { general: [], S: [], M: [], L: [] },
+    legacyStock: 1,    // used for sizeless products and legacy (non-variant) sized products
+    size: null,        // selected size code, or null
+    design: null,      // selected design object, or null
+    qty: 1,
+    activeSteps: ['qty'],
+    stepIndex: 0
+  };
+
+  function fmt(v) {
+    var n = parseFloat(v);
+    return isNaN(n) ? '₱0' : '₱' + n.toFixed(0);
+  }
+
+  function getSizeObj(code) {
+    for (var i = 0; i < state.sizeList.length; i++) {
+      if (state.sizeList[i].code === code) return state.sizeList[i];
+    }
+    return null;
+  }
+
+  // "Available" stock for a size, used only for Step 1's card note.
+  // Variant products: sum of that size's active designs' stock.
+  // Legacy/plain products: the product's own overall stock number.
+  function sizeAvailableStock(sizeObj) {
+    if (!sizeObj) return 0;
+    if (state.hasVariants) {
+      return (sizeObj.designs || []).reduce(function(sum, d) { return sum + (d.stock || 0); }, 0);
+    }
+    return state.legacyStock;
+  }
+
+  // The stock that actually governs the quantity stepper on Step 3 —
+  // a specific design's stock when the product uses variants, otherwise
+  // the plain per-size/product stock.
+  function currentPurchasableStock() {
+    if (state.hasVariants) {
+      return state.design ? (state.design.stock || 0) : 0;
+    }
+    return state.legacyStock;
+  }
+
+  function currentPrice() {
+    if (state.hasSizes && state.size) {
+      var sizeObj = getSizeObj(state.size);
+      return sizeObj ? sizeObj.price : 0;
+    }
+    return state.legacyPrice || 0;
+  }
+
+  function imagesForSize(code) {
+    var general = state.imgBySize.general || [];
+    var specific = (code === 'S' || code === 'M' || code === 'L') ? (state.imgBySize[code] || []) : [];
+    if (specific.length) return specific;
+    if (general.length) return general;
+    return (state.imgBySize.S || []).concat(state.imgBySize.M || [], state.imgBySize.L || []);
+  }
+
+  function updateMainImage() {
+    var src = '';
+    if (state.design && state.design.image) {
+      src = state.design.image;
+    } else {
+      var imgs = imagesForSize(state.size || 'M');
+      if (imgs.length) src = imgs[0];
+      // No product photo at all (photos live on the designs) — fall back
+      // to the first design photo for the selected size, then any size.
+      if (!src && state.hasVariants) {
+        var pool = [];
+        var cur = getSizeObj(state.size);
+        if (cur) pool = pool.concat(cur.designs || []);
+        state.sizeList.forEach(function(sz) { pool = pool.concat(sz.designs || []); });
+        for (var i = 0; i < pool.length; i++) {
+          if (pool[i].image) { src = pool[i].image; break; }
+        }
+      }
+    }
+    if (src) {
+      imgMain.src = src;
+      imgWrap.style.display = '';
+    } else {
+      imgWrap.style.display = 'none';
+    }
+  }
+
+  // -----------------------------------------------------------------
+  // Renders every piece of UI from `state`. Called after ANY state
+  // change (size picked, design picked, quantity changed, step moved)
+  // so nothing can ever go out of sync.
+  // -----------------------------------------------------------------
+  function render() {
+    renderSizeCards();
+    renderDesignCards();
+    renderConfirmStep();
+    renderFooter();
+    renderStepper();
+    renderNav();
+    updateMainImage();
+  }
+
+  function renderSizeCards() {
+    sizeOptionsEl.innerHTML = '';
+    state.sizeList.forEach(function(s) {
+      var stock = sizeAvailableStock(s);
+      var available = stock > 0;
+      var card = document.createElement('div');
+      card.className = 'spm-size-card' + (state.size === s.code ? ' is-selected' : '') + (available ? '' : ' is-disabled');
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-selected', state.size === s.code ? 'true' : 'false');
+      card.setAttribute('aria-disabled', available ? 'false' : 'true');
+      card.setAttribute('aria-label', s.name + ', ' + fmt(s.price) + (available ? ', ' + stock + ' available' : ', out of stock'));
+
+      var main = document.createElement('div');
+      main.className = 'spm-size-card-main';
+      var name = document.createElement('div');
+      name.className = 'spm-size-card-name';
+      name.textContent = s.name;
+      var price = document.createElement('div');
+      price.className = 'spm-size-card-price';
+      price.textContent = fmt(s.price);
+      var note = document.createElement('div');
+      note.className = 'spm-size-card-note' + (available ? '' : ' is-out');
+      note.innerHTML = '<span class="dot"></span>' + (available ? (stock + ' available') : 'Out of stock');
+      main.appendChild(name);
+      main.appendChild(price);
+      main.appendChild(note);
+
+      var check = document.createElement('div');
+      check.className = 'spm-size-card-check';
+      check.innerHTML = '<i class="fas fa-check"></i>';
+
+      card.appendChild(main);
+      card.appendChild(check);
+
+      if (available) {
+        card.addEventListener('click', function() { selectSize(s.code); });
+      }
+      sizeOptionsEl.appendChild(card);
+    });
+  }
+
+  function renderDesignCards() {
+    if (!state.hasVariants) return;
+    var sizeObj = getSizeObj(state.size);
+    var designs = sizeObj ? (sizeObj.designs || []) : [];
+
+    designContextChipEl.textContent = sizeObj ? (sizeObj.name + ' · ' + fmt(sizeObj.price)) : '';
+
+    designOptionsEl.innerHTML = '';
+    if (!designs.length) {
+      designOptionsEl.innerHTML = '<div class="design-empty-note">No design available for this size</div>';
+      return;
+    }
+
+    designs.forEach(function(d) {
+      var stock = d.stock || 0;
+      var available = stock > 0;
+      var card = document.createElement('div');
+      card.className = 'design-option-card' + (state.design && state.design.id === d.id ? ' is-selected' : '') + (available ? '' : ' is-disabled');
+      card.setAttribute('role', 'button');
+      card.setAttribute('aria-selected', (state.design && state.design.id === d.id) ? 'true' : 'false');
+      card.setAttribute('aria-disabled', available ? 'false' : 'true');
+      card.setAttribute('aria-label', d.title + (available ? ', ' + stock + ' available' : ', out of stock'));
+
+      var thumb = document.createElement('div');
+      thumb.className = 'design-option-thumb';
+      if (d.image) {
+        var img = document.createElement('img');
+        img.src = d.image;
+        img.alt = d.title;
+        thumb.appendChild(img);
+      } else {
+        var icon = document.createElement('i');
+        icon.className = 'fas fa-image no-image-icon';
+        thumb.appendChild(icon);
+      }
+      var check = document.createElement('span');
+      check.className = 'design-option-check';
+      check.innerHTML = '<i class="fas fa-check"></i>';
+      thumb.appendChild(check);
+
+      var name = document.createElement('div');
+      name.className = 'design-option-name';
+      name.textContent = d.title;
+
+      var stockLine = document.createElement('div');
+      stockLine.className = 'design-option-stock ' + (available ? 'in-stock' : 'out-of-stock');
+      stockLine.innerHTML = '<span class="dot"></span>' + (available ? (stock + ' available') : 'Out of stock');
+
+      card.appendChild(thumb);
+      card.appendChild(name);
+      card.appendChild(stockLine);
+
+      if (available) {
+        card.addEventListener('click', function() { selectDesign(d); });
+      }
+      designOptionsEl.appendChild(card);
+    });
+  }
+
+  function renderConfirmStep() {
+    if (state.hasSizes) {
+      sumSizeRowEl.style.display = '';
+      var sizeObj = getSizeObj(state.size);
+      sumSizeEl.textContent = sizeObj ? sizeObj.name : '—';
+    } else {
+      sumSizeRowEl.style.display = 'none';
+    }
+
+    if (state.hasVariants && state.design) {
+      sumDesignRowEl.style.display = '';
+      sumDesignEl.textContent = state.design.title;
+    } else {
+      sumDesignRowEl.style.display = 'none';
+    }
+
+    sumPriceEl.textContent = fmt(currentPrice());
+
+    var stock = currentPurchasableStock();
+    qtyValueEl.max = stock;
+    if (state.qty > stock) state.qty = Math.max(stock, 0) || 1;
+    qtyValueEl.value = stock > 0 ? state.qty : 0;
+    qtyHiddenInput.value = stock > 0 ? state.qty : 0;
+
+    stockNoteEl.textContent = stock > 0 ? (stock + ' available') : 'Out of stock for this selection';
+    qtyMinusBtn.disabled = stock <= 0 || state.qty <= 1;
+    qtyPlusBtn.disabled = stock <= 0 || state.qty >= stock;
+    qtyValueEl.disabled = stock <= 0;
+  }
+
+  function renderFooter() {
+    var parts = [];
+    var sizeObj = getSizeObj(state.size);
+    if (state.hasSizes && sizeObj) parts.push(sizeObj.name);
+    if (state.hasVariants && state.design) parts.push(state.design.title);
+    summaryEl.textContent = parts.length ? parts.join(' · ') : '—';
+    subtotalEl.textContent = fmt(currentPrice() * (state.qty || 0));
+  }
+
+  function isMobileViewport() {
+    return window.matchMedia('(max-width: 767.98px)').matches;
+  }
+
+  function renderStepper() {
+    // Desktop/laptop has room to show everything at once, like before —
+    // the step-by-step stepper is a phone-only affordance.
+    if (!isMobileViewport() || state.activeSteps.length <= 1) {
+      stepperEl.classList.remove('active');
+      stepperEl.innerHTML = '';
+      return;
+    }
+    stepperEl.classList.add('active');
+    stepperEl.innerHTML = '';
+    state.activeSteps.forEach(function(key, i) {
+      var dot = document.createElement('div');
+      dot.className = 'spm-stepper-dot' + (i === state.stepIndex ? ' is-current' : (i < state.stepIndex ? ' is-done' : ''));
+      var circle = document.createElement('div');
+      circle.className = 'spm-stepper-circle';
+      circle.innerHTML = (i < state.stepIndex) ? '<i class="fas fa-check"></i>' : (i + 1);
+      var label = document.createElement('div');
+      label.className = 'spm-stepper-label';
+      label.textContent = stepLabels[key] || key;
+      dot.appendChild(circle);
+      dot.appendChild(label);
+      stepperEl.appendChild(dot);
+      if (i < state.activeSteps.length - 1) {
+        var line = document.createElement('div');
+        line.className = 'spm-stepper-line' + (i < state.stepIndex ? ' is-done' : '');
+        stepperEl.appendChild(line);
+      }
+    });
+  }
+
+  function stepIsValid(key) {
+    if (key === 'size') return !!state.size && sizeAvailableStock(getSizeObj(state.size)) > 0;
+    if (key === 'design') return !!state.design && (state.design.stock || 0) > 0;
+    if (key === 'qty') return currentPurchasableStock() > 0 && state.qty >= 1;
+    return true;
+  }
+
+  function allStepsValid() {
+    return state.activeSteps.every(function(key) { return stepIsValid(key); });
+  }
+
+  function renderNav() {
+    var mobile = isMobileViewport();
+
+    if (!mobile) {
+      // Desktop/laptop: everything visible at once, same as the original
+      // single-page layout — no Next/Back, just Cancel + Add to Cart.
+      Object.keys(stepPanelEls).forEach(function(key) {
+        stepPanelEls[key].style.display = (state.activeSteps.indexOf(key) !== -1) ? '' : 'none';
+      });
+      backBtn.textContent = 'Cancel';
+      backBtn.setAttribute('data-bs-dismiss', 'modal');
+      nextBtn.style.display = 'none';
+      confirmBtn.style.display = '';
+      confirmBtn.disabled = !allStepsValid();
+      return;
+    }
+
+    // Phone: progressive, one step at a time.
+    Object.keys(stepPanelEls).forEach(function(key) {
+      stepPanelEls[key].style.display = (state.activeSteps[state.stepIndex] === key) ? '' : 'none';
+    });
+
+    var isFirst = state.stepIndex === 0;
+    var isLast = state.stepIndex === state.activeSteps.length - 1;
+    var currentKey = state.activeSteps[state.stepIndex];
+
+    backBtn.textContent = isFirst ? 'Cancel' : 'Back';
+    if (isFirst) {
+      backBtn.setAttribute('data-bs-dismiss', 'modal');
+    } else {
+      backBtn.removeAttribute('data-bs-dismiss');
+    }
+
+    nextBtn.style.display = isLast ? 'none' : '';
+    confirmBtn.style.display = isLast ? '' : 'none';
+
+    if (!isLast) {
+      nextBtn.disabled = !stepIsValid(currentKey);
+    } else {
+      confirmBtn.disabled = !stepIsValid('qty');
+    }
+  }
+
+  function goToStep(i) {
+    if (!isMobileViewport()) return;
+    state.stepIndex = Math.max(0, Math.min(i, state.activeSteps.length - 1));
+    render();
+    var bodyEl = document.getElementById('spmBody');
+    if (bodyEl) bodyEl.scrollTop = 0;
+  }
+
+  function selectSize(code) {
+    if (state.size === code) return;
+    state.size = code;
+    // Changing size invalidates any previously chosen design and resets
+    // quantity — a design belongs to exactly one size. Design stays
+    // unset (not auto-picked) so the main image keeps showing the
+    // product's own front photo until the customer actually taps a
+    // design card in Step 2.
+    state.design = null;
+    state.qty = 1;
+    render();
+  }
+
+  function selectDesign(d) {
+    state.design = d;
+    state.qty = 1;
+    render();
+  }
+
+  function setQty(val) {
+    var n = parseInt(val, 10);
+    var stock = currentPurchasableStock();
+    if (stock <= 0) { state.qty = 0; render(); return; }
+    if (isNaN(n) || n < 1) n = 1;
+    if (n > stock) n = stock;
+    state.qty = n;
+    render();
+  }
+
+  backBtn.addEventListener('click', function() {
+    if (state.stepIndex > 0) goToStep(state.stepIndex - 1);
+  });
+  nextBtn.addEventListener('click', function() {
+    if (stepIsValid(state.activeSteps[state.stepIndex])) goToStep(state.stepIndex + 1);
+  });
+  qtyMinusBtn.addEventListener('click', function() { setQty((state.qty || 1) - 1); });
+  qtyPlusBtn.addEventListener('click', function() { setQty((state.qty || 1) + 1); });
+  qtyValueEl.addEventListener('change', function() { setQty(qtyValueEl.value); });
+
+  // Re-render if the viewport crosses the mobile/desktop breakpoint while
+  // the modal is open (e.g. rotating a tablet, resizing a browser window).
+  window.addEventListener('resize', function() {
+    if (modalEl.classList.contains('show')) render();
+  });
+
+  document.getElementById('sizePickerConfirmBtn').addEventListener('click', function() {
+    if (!allStepsValid()) return;
+    sizeInput.value = state.size || '';
+    designInput.value = state.design ? state.design.id : '';
+    qtyHiddenInput.value = state.qty;
+    form.submit();
+  });
+
+  // -----------------------------------------------------------------
+  // Modal open: build fresh state for whichever product was clicked.
+  // -----------------------------------------------------------------
+  document.querySelectorAll('.js-open-size-modal').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      form.action = btn.dataset.url;
+      var isBuyNow = btn.dataset.mode === 'buy_now';
+      buyNowInput.value = isBuyNow ? '1' : '';
+      // Update confirm button style and label based on mode
+      var confirmBtn2 = document.getElementById('sizePickerConfirmBtn');
+      var nextBtn2 = document.getElementById('spmNextBtn');
+      if (isBuyNow) {
+        nextBtn2.classList.remove('btn-teal'); nextBtn2.classList.add('btn-gold');
+      } else {
+        nextBtn2.classList.remove('btn-teal'); nextBtn2.classList.add('btn-gold');
+      }
+      var confirmIcon = document.getElementById('spmConfirmIcon');
+      var confirmLabel = document.getElementById('spmConfirmLabel');
+      if (isBuyNow) {
+        confirmBtn2.classList.remove('btn-teal');
+        confirmBtn2.classList.add('btn-gold');
+        confirmIcon.className = 'fas fa-bolt me-2';
+        confirmLabel.textContent = 'Buy Now';
+      } else {
+        confirmBtn2.classList.remove('btn-teal');
+        confirmBtn2.classList.add('btn-gold');
+        confirmIcon.className = 'fas fa-shopping-cart me-2';
+        confirmLabel.textContent = 'Add to Cart';
+      }
+
+      state.productName = btn.dataset.name || '';
+      nameEl.textContent = state.productName;
+      state.legacyStock = parseInt(btn.dataset.stock, 10) || 0;
+
+      var hasVariants = btn.dataset.hasVariants === '1';
+      var sizeList = [];
+      if (hasVariants) {
+        try {
+          var vDataEl = btn.dataset.variantsId ? document.getElementById(btn.dataset.variantsId) : null;
+          var vdata = vDataEl ? JSON.parse(vDataEl.textContent || '{}') : {};
+          (vdata.sizes || []).forEach(function(s) {
+            sizeList.push({
+              code: s.code,
+              name: s.name || s.code,
+              price: parseFloat(s.price) || 0,
+              designs: s.designs || []
+            });
+          });
+        } catch (e) {
+          console.error('Product configurator: failed to parse product variants', e);
+        }
+        // Safety net: server says this product has variants but we
+        // couldn't read any real ones — fall back to the plain flow.
+        if (!sizeList.length) hasVariants = false;
+      }
+
+      var hasSizePricing = btn.dataset.hasSizePricing === '1';
+      var hasSizes = hasSizePricing || hasVariants;
+
+      if (hasSizePricing && !hasVariants) {
+        var legacyNames = { S: 'Small', M: 'Medium', L: 'Large' };
+        var legacyPrices = {
+          S: parseFloat(btn.dataset.priceS) || 0,
+          M: parseFloat(btn.dataset.priceM) || 0,
+          L: parseFloat(btn.dataset.priceL) || 0
+        };
+        sizeList = ['S', 'M', 'L'].map(function(code) {
+          return { code: code, name: legacyNames[code], price: legacyPrices[code], designs: [] };
+        });
+      }
+
+      state.hasSizes = hasSizes;
+      state.hasVariants = hasVariants;
+      state.sizeList = sizeList;
+      state.legacyPrice = parseFloat(btn.dataset.priceM) || parseFloat(btn.dataset.priceS) || 0;
+
+      state.imgBySize = { general: [], S: [], M: [], L: [] };
+      var imagesId = btn.dataset.imagesId;
+      var dataEl = imagesId ? document.getElementById(imagesId) : null;
+      if (dataEl) {
+        try { state.imgBySize = JSON.parse(dataEl.textContent) || state.imgBySize; } catch (e) {}
+      }
+
+      subtitleEl.textContent = hasSizes ? 'Choose your size and design.' : 'Confirm your order.';
+
+      // Pick the initial size: prefer the server's preselect hint if it
+      // actually has stock, otherwise the first in-stock size, otherwise
+      // just the first size (so an all-sold-out product still shows why).
+      state.size = null;
+      state.design = null;
+      state.qty = 1;
+      if (hasSizes) {
+        var preselect = btn.dataset.preselectSize || 'M';
+        var preselectObj = getSizeObj(preselect);
+        if (!preselectObj || sizeAvailableStock(preselectObj) <= 0) {
+          var firstAvailable = sizeList.find(function(s) { return sizeAvailableStock(s) > 0; });
+          preselect = firstAvailable ? firstAvailable.code : (sizeList[0] ? sizeList[0].code : null);
+        }
+        if (preselect) selectSize(preselect); // selectSize also sets initial design + calls render()
+      }
+
+      // Build this product's step flow: size only when it has sizes,
+      // design only when it uses the Size → Design variant system,
+      // quantity/confirm always last.
+      state.activeSteps = [];
+      if (hasSizes) state.activeSteps.push('size');
+      if (hasVariants) state.activeSteps.push('design');
+      state.activeSteps.push('qty');
+      state.stepIndex = 0;
+
+      render();
+      bsModal.show();
+    });
+  });
+})();
+</script>

@@ -1,0 +1,385 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize %}
+{% block page_title %}User: {{ profile_user.username }}{% endblock %}
+{% block sb_users %}active{% endblock %}
+{% block title %}{{ profile_user.username }} – Likhalaya Dashboard{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+/* =========================================================
+   Reuses the approved Likhalaya design-system tokens and
+   components (ds-profile card, ds-kpi-card, dash-panel,
+   ds-table, ds-badge, ds-btn) — same component set as
+   Dashboard Home / Orders / Reports pages, kept local to this
+   template only where the shared design-system.css/dashboard.css
+   files aren't yet wired into this build. No new visual
+   language introduced.
+   ========================================================= */
+:root {
+  --brand-green: #0F6B4F;
+  --brand-green-hover: #0C5940;
+  --brand-green-light: #E6F4EF;
+  --surface-white: #FFFFFF;
+  --surface-subtle: #F9FAF9;
+  --border: #E4E7E4;
+  --text-primary: #1A1D1B;
+  --text-secondary: #5B615D;
+  --text-muted: #9AA09C;
+  --success: #0F6B4F;
+  --warning: #B7791F;
+  --warning-bg: #FBF3E4;
+  --danger: #C0362C;
+  --danger-bg: #FBEAE8;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgba(16,24,20,0.06);
+  --shadow-md: 0 4px 12px rgba(16,24,20,0.08);
+  --space-1: 4px; --space-2: 8px; --space-3: 16px; --space-4: 24px; --space-5: 32px; --space-6: 48px;
+  --transition: 150ms ease;
+}
+
+.ds-breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: var(--space-3); display: flex; align-items: center; gap: 6px; }
+.ds-breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color var(--transition); }
+.ds-breadcrumb a:hover { color: var(--brand-green); }
+.ds-breadcrumb .current { color: var(--text-primary); font-weight: 600; }
+.ds-breadcrumb .sep { color: var(--border); }
+
+.dash-greeting-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+.dash-greeting-sub { font-size: 13px; color: var(--text-muted); }
+
+.ds-btn { font-size: 14px; font-weight: 600; border-radius: var(--radius-sm); padding: 10px 16px; border: none; transition: background var(--transition), box-shadow var(--transition), border-color var(--transition); cursor: pointer; display: inline-flex; align-items: center; text-decoration: none; }
+.ds-btn-primary { background: var(--brand-green); color: #fff; }
+.ds-btn-primary:hover { background: var(--brand-green-hover); box-shadow: var(--shadow-sm); color: #fff; }
+.ds-btn-secondary { background: var(--surface-white); color: var(--text-primary); border: 1px solid var(--border); }
+.ds-btn-secondary:hover { background: var(--surface-subtle); color: var(--text-primary); }
+.ds-btn-danger-outline { background: var(--surface-white); color: var(--danger); border: 1px solid var(--danger-bg); }
+.ds-btn-danger-outline:hover { background: var(--danger-bg); color: var(--danger); }
+.ds-btn-sm { padding: 8px 12px; font-size: 13px; }
+.ds-btn:focus-visible { outline: 2px solid var(--brand-green-light); outline-offset: 2px; }
+
+/* Profile header */
+.ds-profile-header {
+  background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm); padding: var(--space-4);
+  display: flex; align-items: center; gap: var(--space-4); flex-wrap: wrap;
+}
+.ds-profile-avatar {
+  width: 88px; height: 88px; border-radius: 50%; flex-shrink: 0;
+  background: var(--brand-green-light); color: var(--brand-green);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 30px; font-weight: 700; overflow: hidden;
+}
+.ds-profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.ds-profile-name { font-size: 20px; font-weight: 700; color: var(--text-primary); line-height: 1.2; }
+.ds-profile-email { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+.ds-profile-meta { font-size: 12.5px; color: var(--text-muted); margin-top: 10px; display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.ds-status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 5px; }
+.ds-status-dot.active { background: var(--brand-green); }
+.ds-status-dot.inactive { background: var(--danger); }
+
+/* Role badge */
+.ds-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.ds-badge-neutral { background: var(--surface-subtle); color: var(--text-secondary); }
+.ds-badge-success { background: var(--brand-green-light); color: var(--brand-green); }
+.ds-badge-warning { background: var(--warning-bg); color: var(--warning); }
+.ds-badge-danger { background: var(--danger-bg); color: var(--danger); }
+.ds-badge-role-admin { background: var(--danger-bg); color: var(--danger); }
+.ds-badge-role-staff { background: #E8F1FB; color: #2980B9; }
+.ds-badge-role-coordinator { background: var(--warning-bg); color: var(--warning); }
+.ds-badge-role-customer { background: var(--surface-subtle); color: var(--text-secondary); }
+
+/* KPI cards */
+.ds-kpi-card {
+  background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4); box-shadow: var(--shadow-sm); transition: box-shadow var(--transition);
+  height: 100%;
+}
+.ds-kpi-card:hover { box-shadow: var(--shadow-md); }
+.ds-kpi-card .kpi-label { font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+.ds-kpi-card .kpi-value { font-size: 24px; font-weight: 700; color: var(--text-primary); line-height: 1.15; margin-top: 4px; }
+.dash-kpi-icon {
+  width: 38px; height: 38px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+}
+.dash-kpi-icon.icon-orders    { background: #E8F1FB; color: #2980B9; }
+.dash-kpi-icon.icon-completed { background: var(--brand-green-light); color: var(--brand-green); }
+.dash-kpi-icon.icon-pending   { background: var(--warning-bg); color: var(--warning); }
+.dash-kpi-icon.icon-revenue   { background: var(--brand-green-light); color: var(--brand-green); }
+
+/* Panels (account detail groups + orders) */
+.dash-panel { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.dash-panel-header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); gap: var(--space-2); flex-wrap: wrap; }
+.dash-panel-header h6 { font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0; }
+.dash-panel-body { padding: var(--space-4); }
+
+.ds-field { display: flex; align-items: flex-start; gap: 10px; }
+.ds-field-icon {
+  width: 30px; height: 30px; border-radius: var(--radius-sm); background: var(--surface-subtle);
+  color: var(--brand-green); display: flex; align-items: center; justify-content: center;
+  font-size: 13px; flex-shrink: 0; margin-top: 1px;
+}
+.ds-field-label { font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+.ds-field-value { font-size: 14px; color: var(--text-primary); font-weight: 600; margin-top: 1px; word-break: break-word; }
+
+/* Orders table */
+.ds-table { width: 100%; border-collapse: collapse; background: var(--surface-white); border-radius: var(--radius-md); overflow: hidden; }
+.ds-table thead th { background: var(--surface-subtle); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); padding: 12px var(--space-3); text-align: left; border-bottom: 1px solid var(--border); }
+.ds-table tbody td { padding: 14px var(--space-3); font-size: 13.5px; color: var(--text-primary); border-bottom: 1px solid var(--border); }
+.ds-table tbody tr { transition: background var(--transition); }
+.ds-table tbody tr:hover { background: var(--surface-subtle); }
+.ds-table tbody tr:last-child td { border-bottom: none; }
+
+.ds-empty-state { text-align: center; padding: var(--space-6) var(--space-4); color: var(--text-muted); }
+.ds-empty-state .icon { font-size: 36px; color: var(--border); margin-bottom: var(--space-3); }
+.ds-empty-state .title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+.ds-empty-state .desc { font-size: 13px; }
+
+/* Responsive */
+@media (max-width: 991px) {
+  .dash-greeting-title { font-size: 18px; }
+  .ds-profile-header { text-align: center; justify-content: center; }
+  .ds-profile-meta { justify-content: center; }
+}
+@media (max-width: 767px) {
+  .ds-profile-header { flex-direction: column; text-align: center; }
+  .ds-kpi-card .kpi-value { font-size: 21px; }
+}
+@media (max-width: 575px) {
+  .dash-panel-header { flex-direction: column; align-items: flex-start; }
+}
+</style>
+{% endblock %}
+
+{% block dash_content %}
+<nav class="ds-breadcrumb" aria-label="Breadcrumb">
+  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+  <span class="sep">/</span><a href="{% url 'dashboard:user_list' %}">Users</a>
+  <span class="sep">/</span><span class="current" aria-current="page">{{ profile_user.username }}</span>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+  <div>
+    <h1 class="dash-greeting-title">User Profile</h1>
+    <p class="dash-greeting-sub mb-0">Account details and order history</p>
+  </div>
+  <div class="d-flex gap-2">
+        {% if profile_user.pk != user.pk %}
+    <button type="button" class="ds-btn ds-btn-danger-outline ds-btn-sm" data-bs-toggle="modal" data-bs-target="#delete-user-{{ profile_user.pk }}">
+      <i class="fas fa-box-archive me-2"></i>Archive Account
+    </button>
+    {% url 'dashboard:user_delete' profile_user.pk as pu_delete_url %}
+    {% include 'partials/confirm_delete_modal.html' with id_prefix="delete-user-" obj_pk=profile_user.pk title='Archive Account' message_prefix='Move' item_name=profile_user.get_full_name|default:profile_user.username message_suffix="'s account to the Archive? They'll be signed out and won't be able to log in until an admin restores the account from the Archive page." form_action=pu_delete_url submit_label='Archive' %}
+    {% endif %}
+    <a href="{% url 'dashboard:user_list' %}" class="ds-btn ds-btn-secondary ds-btn-sm">
+      <i class="fas fa-arrow-left me-2"></i>Back
+    </a>
+  </div>
+</div>
+
+<!-- Profile header -->
+<div class="ds-profile-header mb-4">
+  <div class="ds-profile-avatar">
+    {% if profile_user.avatar %}
+      <img src="{{ profile_user.avatar.url }}" alt="{{ profile_user.username }}">
+    {% else %}
+      {{ profile_user.first_name|first|upper }}{{ profile_user.last_name|first|upper|default:profile_user.username|first|upper }}
+    {% endif %}
+  </div>
+  <div>
+    <div class="ds-profile-name">{{ profile_user.get_full_name|default:profile_user.username }}</div>
+    <div class="ds-profile-email">{{ profile_user.email }}</div>
+    <div class="ds-profile-meta">
+      <span class="ds-badge
+        {% if profile_user.role == 'admin' %}ds-badge-role-admin
+        {% elif profile_user.role == 'staff' %}ds-badge-role-staff
+        {% elif profile_user.role == 'coordinator' %}ds-badge-role-coordinator
+        {% else %}ds-badge-role-customer{% endif %}">
+        {{ profile_user.get_role_display }}
+      </span>
+      <span>
+        <span class="ds-status-dot {% if profile_user.is_active %}active{% else %}inactive{% endif %}"></span>
+        {% if profile_user.is_active %}Active{% else %}Inactive{% endif %}
+      </span>
+      <span><i class="far fa-calendar text-muted me-1"></i>Joined {{ profile_user.date_joined|date:"M d, Y" }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- KPI cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg-3">
+    <div class="ds-kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Total Orders</div>
+          <div class="kpi-value">{{ order_stats.total_orders|default:0 }}</div>
+        </div>
+        <div class="dash-kpi-icon icon-orders"><i class="fas fa-shopping-bag"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="ds-kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Completed</div>
+          <div class="kpi-value">{{ order_stats.completed_orders|default:0 }}</div>
+        </div>
+        <div class="dash-kpi-icon icon-completed"><i class="fas fa-circle-check"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="ds-kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Pending</div>
+          <div class="kpi-value">{{ order_stats.pending_orders|default:0 }}</div>
+        </div>
+        <div class="dash-kpi-icon icon-pending"><i class="fas fa-clock"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-3">
+    <div class="ds-kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Total Spent</div>
+          <div class="kpi-value">₱{{ order_stats.total_spent|default:0|floatformat:0|intcomma }}</div>
+        </div>
+        <div class="dash-kpi-icon icon-revenue"><i class="fas fa-peso-sign"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Account details -->
+  <div class="col-lg-5">
+    <div class="dash-panel mb-4">
+      <div class="dash-panel-header"><h6>Personal Information</h6></div>
+      <div class="dash-panel-body">
+        <div class="row g-3">
+          <div class="col-6">
+            <div class="ds-field">
+              <div class="ds-field-icon"><i class="fas fa-user"></i></div>
+              <div>
+                <div class="ds-field-label">Username</div>
+                <div class="ds-field-value">{{ profile_user.username }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="ds-field">
+              <div class="ds-field-icon"><i class="far fa-calendar"></i></div>
+              <div>
+                <div class="ds-field-label">Joined</div>
+                <div class="ds-field-value">{{ profile_user.date_joined|date:"M d, Y" }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-panel mb-4">
+      <div class="dash-panel-header"><h6>Contact &amp; Address</h6></div>
+      <div class="dash-panel-body">
+        <div class="row g-3">
+          <div class="col-12">
+            <div class="ds-field">
+              <div class="ds-field-icon"><i class="fas fa-phone"></i></div>
+              <div>
+                <div class="ds-field-label">Phone</div>
+                <div class="ds-field-value">{{ profile_user.phone|default:"—" }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-12">
+            <div class="ds-field">
+              <div class="ds-field-icon"><i class="fas fa-location-dot"></i></div>
+              <div>
+                <div class="ds-field-label">Street Address</div>
+                <div class="ds-field-value">{{ profile_user.address|default:"—" }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="col-sm-4">
+            <div class="ds-field-label">City/Municipality</div>
+            <div class="ds-field-value">{{ profile_user.city|default:"—" }}</div>
+          </div>
+          <div class="col-sm-4">
+            <div class="ds-field-label">Province</div>
+            <div class="ds-field-value">{{ profile_user.province|default:"—" }}</div>
+          </div>
+          <div class="col-sm-4">
+            <div class="ds-field-label">ZIP Code</div>
+            <div class="ds-field-value">{{ profile_user.zip_code|default:"—" }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-panel">
+      <div class="dash-panel-header"><h6>Account Status</h6></div>
+      <div class="dash-panel-body">
+        <div class="ds-field">
+          <div class="ds-field-icon"><i class="fas fa-shield-halved"></i></div>
+          <div>
+            <div class="ds-field-label">Status</div>
+            <div class="ds-field-value">
+              <span class="ds-badge {% if profile_user.is_active %}ds-badge-success{% else %}ds-badge-danger{% endif %}">
+                <span class="ds-status-dot {% if profile_user.is_active %}active{% else %}inactive{% endif %}"></span>
+                {% if profile_user.is_active %}Active{% else %}Inactive{% endif %}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent orders -->
+  <div class="col-lg-7">
+    <div class="dash-panel">
+      <div class="dash-panel-header">
+        <h6>Recent Orders</h6>
+        <span class="dash-greeting-sub mb-0">Last {{ user_orders|length }} order{{ user_orders|length|pluralize }}</span>
+      </div>
+      <div class="table-responsive">
+        <table class="ds-table mb-0">
+          <thead><tr><th>Order #</th><th>Total</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody>
+            {% for o in user_orders %}
+            <tr>
+              <td class="fw-semibold" style="color:var(--brand-green);">{{ o.order_number }}</td>
+              <td class="fw-bold">₱{{ o.total|floatformat:0|intcomma }}</td>
+              <td>
+                <span class="ds-badge
+                  {% if o.status == 'pending' %}ds-badge-warning
+                  {% elif o.status == 'confirmed' %}ds-badge-success
+                  {% elif o.status == 'processing' %}ds-badge-neutral
+                  {% elif o.status == 'shipped' %}ds-badge-neutral
+                  {% elif o.status == 'delivered' %}ds-badge-success
+                  {% else %}ds-badge-danger{% endif %}">
+                  {{ o.get_status_display }}
+                </span>
+              </td>
+              <td class="text-muted" style="font-size:12px;">{{ o.created_at|date:"M d, Y" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4">
+              <div class="ds-empty-state">
+                <i class="fas fa-shopping-bag icon"></i>
+                <div class="title">No orders yet</div>
+                <div class="desc">Orders placed by this user will appear here.</div>
+              </div>
+            </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

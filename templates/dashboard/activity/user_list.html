@@ -1,0 +1,353 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block page_title %}{{ username }} — Activity{% endblock %}
+{% block sb_activity %}active{% endblock %}
+{% block title %}{{ username }} Activity – Dashboard{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+/* =========================================================
+   Reuses the approved Likhalaya design-system tokens and
+   components (dash-panel, ds-kpi-card, ds-badge, ds-btn,
+   ds-input) — same component set as Users / Orders / Products
+   pages, kept local to this template only where the shared
+   design-system.css/dashboard.css files aren't yet wired into
+   this build. No new visual language introduced.
+   ========================================================= */
+:root {
+  --brand-green: #0F6B4F;
+  --brand-green-hover: #0C5940;
+  --brand-green-light: #E6F4EF;
+  --surface-white: #FFFFFF;
+  --surface-subtle: #F9FAF9;
+  --border: #E4E7E4;
+  --text-primary: #1A1D1B;
+  --text-secondary: #5B615D;
+  --text-muted: #9AA09C;
+  --info: #2980B9;
+  --info-bg: #E8F1FB;
+  --warning: #B7791F;
+  --warning-bg: #FBF3E4;
+  --danger: #C0362C;
+  --danger-bg: #FBEAE8;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgba(16,24,20,0.06);
+  --shadow-md: 0 4px 12px rgba(16,24,20,0.08);
+  --space-1: 4px; --space-2: 8px; --space-3: 16px; --space-4: 24px; --space-5: 32px; --space-6: 48px;
+  --transition: 150ms ease;
+}
+
+.ds-breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: var(--space-3); display: flex; align-items: center; gap: 6px; }
+.ds-breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color var(--transition); }
+.ds-breadcrumb a:hover { color: var(--brand-green); }
+.ds-breadcrumb .current { color: var(--text-primary); font-weight: 600; }
+.ds-breadcrumb .sep { color: var(--border); }
+
+.ds-btn { font-size: 14px; font-weight: 600; border-radius: var(--radius-sm); padding: 10px 16px; border: none; transition: background var(--transition), box-shadow var(--transition), border-color var(--transition), color var(--transition); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
+.ds-btn-primary { background: var(--brand-green); color: #fff; }
+.ds-btn-primary:hover { background: var(--brand-green-hover); box-shadow: var(--shadow-sm); color: #fff; }
+.ds-btn-secondary { background: var(--surface-white); color: var(--text-primary); border: 1px solid var(--border); }
+.ds-btn-secondary:hover { background: var(--surface-subtle); color: var(--text-primary); }
+.ds-btn-sm { padding: 8px 12px; font-size: 13px; }
+.ds-btn:focus-visible { outline: 2px solid var(--brand-green-light); outline-offset: 2px; }
+
+.ds-input {
+  border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 9px 12px;
+  font-size: 13.5px; color: var(--text-primary); background: var(--surface-white);
+  transition: border-color var(--transition), box-shadow var(--transition); width: 100%;
+}
+.ds-input:focus { outline: none; border-color: var(--brand-green); box-shadow: 0 0 0 3px var(--brand-green-light); }
+.ds-label { font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; display: block; }
+
+.ds-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.ds-badge-neutral { background: var(--surface-subtle); color: var(--text-secondary); }
+.ds-badge-success { background: var(--brand-green-light); color: var(--brand-green); }
+.ds-badge-warning { background: var(--warning-bg); color: var(--warning); }
+.ds-badge-danger { background: var(--danger-bg); color: var(--danger); }
+.ds-badge-info { background: var(--info-bg); color: var(--info); }
+
+/* Profile header */
+.al-profile-header {
+  background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm); padding: var(--space-3) var(--space-4);
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+.al-profile-identity { display: flex; align-items: center; gap: var(--space-3); }
+.al-user-avatar {
+  width: 56px; height: 56px; border-radius: 50%; background: var(--brand-green-light); color: var(--brand-green);
+  display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 700; flex-shrink: 0;
+}
+.al-profile-name { font-size: 19px; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+.al-profile-meta { font-size: 12.5px; color: var(--text-muted); margin-top: 3px; display: flex; gap: var(--space-3); flex-wrap: wrap; }
+.ds-badge-role-admin { background: var(--danger-bg); color: var(--danger); }
+.ds-badge-role-staff { background: var(--info-bg); color: var(--info); }
+.ds-badge-role-coordinator { background: var(--warning-bg); color: var(--warning); }
+
+/* KPI cards */
+.ds-kpi-card { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3); box-shadow: var(--shadow-sm); height: 100%; }
+.ds-kpi-card .kpi-label { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
+.ds-kpi-card .kpi-value { font-size: 20px; font-weight: 700; color: var(--text-primary); line-height: 1.15; margin-top: 3px; }
+
+/* Filters */
+.dash-panel { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.al-filter-bar { padding: var(--space-3) var(--space-4); }
+
+/* Timeline */
+.al-timeline-group { margin-bottom: var(--space-4); }
+.al-timeline-date-label {
+  font-size: 11px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em;
+  margin: 0 0 var(--space-2) 2px;
+}
+.al-timeline { position: relative; padding-left: 28px; }
+.al-timeline::before {
+  content: ''; position: absolute; left: 8px; top: 6px; bottom: 6px; width: 1px; background: var(--border);
+}
+.al-timeline-item { position: relative; margin-bottom: var(--space-2); }
+.al-timeline-item:last-child { margin-bottom: 0; }
+.al-timeline-dot {
+  position: absolute; left: -28px; top: 18px; width: 9px; height: 9px; border-radius: 50%;
+  border: 2px solid var(--surface-white); box-shadow: 0 0 0 1px var(--border);
+}
+.dot-login { background: var(--brand-green); }
+.dot-logout { background: var(--text-muted); }
+.dot-create { background: var(--info); }
+.dot-update { background: var(--warning); }
+.dot-delete { background: var(--danger); }
+.dot-restore { background: var(--brand-green); }
+.dot-status_change { background: var(--info); }
+.dot-login_failed { background: var(--danger); }
+.dot-other { background: var(--text-muted); }
+
+.al-card {
+  background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: var(--space-3) var(--space-4); display: flex; align-items: center; justify-content: space-between;
+  gap: var(--space-3); cursor: pointer; transition: box-shadow var(--transition), border-color var(--transition);
+}
+.al-card:hover { box-shadow: var(--shadow-md); border-color: var(--brand-green-light); }
+.al-card:focus-visible { outline: 2px solid var(--brand-green-light); outline-offset: 2px; }
+.al-card-left { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.al-card-icon {
+  width: 36px; height: 36px; border-radius: var(--radius-sm); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+}
+.icon-login, .icon-restore { background: var(--brand-green-light); color: var(--brand-green); }
+.icon-logout, .icon-other { background: var(--surface-subtle); color: var(--text-muted); }
+.icon-create, .icon-status_change { background: var(--info-bg); color: var(--info); }
+.icon-update { background: var(--warning-bg); color: var(--warning); }
+.icon-delete, .icon-login_failed { background: var(--danger-bg); color: var(--danger); }
+
+.al-card-title { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+.al-card-title .al-action-tag { font-size: 10.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; margin-right: 6px; }
+.al-card-time { font-size: 12px; color: var(--text-muted); margin-top: 2px; display: flex; align-items: center; gap: 5px; }
+.al-card-right { display: flex; align-items: center; gap: var(--space-3); flex-shrink: 0; }
+.al-card-chevron { color: var(--text-muted); font-size: 12px; }
+
+.ds-empty-state { text-align: center; padding: var(--space-6) var(--space-4); color: var(--text-muted); }
+.ds-empty-state .icon { font-size: 36px; color: var(--border); margin-bottom: var(--space-3); }
+.ds-empty-state .title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+
+/* Pagination */
+.al-pagination-wrap { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); margin-top: var(--space-5); }
+.al-pagination-count { font-size: 12.5px; color: var(--text-muted); }
+.ds-pagination { display: flex; gap: 4px; align-items: center; }
+.ds-page-btn {
+  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; color: var(--text-secondary);
+  transition: background var(--transition), color var(--transition); text-decoration: none;
+  border: 1px solid transparent;
+}
+.ds-page-btn:hover { background: var(--surface-subtle); }
+.ds-page-btn.active { background: var(--brand-green); color: #fff; }
+.ds-page-btn.disabled { opacity: .4; pointer-events: none; }
+.ds-page-btn:focus-visible { outline: 2px solid var(--brand-green-light); outline-offset: 2px; }
+
+@media (max-width: 991px) {
+  .al-profile-header { flex-direction: column; align-items: flex-start; }
+}
+@media (max-width: 767px) {
+  .al-card { flex-direction: column; align-items: flex-start; }
+  .al-card-right { align-self: flex-end; }
+  .al-timeline { padding-left: 20px; }
+  .al-timeline-dot { left: -20px; }
+}
+</style>
+{% endblock %}
+
+{% block dash_content %}
+<nav class="ds-breadcrumb" aria-label="Breadcrumb">
+  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+  <span class="sep">/</span><a href="{% url 'dashboard:activity_log' %}">Activity Log</a>
+  <span class="sep">/</span><span class="current" aria-current="page">{{ username }}</span>
+</nav>
+
+<!-- Profile summary header -->
+<div class="al-profile-header">
+  <div class="al-profile-identity">
+    <div class="al-user-avatar">{{ username|default:"?"|slice:":2"|upper }}</div>
+    <div>
+      <div class="al-profile-name">
+        {{ username }}
+        {% if role %}
+        <span class="ds-badge
+          {% if role == 'admin' %}ds-badge-role-admin
+          {% elif role == 'staff' %}ds-badge-role-staff
+          {% else %}ds-badge-neutral{% endif %}">{{ role|title }}</span>
+        {% endif %}
+      </div>
+      <div class="al-profile-meta">
+        <span><i class="fas fa-list-check me-1"></i>{{ total_count }} activit{{ total_count|pluralize:"y,ies" }} recorded</span>
+        {% if last_active %}
+        <span><i class="far fa-clock me-1"></i>Last active {{ last_active|date:"M d, Y · g:i A" }}</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <a href="{% url 'dashboard:activity_log' %}" class="ds-btn ds-btn-secondary ds-btn-sm">
+    <i class="fas fa-arrow-left me-2"></i>Back to Activity Log
+  </a>
+</div>
+
+<!-- KPI stats -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="ds-kpi-card"><div class="kpi-label">Total</div><div class="kpi-value">{{ stats.total }}</div></div>
+  </div>
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="ds-kpi-card"><div class="kpi-label">Successful</div><div class="kpi-value">{{ stats.successful }}</div></div>
+  </div>
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="ds-kpi-card"><div class="kpi-label">Failed</div><div class="kpi-value">{{ stats.failed }}</div></div>
+  </div>
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="ds-kpi-card"><div class="kpi-label">Logins</div><div class="kpi-value">{{ stats.logins }}</div></div>
+  </div>
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="ds-kpi-card"><div class="kpi-label">Updates</div><div class="kpi-value">{{ stats.updates }}</div></div>
+  </div>
+  <div class="col-6 col-md-4 col-lg-2">
+    <div class="ds-kpi-card"><div class="kpi-label">Orders Processed</div><div class="kpi-value">{{ stats.orders_processed }}</div></div>
+  </div>
+</div>
+
+<!-- Filters -->
+<div class="dash-panel mb-4">
+  <div class="al-filter-bar">
+    <form method="get" class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label class="ds-label" for="al-search">Search Activities</label>
+        <input id="al-search" type="text" name="q" class="ds-input" placeholder="Description, resource…" value="{{ search }}">
+      </div>
+      <div class="col-md-2">
+        <label class="ds-label" for="al-type">Activity Type</label>
+        <select id="al-type" name="action" class="ds-input">
+          <option value="">Any</option>
+          {% for val, label in action_choices %}
+          <option value="{{ val }}" {% if val == action_filter %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="ds-label" for="al-from">From</label>
+        <input id="al-from" type="date" name="from" class="ds-input" value="{{ date_from }}">
+      </div>
+      <div class="col-md-2">
+        <label class="ds-label" for="al-to">To</label>
+        <input id="al-to" type="date" name="to" class="ds-input" value="{{ date_to }}">
+      </div>
+      <div class="col-md-1">
+        <label class="ds-label" for="al-status">Status</label>
+        <select id="al-status" name="status" class="ds-input">
+          <option value="">Any</option>
+          {% for val, label in status_choices %}
+          <option value="{{ val }}" {% if val == status_filter %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm flex-fill">Apply Filter</button>
+        <a href="{% url 'dashboard:activity_log_user' username %}" class="ds-btn ds-btn-secondary ds-btn-sm flex-fill">Reset</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Timeline, grouped by day -->
+{% if logs %}
+{% regroup logs by day_label as day_groups %}
+{% for group in day_groups %}
+<div class="al-timeline-group">
+  <div class="al-timeline-date-label">{{ group.grouper }}</div>
+  <div class="al-timeline">
+    {% for log in group.list %}
+    <div class="al-timeline-item">
+      <span class="al-timeline-dot dot-{{ log.action }}" aria-hidden="true"></span>
+      <a class="al-card" href="{% url 'dashboard:activity_log_detail' log.id %}" aria-label="View details: {{ log.get_action_display }} — {{ log.description|default:log.get_action_display }}, {{ log.timestamp|date:'M d, Y g:i A' }}">
+        <div class="al-card-left">
+          <div class="al-card-icon icon-{{ log.action }}" aria-hidden="true">
+            <i class="fas
+              {% if log.action == 'login' %}fa-right-to-bracket
+              {% elif log.action == 'login_failed' %}fa-triangle-exclamation
+              {% elif log.action == 'logout' %}fa-right-from-bracket
+              {% elif log.action == 'create' %}fa-plus
+              {% elif log.action == 'update' %}fa-pen
+              {% elif log.action == 'delete' %}fa-box-archive
+              {% elif log.action == 'restore' %}fa-rotate-left
+              {% elif log.action == 'status_change' %}fa-arrows-rotate
+              {% else %}fa-circle-info{% endif %}"></i>
+          </div>
+          <div class="min-width-0">
+            <div class="al-card-title">
+              <span class="al-action-tag">{{ log.get_action_display }}</span>{{ log.description|default:log.get_action_display }}
+            </div>
+            <div class="al-card-time"><i class="far fa-clock"></i>{{ log.timestamp|date:"g:i A" }}</div>
+          </div>
+        </div>
+        <div class="al-card-right">
+          {% if log.status == 'failed' %}
+          <span class="ds-badge ds-badge-danger"><i class="fas fa-xmark"></i>Failed</span>
+          {% endif %}
+          <i class="fas fa-chevron-right al-card-chevron" aria-hidden="true"></i>
+        </div>
+      </a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endfor %}
+{% else %}
+<div class="dash-panel">
+  <div class="ds-empty-state">
+    <i class="fas fa-list-check icon"></i>
+    <div class="title">No activity found</div>
+    <div class="desc">Try adjusting your search or filters.</div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<div class="al-pagination-wrap">
+  <nav aria-label="Activity pagination">
+    <div class="ds-pagination">
+      {% if page_obj.has_previous %}
+      <a class="ds-page-btn" href="?page={{ page_obj.previous_page_number }}&q={{ search }}&action={{ action_filter }}&status={{ status_filter }}&from={{ date_from }}&to={{ date_to }}" aria-label="Previous page">‹</a>
+      {% else %}
+      <span class="ds-page-btn disabled" aria-hidden="true">‹</span>
+      {% endif %}
+      {% for n in page_obj.paginator.page_range %}
+      <a class="ds-page-btn {% if n == page_obj.number %}active{% endif %}"
+         href="?page={{ n }}&q={{ search }}&action={{ action_filter }}&status={{ status_filter }}&from={{ date_from }}&to={{ date_to }}"
+         {% if n == page_obj.number %}aria-current="page"{% endif %}>{{ n }}</a>
+      {% endfor %}
+      {% if page_obj.has_next %}
+      <a class="ds-page-btn" href="?page={{ page_obj.next_page_number }}&q={{ search }}&action={{ action_filter }}&status={{ status_filter }}&from={{ date_from }}&to={{ date_to }}" aria-label="Next page">›</a>
+      {% else %}
+      <span class="ds-page-btn disabled" aria-hidden="true">›</span>
+      {% endif %}
+    </div>
+  </nav>
+  <div class="al-pagination-count">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} activities · Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,694 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize %}
+{% block page_title %}Order {{ order.order_number }}{% endblock %}
+{% block sb_orders %}active{% endblock %}
+{% block title %}Order {{ order.order_number }} – Dashboard{% endblock %}
+
+{% block dash_content %}
+<style>
+  /* ══════════════════════════════════════════════════════════
+     Order Detail — Shopify/Stripe/Linear-style admin redesign
+     Reuses --teal / --gold tokens + dash-* system from base_dashboard.
+     8pt grid: all spacing values below are multiples of 4/8.
+     ══════════════════════════════════════════════════════════ */
+
+  .od-wrap { max-width: 1280px; }
+
+  /* ── Header ── */
+  .od-header {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 16px; margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .od-title-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .od-title {
+    font-size: 24px; font-weight: 800; color: #1a1a1a; margin: 0;
+    letter-spacing: -0.01em;
+  }
+  body.dark-mode .od-title { color: var(--dm-text); }
+  .od-meta {
+    font-size: 13px; color: #8a8377; margin-top: 4px;
+    display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  }
+  body.dark-mode .od-meta { color: var(--dm-text-mute); }
+  .od-meta .dot { width: 3px; height: 3px; border-radius: 50%; background: #c9c2b6; display: inline-block; }
+  body.dark-mode .od-meta .dot { background: var(--dm-border); }
+  .od-actions { display: flex; align-items: center; gap: 8px; }
+
+  /* Status pill — icon + label, not color-only */
+  .od-status-pill {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px 6px 10px; border-radius: 20px;
+    font-size: 12px; font-weight: 700; letter-spacing: .02em;
+    line-height: 1.4;
+  }
+  .od-status-pill .dot-ind { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .od-status-pill.st-pending  { background: #fdf0d5; color: #8a6d1f; }
+  .od-status-pill.st-pending .dot-ind { background: #c9841a; }
+  .od-status-pill.st-processing,
+  .od-status-pill.st-confirmed { background: #e8f0fe; color: #2b5ba8; }
+  .od-status-pill.st-processing .dot-ind,
+  .od-status-pill.st-confirmed .dot-ind { background: #2b6cb0; }
+  .od-status-pill.st-shipped  { background: #e6f7f5; color: #0d7a70; }
+  .od-status-pill.st-shipped .dot-ind { background: #0f9488; }
+  .od-status-pill.st-delivered { background: #e6f6ec; color: #1e7e42; }
+  .od-status-pill.st-delivered .dot-ind { background: #27ae60; }
+  .od-status-pill.st-cancelled { background: #fdeaea; color: #b02a2a; }
+  .od-status-pill.st-cancelled .dot-ind { background: #e05252; }
+  body.dark-mode .od-status-pill.st-pending    { background: rgba(208,136,78,.15); color: #e3a56e; }
+  body.dark-mode .od-status-pill.st-processing,
+  body.dark-mode .od-status-pill.st-confirmed  { background: rgba(79,169,232,.15); color: #7cbdf0; }
+  body.dark-mode .od-status-pill.st-shipped    { background: rgba(79,209,197,.15); color: var(--dm-teal); }
+  body.dark-mode .od-status-pill.st-delivered  { background: rgba(62,207,142,.15); color: #6fe0ab; }
+  body.dark-mode .od-status-pill.st-cancelled  { background: rgba(255,107,107,.15); color: #ff9494; }
+
+  /* ── Buttons (proper hierarchy) ── */
+  .od-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    height: 36px; padding: 0 16px; border-radius: 8px;
+    font-size: 13px; font-weight: 600; border: 1px solid transparent;
+    cursor: pointer; transition: all .15s ease; text-decoration: none;
+    white-space: nowrap;
+  }
+  .od-btn:focus-visible {
+    outline: none; box-shadow: 0 0 0 3px rgba(79,209,197,.35);
+  }
+  .od-btn-secondary {
+    background: #fff; border-color: #e0dbd0; color: #4a463d;
+  }
+  .od-btn-secondary:hover { background: #f8f6f2; border-color: #cfc8ba; color: #2b2b2b; }
+  body.dark-mode .od-btn-secondary { background: var(--dm-surface-2); border-color: var(--dm-border); color: var(--dm-text-dim); }
+  body.dark-mode .od-btn-secondary:hover { background: var(--dm-surface-3); color: var(--dm-text); }
+  .od-btn-primary {
+    background: var(--teal); border-color: var(--teal); color: #fff;
+  }
+  .od-btn-primary:hover { background: var(--teal-lt); border-color: var(--teal-lt); color: #fff; }
+  body.dark-mode .od-btn-primary { background: var(--dm-teal); border-color: var(--dm-teal); color: #0e1420; }
+  body.dark-mode .od-btn-primary:hover { filter: brightness(1.08); color: #0e1420; }
+  .od-btn-primary.w-100, .od-btn-secondary.w-100 { width: 100%; justify-content: center; height: 40px; }
+  .od-btn-danger-ghost { background: transparent; border-color: #f1c7c7; color: #b02a2a; }
+  .od-btn-danger-ghost:hover { background: #fdeaea; }
+  body.dark-mode .od-btn-danger-ghost { border-color: rgba(255,107,107,.35); color: #ff9494; }
+  body.dark-mode .od-btn-danger-ghost:hover { background: rgba(255,107,107,.12); }
+
+  /* ── Cards (soft shadow, larger radius, generous padding) ── */
+  .od-card {
+    background: #fff; border: 1px solid #f0ede8; border-radius: 16px;
+    box-shadow: 0 1px 2px rgba(20,20,20,.04), 0 8px 24px -12px rgba(20,20,20,.08);
+    margin-bottom: 24px; overflow: hidden;
+  }
+  body.dark-mode .od-card { background: var(--dm-surface); border-color: var(--dm-border); box-shadow: 0 8px 24px -12px rgba(0,0,0,.4); }
+  .od-card-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 24px; border-bottom: 1px solid #f0ede8;
+  }
+  body.dark-mode .od-card-header { border-color: var(--dm-border); }
+  .od-card-header h6 { font-size: 14px; font-weight: 700; color: #1a1a1a; margin: 0; letter-spacing: -0.01em; }
+  body.dark-mode .od-card-header h6 { color: var(--dm-text); }
+  .od-card-header .ico {
+    width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 13px; margin-right: 10px;
+  }
+  .od-card-header-title { display: flex; align-items: center; }
+  .od-count-chip {
+    font-size: 11px; font-weight: 700; color: #8a8377; background: #f3f0ea;
+    padding: 2px 9px; border-radius: 20px;
+  }
+  body.dark-mode .od-count-chip { background: var(--dm-surface-3); color: var(--dm-text-mute); }
+
+  /* ── Layout grid: 2-column, sidebar sticky ── */
+  .od-grid { display: grid; grid-template-columns: minmax(0,1fr) 360px; gap: 24px; align-items: start; }
+  .od-sidebar-sticky { position: sticky; top: calc(var(--topbar-h) + 20px); }
+  @media (max-width: 1100px) {
+    .od-grid { grid-template-columns: 1fr; }
+    .od-sidebar-sticky { position: static; }
+  }
+
+  /* ── Order items table ── */
+  .od-items-table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .od-items-table thead th {
+    text-align: left; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: .06em; color: #9a9488; padding: 0 24px 12px; border-bottom: 1px solid #f0ede8;
+  }
+  body.dark-mode .od-items-table thead th { color: var(--dm-text-mute); border-color: var(--dm-border); }
+  .od-items-table thead { display: table-header-group; }
+  .od-items-table tbody tr { border-bottom: 1px solid #f5f2ec; }
+  body.dark-mode .od-items-table tbody tr { border-color: var(--dm-border); }
+  .od-items-table tbody tr:last-child { border-bottom: none; }
+  .od-items-table td { padding: 20px 24px; vertical-align: middle; }
+  .od-items-table td.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+  .od-thumb {
+    width: 64px; height: 64px; border-radius: 12px; object-fit: cover;
+    background: #f0ede8; flex-shrink: 0; border: 1px solid #ece7dd;
+  }
+  body.dark-mode .od-thumb { background: var(--dm-surface-3); border-color: var(--dm-border); }
+  .od-thumb-placeholder {
+    width: 64px; height: 64px; border-radius: 12px; background: #f0ede8; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; color: #c9c2b6; font-size: 18px;
+    border: 1px solid #ece7dd;
+  }
+  body.dark-mode .od-thumb-placeholder { background: var(--dm-surface-3); border-color: var(--dm-border); color: var(--dm-text-mute); }
+  .od-item-name { font-weight: 600; font-size: 14px; color: #1a1a1a; }
+  body.dark-mode .od-item-name { color: var(--dm-text); }
+  .od-item-sub { font-size: 12px; color: #9a9488; margin-top: 2px; }
+  body.dark-mode .od-item-sub { color: var(--dm-text-mute); }
+  .od-size-badge {
+    display: inline-block; font-size: 10.5px; font-weight: 600; padding: 1px 8px;
+    border-radius: 6px; background: #f3f0ea; color: #6b6558; margin-left: 6px; vertical-align: middle;
+  }
+  body.dark-mode .od-size-badge { background: var(--dm-surface-3); color: var(--dm-text-dim); }
+  .od-qty-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    min-width: 26px; height: 26px; padding: 0 8px; border-radius: 8px;
+    background: #eef0f4; color: #495468; font-weight: 700; font-size: 12.5px;
+  }
+  body.dark-mode .od-qty-badge { background: var(--dm-surface-3); color: var(--dm-text); }
+  .od-price-total { font-weight: 700; color: var(--gold); font-size: 14px; }
+  body.dark-mode .od-price-total { color: var(--dm-gold); }
+
+  /* ── Order summary card ── */
+  .od-summary-block { padding: 20px 24px; background: #faf8f4; }
+  body.dark-mode .od-summary-block { background: var(--dm-surface-2); }
+  .od-summary-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0; font-size: 13.5px;
+  }
+  .od-summary-row .label { color: #9a9488; }
+  body.dark-mode .od-summary-row .label { color: var(--dm-text-mute); }
+  .od-summary-row .value { font-weight: 600; color: #2b2b2b; }
+  body.dark-mode .od-summary-row .value { color: var(--dm-text); }
+  .od-summary-divider { border: none; border-top: 1px dashed #e5ddd0; margin: 4px 0; }
+  body.dark-mode .od-summary-divider { border-top-color: var(--dm-border); }
+  .od-grand-total {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 16px 24px; background: #fff;
+    border-top: 1px solid #f0ede8;
+  }
+  body.dark-mode .od-grand-total { background: var(--dm-surface); border-color: var(--dm-border); }
+  .od-grand-total .gt-label { font-size: 13px; font-weight: 700; color: #1a1a1a; text-transform: uppercase; letter-spacing: .04em; }
+  body.dark-mode .od-grand-total .gt-label { color: var(--dm-text); }
+  .od-grand-total .gt-value { font-size: 22px; font-weight: 800; color: var(--gold); letter-spacing: -0.01em; }
+  body.dark-mode .od-grand-total .gt-value { color: var(--dm-gold); }
+
+  /* ── Shipping info: icon cards ── */
+  .od-ship-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 24px; }
+  @media (max-width: 560px) { .od-ship-grid { grid-template-columns: 1fr; } }
+  .od-ship-item { display: flex; align-items: flex-start; gap: 12px; }
+  .od-ship-item.full { grid-column: 1 / -1; }
+  .od-ship-ico {
+    width: 36px; height: 36px; border-radius: 10px; background: #f3f0ea; color: var(--teal);
+    display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;
+  }
+  body.dark-mode .od-ship-ico { background: var(--dm-surface-3); color: var(--dm-teal); }
+  .od-ship-label { font-size: 11px; color: #9a9488; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 3px; }
+  body.dark-mode .od-ship-label { color: var(--dm-text-mute); }
+  .od-ship-value { font-size: 14px; font-weight: 600; color: #2b2b2b; line-height: 1.4; }
+  body.dark-mode .od-ship-value { color: var(--dm-text); }
+  .od-ship-note {
+    display: flex; align-items: center; gap: 8px;
+    margin: 0 24px 24px; padding: 12px 14px; border-radius: 10px;
+    background: #eaf3fb; color: #2b6cb0; font-size: 13px;
+  }
+  body.dark-mode .od-ship-note { background: rgba(79,169,232,.12); color: #7cbdf0; }
+
+  /* ── Sidebar: Update Status panel ── */
+  .od-current-status-block {
+    padding: 20px 24px; text-align: left;
+  }
+  .od-current-status-label { font-size: 11px; color: #9a9488; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 8px; }
+  body.dark-mode .od-current-status-label { color: var(--dm-text-mute); }
+
+  /* Vertical modern timeline (fits narrow sidebar better than horizontal) */
+  .od-timeline { padding: 4px 24px 20px; }
+  .od-tl-step { display: flex; gap: 14px; position: relative; padding-bottom: 26px; }
+  .od-tl-step:last-child { padding-bottom: 0; }
+  .od-tl-marker-col { display: flex; flex-direction: column; align-items: center; }
+  .od-tl-dot {
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: #f0ede8; color: #b0aa9d; font-size: 11px; font-weight: 700;
+    border: 2px solid #f0ede8; z-index: 1; transition: all .2s ease;
+  }
+  body.dark-mode .od-tl-dot { background: var(--dm-surface-3); border-color: var(--dm-surface-3); color: var(--dm-text-mute); }
+  .od-tl-line { width: 2px; flex: 1; background: #eee7dd; min-height: 18px; margin-top: 2px; }
+  body.dark-mode .od-tl-line { background: var(--dm-border); }
+  .od-tl-step.done .od-tl-dot { background: #27ae60; border-color: #27ae60; color: #fff; }
+  .od-tl-step.done .od-tl-line { background: #27ae60; }
+  .od-tl-step.current .od-tl-dot {
+    background: var(--teal); border-color: var(--teal); color: #fff;
+    box-shadow: 0 0 0 4px rgba(31,95,90,.15);
+  }
+  body.dark-mode .od-tl-step.done .od-tl-dot,
+  body.dark-mode .od-tl-step.done .od-tl-line { background: #3ecf8e; border-color: #3ecf8e; }
+  body.dark-mode .od-tl-step.current .od-tl-dot { background: var(--dm-teal); border-color: var(--dm-teal); color: #0e1420; box-shadow: 0 0 0 4px rgba(79,209,197,.18); }
+  .od-tl-step.cancelled-step .od-tl-dot { background: #fdeaea; border-color: #fdeaea; color: #c0392b; }
+  body.dark-mode .od-tl-step.cancelled-step .od-tl-dot { background: rgba(255,107,107,.15); border-color: rgba(255,107,107,.15); color: #ff9494; }
+  .od-tl-content { padding-top: 3px; }
+  .od-tl-title { font-size: 13.5px; font-weight: 600; color: #b0aa9d; line-height: 1.3; }
+  .od-tl-step.done .od-tl-title,
+  .od-tl-step.current .od-tl-title { color: #2b2b2b; }
+  body.dark-mode .od-tl-title { color: var(--dm-text-mute); }
+  body.dark-mode .od-tl-step.done .od-tl-title,
+  body.dark-mode .od-tl-step.current .od-tl-title { color: var(--dm-text); }
+  .od-tl-step.current .od-tl-title { font-weight: 700; color: var(--teal); }
+  body.dark-mode .od-tl-step.current .od-tl-title { color: var(--dm-teal); }
+  .od-tl-sub { font-size: 11.5px; color: #b0aa9d; margin-top: 1px; }
+  body.dark-mode .od-tl-sub { color: var(--dm-text-mute); }
+
+  .od-status-form { padding: 4px 24px 24px; border-top: 1px solid #f0ede8; }
+  body.dark-mode .od-status-form { border-color: var(--dm-border); }
+  .od-status-form label { font-size: 12px; font-weight: 600; color: #6b6558; margin: 16px 0 6px; display: block; }
+  body.dark-mode .od-status-form label { color: var(--dm-text-dim); }
+
+  /* Task-based action buttons */
+  .od-task-actions { padding: 4px 24px 24px; border-top: 1px solid #f0ede8; display: flex; flex-direction: column; gap: 10px; }
+  body.dark-mode .od-task-actions { border-color: var(--dm-border); }
+  .od-task-hint { font-size: 12.5px; color: #8a8377; line-height: 1.5; margin: 12px 0 2px; }
+  body.dark-mode .od-task-hint { color: var(--dm-text-mute); }
+  .od-courier-form { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+  .od-courier-badge {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px;
+    color: #2b6cb0; background: #e8f0fe; padding: 5px 10px; border-radius: 8px; font-weight: 600;
+  }
+  body.dark-mode .od-courier-badge { background: rgba(79,169,232,.15); color: #7cbdf0; }
+  .od-proof-thumb { border-radius: 10px; border: 1px solid #ece7dd; width: 100%; max-height: 180px; object-fit: cover; }
+  body.dark-mode .od-proof-thumb { border-color: var(--dm-border); }
+  .od-cancel-btn {
+    width: 100%; background: none; border: 1px solid #f0c2c2; color: #b02a2a;
+    border-radius: 10px; padding: 9px 12px; font-size: 13px; font-weight: 600; margin-top: 4px;
+  }
+  .od-cancel-btn:hover { background: #fdeaea; }
+  body.dark-mode .od-cancel-btn { border-color: rgba(255,107,107,.3); color: #ff9494; }
+  body.dark-mode .od-cancel-btn:hover { background: rgba(255,107,107,.1); }
+
+  @media print {
+    .no-print { display: none !important; }
+    .od-grid { display: block; }
+    .od-card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
+  }
+</style>
+
+<div class="dash-breadcrumb no-print">
+  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+  <span class="sep">/</span><a href="{% url 'dashboard:order_list' %}">Orders</a>
+  <span class="sep">/</span><span class="current">{{ order.order_number }}</span>
+</div>
+
+<div class="od-wrap">
+  <!-- Header -->
+  <div class="od-header no-print">
+    <div>
+      <div class="od-title-row">
+        <h1 class="od-title">Order {{ order.order_number }}</h1>
+        <span class="od-status-pill
+          {% if order.status == 'pending' %}st-pending
+          {% elif order.status == 'processing' %}st-processing
+          {% elif order.status == 'confirmed' %}st-confirmed
+          {% elif order.status == 'shipped' %}st-shipped
+          {% elif order.status == 'delivered' %}st-delivered
+          {% elif order.status == 'cancelled' %}st-cancelled
+          {% endif %}">
+          <span class="dot-ind"></span>{{ order.get_status_display|upper }}
+        </span>
+      </div>
+      <div class="od-meta">
+        <span>Placed on {{ order.created_at|date:"M d, Y g:i A" }}</span>
+        <span class="dot"></span>
+        <span><i class="fas fa-money-bill-wave me-1"></i>{{ order.get_payment_method_display }}</span>
+      </div>
+    </div>
+    <div class="od-actions">
+      <button type="button" onclick="window.print()" class="od-btn od-btn-secondary">
+        <i class="fas fa-print"></i>Print Order
+      </button>
+      <a href="{% url 'dashboard:order_list' %}" class="od-btn od-btn-secondary">
+        <i class="fas fa-arrow-left"></i>Back
+      </a>
+    </div>
+  </div>
+
+  <div class="od-grid">
+    <!-- ═══════════ MAIN COLUMN ═══════════ -->
+    <div>
+      <!-- Order Items + Summary -->
+      <div class="od-card">
+        <div class="od-card-header">
+          <div class="od-card-header-title">
+            <span class="ico" style="background:#e6f7f5;color:#0f9488;"><i class="fas fa-box"></i></span>
+            <h6>Order Items</h6>
+          </div>
+          <span class="od-count-chip">{{ order.items.all|length }} item{{ order.items.all|length|pluralize }}</span>
+        </div>
+
+        <div class="table-responsive">
+          <table class="od-items-table">
+            <thead>
+              <tr>
+                <th style="width:50%;">Product</th>
+                <th>Price</th>
+                <th>Quantity</th>
+                <th class="text-end">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in order.items.all %}
+              <tr>
+                <td>
+                  <div class="d-flex align-items-center gap-3">
+                    {% if item.design and item.design.image %}
+                      <img src="{{ item.design.image.url }}" class="od-thumb" alt="{{ item.product_name }}">
+                    {% elif item.product and item.product.image %}
+                      <img src="{{ item.product.image.url }}" class="od-thumb" alt="{{ item.product_name }}">
+                    {% else %}
+                      <div class="od-thumb-placeholder"><i class="fas fa-image"></i></div>
+                    {% endif %}
+                    <div>
+                      <div class="od-item-name">{{ item.product_name }}{% if item.size_display %}<span class="od-size-badge">{{ item.size_display }}</span>{% endif %}{% if item.design_name %}<span class="od-size-badge">{{ item.design_name }}</span>{% endif %}</div>
+                      {% if item.product %}<div class="od-item-sub">SKU: {{ item.product.pk }}</div>{% endif %}
+                    </div>
+                  </div>
+                </td>
+                <td class="num">₱{{ item.product_price|floatformat:2|intcomma }}</td>
+                <td><span class="od-qty-badge">{{ item.quantity }}</span></td>
+                <td class="num od-price-total">₱{{ item.item_total|floatformat:2|intcomma }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Summary -->
+        <div class="od-summary-block">
+          <div class="row">
+            <div class="col-md-6">
+              <div class="od-summary-row"><span class="label">Order Number</span><span class="value">{{ order.order_number }}</span></div>
+              <div class="od-summary-row"><span class="label">Date Placed</span><span class="value">{{ order.created_at|date:"M d, Y g:i A" }}</span></div>
+              <div class="od-summary-row"><span class="label">Last Updated</span><span class="value">{{ order.updated_at|date:"M d, Y g:i A" }}</span></div>
+              <div class="od-summary-row"><span class="label">Customer</span><span class="value">{% if order.user %}<a href="{% url 'dashboard:user_detail' order.user.pk %}">{{ order.user.username }}</a>{% else %}Guest{% endif %}</span></div>
+            </div>
+            <div class="col-md-6">
+              <div class="od-summary-row"><span class="label">Subtotal</span><span class="value">₱{{ order.subtotal|floatformat:2|intcomma }}</span></div>
+              <div class="od-summary-row"><span class="label">Shipping Fee</span><span class="value">₱{{ order.shipping_fee|floatformat:2|intcomma }}</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="od-grand-total">
+          <span class="gt-label">Grand Total</span>
+          <span class="gt-value">₱{{ order.total|floatformat:2|intcomma }}</span>
+        </div>
+      </div>
+
+      <!-- Shipping Info -->
+      <div class="od-card">
+        <div class="od-card-header">
+          <div class="od-card-header-title">
+            <span class="ico" style="background:#e8f0fe;color:#2b6cb0;"><i class="fas fa-map-marker-alt"></i></span>
+            <h6>Shipping Information</h6>
+          </div>
+        </div>
+        <div class="od-ship-grid">
+          <div class="od-ship-item">
+            <div class="od-ship-ico"><i class="fas fa-user"></i></div>
+            <div>
+              <div class="od-ship-label">Full Name</div>
+              <div class="od-ship-value">{{ order.full_name }}</div>
+            </div>
+          </div>
+          <div class="od-ship-item">
+            <div class="od-ship-ico"><i class="fas fa-envelope"></i></div>
+            <div>
+              <div class="od-ship-label">Email</div>
+              <div class="od-ship-value">{{ order.email }}</div>
+            </div>
+          </div>
+          <div class="od-ship-item">
+            <div class="od-ship-ico"><i class="fas fa-phone"></i></div>
+            <div>
+              <div class="od-ship-label">Phone</div>
+              <div class="od-ship-value">{{ order.phone }}</div>
+            </div>
+          </div>
+          <div class="od-ship-item">
+            <div class="od-ship-ico"><i class="fas fa-credit-card"></i></div>
+            <div>
+              <div class="od-ship-label">Payment Method</div>
+              <div class="od-ship-value">{{ order.get_payment_method_display }}</div>
+            </div>
+          </div>
+          <div class="od-ship-item full">
+            <div class="od-ship-ico"><i class="fas fa-home"></i></div>
+            <div>
+              <div class="od-ship-label">Address</div>
+              <div class="od-ship-value">{{ order.address }}, {{ order.city }}, {{ order.province }} {{ order.zip_code }}</div>
+            </div>
+          </div>
+          {% if order.notes %}
+          <div class="od-ship-item full">
+            <div class="od-ship-ico"><i class="fas fa-sticky-note"></i></div>
+            <div>
+              <div class="od-ship-label">Notes</div>
+              <div class="od-ship-value">{{ order.notes }}</div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+        {% if order.payment_method == 'cod' %}
+        <div class="od-ship-note">
+          <i class="fas fa-info-circle"></i>
+          <span>The customer will pay when the order is delivered.</span>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- ═══════════ SIDEBAR (sticky) ═══════════ -->
+    <div class="no-print">
+      <div class="od-sidebar-sticky">
+        <!-- Status Update -->
+        <div class="od-card">
+          <div class="od-card-header">
+            <div class="od-card-header-title">
+              <span class="ico" style="background:#f3f0ea;color:var(--teal);"><i class="fas fa-sync-alt"></i></span>
+              <h6>Update Status</h6>
+            </div>
+          </div>
+
+          <div class="od-current-status-block">
+            <div class="od-current-status-label">Current Status</div>
+            <span class="od-status-pill
+              {% if order.status == 'pending' %}st-pending
+              {% elif order.status == 'processing' %}st-processing
+              {% elif order.status == 'confirmed' %}st-confirmed
+              {% elif order.status == 'shipped' %}st-shipped
+              {% elif order.status == 'delivered' %}st-delivered
+              {% elif order.status == 'cancelled' %}st-cancelled
+              {% endif %}">
+              <span class="dot-ind"></span>{{ order.get_status_display|upper }}
+            </span>
+          </div>
+
+          {% if order.status != 'cancelled' %}
+          <div class="od-timeline">
+            {% with found=False %}
+            {% for s, l in status_choices %}
+              {% if s != 'cancelled' %}
+              <div class="od-tl-step
+                {% if order.status == 'delivered' %}done
+                {% elif s == order.status %}current
+                {% endif %}"
+                data-step="{{ s }}">
+                <div class="od-tl-marker-col">
+                  <div class="od-tl-dot">
+                    <i class="fas fa-check" style="display:none;"></i>
+                    <span>{{ forloop.counter }}</span>
+                  </div>
+                  {% if not forloop.last %}<div class="od-tl-line"></div>{% endif %}
+                </div>
+                <div class="od-tl-content">
+                  <div class="od-tl-title">{{ l }}</div>
+                  {% if s == order.status %}<div class="od-tl-sub">Current stage</div>{% endif %}
+                </div>
+              </div>
+              {% endif %}
+            {% endfor %}
+            {% endwith %}
+          </div>
+          {% else %}
+          <div class="od-timeline">
+            <div class="od-tl-step cancelled-step">
+              <div class="od-tl-marker-col">
+                <div class="od-tl-dot"><i class="fas fa-xmark"></i></div>
+              </div>
+              <div class="od-tl-content">
+                <div class="od-tl-title">Order Cancelled</div>
+                <div class="od-tl-sub">This order will not be fulfilled</div>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+
+          <div class="od-task-actions">
+            {% if order.status == 'pending' %}
+            <div class="od-task-hint">This order is waiting to be prepared. Starting processing is the only way to move it forward.</div>
+            <form method="post" action="{% url 'dashboard:order_start_processing' order.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="od-btn od-btn-primary w-100"><i class="fas fa-play"></i>Start Processing</button>
+            </form>
+
+            {% elif order.status == 'processing' %}
+            <div class="od-task-hint">Once everything is packed and ready to go out for delivery, confirm it below.</div>
+            <form method="post" action="{% url 'dashboard:order_mark_ready' order.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="od-btn od-btn-primary w-100"><i class="fas fa-box-check"></i>Mark Ready for Delivery</button>
+            </form>
+
+            {% elif order.status == 'confirmed' %}
+            <div class="od-task-hint">Assign one of our couriers below. The order becomes <strong>Shipped</strong> automatically once the courier confirms pickup with a photo — no manual status change needed here.</div>
+            <form method="post" action="{% url 'dashboard:order_assign_courier' order.pk %}" class="od-courier-form">
+              {% csrf_token %}
+              <select name="courier_id" class="form-select form-select-sm">
+                <option value="">— Unassigned —</option>
+                {% for c in couriers %}
+                <option value="{{ c.pk }}" {% if order.assigned_courier_id == c.pk %}selected{% endif %}>{{ c.get_full_name|default:c.username }}{% if c.role == 'staff' %} (Staff){% endif %}</option>
+                {% endfor %}
+              </select>
+              <button type="submit" class="od-btn od-btn-secondary" style="white-space:nowrap;"><i class="fas fa-user-check"></i>Assign</button>
+            </form>
+            {% if order.assigned_courier %}
+            <span class="od-courier-badge"><i class="fas fa-truck-fast"></i>Waiting for {{ order.assigned_courier.get_full_name|default:order.assigned_courier.username }} to confirm pickup</span>
+            {% endif %}
+
+            {% elif order.status == 'shipped' %}
+            <div class="od-task-hint">Picked up by {{ order.assigned_courier.get_full_name|default:order.assigned_courier.username|default:"the courier" }} on {{ order.pickup_confirmed_at|date:"M d, Y \a\t H:i" }}. This order becomes <strong>Delivered</strong> automatically once the courier confirms delivery with a photo.</div>
+            {% if order.pickup_proof %}
+            <img src="{{ order.pickup_proof.url }}" alt="Pickup proof" class="od-proof-thumb">
+            {% endif %}
+
+            {% elif order.status == 'delivered' %}
+            <div class="od-task-hint">Delivered on {{ order.delivery_confirmed_at|date:"M d, Y \a\t H:i" }}. This order is complete.</div>
+            {% if order.delivery_proof %}
+            <img src="{{ order.delivery_proof.url }}" alt="Delivery proof" class="od-proof-thumb">
+            {% endif %}
+            {% endif %}
+
+            {% if order.status not in 'shipped,delivered,cancelled' %}
+            <form method="post" action="{% url 'dashboard:order_cancel' order.pk %}" onsubmit="return confirm('Cancel order {{ order.order_number }}? Stock will be restored.');">
+              {% csrf_token %}
+              <button type="submit" class="od-cancel-btn"><i class="fas fa-ban"></i>&nbsp;Cancel Order</button>
+            </form>
+            {% endif %}
+          </div>
+        </div>
+
+        <!-- GCash Verification Image -->
+        {% if order.payment_method == 'gcash' %}
+        <div class="od-card">
+          <div class="od-card-header">
+            <div class="od-card-header-title">
+              <span class="ico" style="background:#e6f0fb;color:#0071CE;"><i class="fas fa-mobile-screen-button"></i></span>
+              <h6>GCash Verification</h6>
+            </div>
+          </div>
+          <div style="padding:20px 24px;">
+            {% if order.payment_proof %}
+            <a href="#" data-bs-toggle="modal" data-bs-target="#gcashProofModal">
+              <img src="{{ order.payment_proof.url }}" alt="GCash payment verification" class="rounded-3 border w-100" style="max-height:240px;object-fit:cover;">
+            </a>
+            <div class="mt-3" style="font-size:13px;">
+              <div class="text-success fw-semibold mb-1"><i class="fas fa-circle-check me-1"></i>Received</div>
+              {% if order.payment_submitted_at %}
+              <div class="text-muted">Sent: {{ order.payment_submitted_at|date:"M d, Y \a\t H:i" }}</div>
+              {% endif %}
+              <div class="text-muted">Amount due: <span class="fw-semibold" style="color:#2b2b2b;">₱{{ order.total|floatformat:2 }}</span></div>
+              <a href="#" data-bs-toggle="modal" data-bs-target="#gcashProofModal" class="fw-semibold" style="color:var(--teal);text-decoration:underline;">View full size</a>
+            </div>
+            {% else %}
+            <div class="p-2 rounded" style="background:#fdeeee; color:#c0392b; font-size:13px;">
+              <i class="fas fa-triangle-exclamation me-1"></i>No verification image submitted by the customer yet.
+            </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if order.payment_method == 'gcash' and order.payment_proof %}
+<!-- GCash Proof Full-Size Modal -->
+<div class="modal fade" id="gcashProofModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" style="color:var(--teal);"><i class="fas fa-mobile-screen-button me-2" style="color:#0071CE;"></i>GCash Verification Image</h5>
+        <div class="d-flex align-items-center gap-1 ms-auto me-2">
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="gcashZoomOut" title="Zoom out"><i class="fas fa-magnifying-glass-minus"></i></button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="gcashZoomReset" title="Reset zoom"><i class="fas fa-magnifying-glass"></i></button>
+          <button type="button" class="btn btn-sm btn-outline-secondary" id="gcashZoomIn" title="Zoom in"><i class="fas fa-magnifying-glass-plus"></i></button>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center p-0" id="gcashZoomWrap" style="overflow:auto; max-height:78vh; background:#f3f1eb; cursor:zoom-in;">
+        <img src="{{ order.payment_proof.url }}" alt="GCash payment verification" id="gcashZoomImg" style="max-width:100%; display:block; margin:0 auto; transition:transform .15s ease; transform:scale(1); transform-origin:center top;">
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  const wrap = document.getElementById('gcashZoomWrap');
+  const img = document.getElementById('gcashZoomImg');
+  const zoomInBtn = document.getElementById('gcashZoomIn');
+  const zoomOutBtn = document.getElementById('gcashZoomOut');
+  const zoomResetBtn = document.getElementById('gcashZoomReset');
+  const modalEl = document.getElementById('gcashProofModal');
+  if (!wrap || !img) return;
+
+  let scale = 1;
+  const MIN = 1, MAX = 4, STEP = 0.5;
+
+  function applyZoom() {
+    img.style.transform = `scale(${scale})`;
+    wrap.style.cursor = scale > 1 ? 'zoom-out' : 'zoom-in';
+  }
+  function zoomIn() { scale = Math.min(MAX, scale + STEP); applyZoom(); }
+  function zoomOut() { scale = Math.max(MIN, scale - STEP); applyZoom(); }
+  function zoomReset() { scale = 1; applyZoom(); wrap.scrollTop = 0; wrap.scrollLeft = 0; }
+
+  zoomInBtn.addEventListener('click', zoomIn);
+  zoomOutBtn.addEventListener('click', zoomOut);
+  zoomResetBtn.addEventListener('click', zoomReset);
+  img.addEventListener('click', () => { scale > 1 ? zoomReset() : (scale = 2, applyZoom()); });
+  wrap.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    e.deltaY < 0 ? zoomIn() : zoomOut();
+  }, { passive: false });
+  if (modalEl) modalEl.addEventListener('hidden.bs.modal', zoomReset);
+})();
+</script>
+{% endif %}
+
+<script>
+// Mark timeline steps completed relative to current status order (client-side, no backend change)
+(function () {
+  const order = ['pending','processing','confirmed','shipped','delivered'];
+  const steps = document.querySelectorAll('.od-tl-step[data-step]');
+  if (!steps.length) return;
+  let currentIdx = -1;
+  steps.forEach(s => { if (s.classList.contains('current')) currentIdx = order.indexOf(s.dataset.step); });
+  if (currentIdx === -1) return;
+  steps.forEach(s => {
+    const idx = order.indexOf(s.dataset.step);
+    if (idx > -1 && idx < currentIdx) {
+      s.classList.add('done');
+      s.classList.remove('current');
+      const dot = s.querySelector('.od-tl-dot');
+      dot.querySelector('i').style.display = 'inline';
+      dot.querySelector('span').style.display = 'none';
+    }
+  });
+})();
+</script>
+{% endblock %}

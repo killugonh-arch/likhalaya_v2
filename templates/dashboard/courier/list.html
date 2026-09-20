@@ -1,0 +1,116 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize %}
+{% block page_title %}My Deliveries{% endblock %}
+{% block sb_deliveries %}active{% endblock %}
+{% block sb_deliveries2 %}active{% endblock %}
+{% block title %}My Deliveries – Likhalaya Dashboard{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+:root {
+  --brand-green: #0F6B4F;
+  --brand-green-hover: #0C5940;
+  --brand-green-light: #E6F4EF;
+  --surface-white: #FFFFFF;
+  --surface-subtle: #F9FAF9;
+  --border: #E4E7E4;
+  --text-primary: #1A1D1B;
+  --text-secondary: #5B615D;
+  --text-muted: #9AA09C;
+  --warning: #B7791F;
+  --warning-bg: #FBF3E4;
+  --radius-sm: 6px; --radius-md: 10px;
+  --shadow-sm: 0 1px 2px rgba(16,24,20,0.06);
+  --space-2: 8px; --space-3: 16px; --space-4: 24px; --space-6: 48px;
+}
+.ds-breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: var(--space-3); display: flex; align-items: center; gap: 6px; }
+.ds-breadcrumb .current { color: var(--text-primary); font-weight: 600; }
+.dash-greeting-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+.dash-greeting-sub { font-size: 13px; color: var(--text-muted); }
+.dash-panel { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.ds-table { width: 100%; border-collapse: collapse; background: var(--surface-white); border-radius: var(--radius-md); overflow: hidden; }
+.ds-table thead th { background: var(--surface-subtle); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); padding: 12px var(--space-3); text-align: left; border-bottom: 1px solid var(--border); }
+.ds-table tbody td { padding: 14px var(--space-3); font-size: 13.5px; color: var(--text-primary); border-bottom: 1px solid var(--border); }
+.ds-table tbody tr:hover { background: var(--surface-subtle); }
+.ds-table tbody tr:last-child td { border-bottom: none; }
+.ds-table tbody tr.order-row { cursor: pointer; }
+.ds-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.ds-badge-warning { background: var(--warning-bg); color: var(--warning); }
+.ds-badge-neutral { background: var(--surface-subtle); color: var(--text-secondary); }
+.ds-empty-state { text-align: center; padding: var(--space-6) var(--space-4); color: var(--text-muted); }
+.ds-empty-state .icon { font-size: 36px; color: var(--border); margin-bottom: var(--space-3); }
+.ds-empty-state .title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+.ds-empty-state .desc { font-size: 13px; }
+.order-meta-chip {
+  display: inline-flex; align-items: center; background: var(--surface-subtle);
+  color: var(--text-secondary); font-size: 11px; font-weight: 600;
+  padding: 3px 9px; border-radius: 20px; border: 1px solid var(--border);
+}
+</style>
+{% endblock %}
+
+{% block dash_content %}
+<nav class="ds-breadcrumb" aria-label="Breadcrumb">
+  <span class="current" aria-current="page">My Deliveries</span>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+  <div>
+    <h1 class="dash-greeting-title">My Deliveries</h1>
+    <p class="dash-greeting-sub mb-0">
+      {% if request.user.is_courier_user %}Orders assigned to you that need a pickup or delivery confirmation.
+      {% else %}Every order currently waiting on a courier action.{% endif %}
+    </p>
+  </div>
+</div>
+
+<div class="dash-panel">
+  <div class="table-responsive">
+    <table class="ds-table mb-0">
+      <thead><tr>
+        <th>Order #</th><th>Customer</th><th>Address</th><th>Status</th><th>Assigned Courier</th><th>Date</th>
+      </tr></thead>
+      <tbody>
+        {% for order in orders %}
+        {% url 'dashboard:courier_order_detail' order.pk as order_url %}
+        <tr class="order-row" data-href="{{ order_url }}">
+          <td class="fw-semibold" style="color:var(--brand-green);">{{ order.order_number }}</td>
+          <td>
+            <div class="fw-semibold" style="font-size:13px;">{{ order.full_name }}</div>
+            <div class="text-muted" style="font-size:11px;">{{ order.phone }}</div>
+          </td>
+          <td class="text-muted" style="font-size:12.5px;">{{ order.address }}, {{ order.city }}</td>
+          <td>
+            <span class="ds-badge {% if order.status == 'confirmed' %}ds-badge-warning{% else %}ds-badge-neutral{% endif %}">
+              {% if order.status == 'confirmed' %}Awaiting Pickup{% else %}Awaiting Delivery{% endif %}
+            </span>
+          </td>
+          <td><span class="order-meta-chip">{{ order.assigned_courier.get_full_name|default:"Unassigned" }}</span></td>
+          <td class="text-muted" style="font-size:12px;">{{ order.created_at|date:"M d, Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6">
+          <div class="ds-empty-state">
+            <i class="fas fa-truck-fast icon"></i>
+            <div class="title">No deliveries right now</div>
+            <div class="desc">Confirmed orders assigned to you will show up here.</div>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+document.querySelectorAll('.order-row').forEach(function (row) {
+  row.addEventListener('click', function () { window.location = row.dataset.href; });
+  row.setAttribute('tabindex', '0');
+  row.setAttribute('role', 'link');
+  row.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); window.location = row.dataset.href; }
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,192 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block sb_categories %}active{% endblock %}
+{% block title %}{{ title }} – Dashboard{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+/* =========================================================
+   Reuses the approved Likhalaya design-system tokens and
+   components (dash-panel, ds-input, ds-btn, ds-breadcrumb) —
+   same component set as Users / Orders / Reports pages, kept
+   local to this template only where the shared
+   design-system.css/dashboard.css files aren't yet wired into
+   this build. No new visual language introduced.
+   ========================================================= */
+:root {
+  --brand-green: #0F6B4F;
+  --brand-green-hover: #0C5940;
+  --brand-green-light: #E6F4EF;
+  --surface-white: #FFFFFF;
+  --surface-subtle: #F9FAF9;
+  --border: #E4E7E4;
+  --text-primary: #1A1D1B;
+  --text-secondary: #5B615D;
+  --text-muted: #9AA09C;
+  --danger: #C0362C;
+  --danger-bg: #FBEAE8;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgba(16,24,20,0.06);
+  --shadow-md: 0 4px 12px rgba(16,24,20,0.08);
+  --space-1: 4px; --space-2: 8px; --space-3: 16px; --space-4: 24px; --space-5: 32px; --space-6: 48px;
+  --transition: 150ms ease;
+}
+
+.ds-breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: var(--space-3); display: flex; align-items: center; gap: 6px; }
+.ds-breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color var(--transition); }
+.ds-breadcrumb a:hover { color: var(--brand-green); }
+.ds-breadcrumb .current { color: var(--text-primary); font-weight: 600; }
+.ds-breadcrumb .sep { color: var(--border); }
+
+/* Compact page header — replaces the oversized gradient hero */
+.ds-page-header {
+  display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap;
+  gap: var(--space-3); padding-bottom: var(--space-4); margin-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border);
+}
+.ds-page-header h1 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0; }
+.ds-page-header p { font-size: 13px; color: var(--text-muted); margin: 4px 0 0; }
+
+.ds-btn { font-size: 14px; font-weight: 600; border-radius: var(--radius-sm); padding: 10px 16px; border: none; transition: background var(--transition), box-shadow var(--transition), border-color var(--transition), color var(--transition); cursor: pointer; display: inline-flex; align-items: center; text-decoration: none; }
+.ds-btn-primary { background: var(--brand-green); color: #fff; }
+.ds-btn-primary:hover { background: var(--brand-green-hover); box-shadow: var(--shadow-sm); color: #fff; }
+.ds-btn-secondary { background: var(--surface-white); color: var(--text-primary); border: 1px solid var(--border); }
+.ds-btn-secondary:hover { background: var(--surface-subtle); color: var(--text-primary); }
+.ds-btn-outline-brand { background: var(--surface-white); color: var(--brand-green); border: 1.5px solid var(--brand-green); }
+.ds-btn-outline-brand:hover { background: var(--brand-green-light); color: var(--brand-green); }
+.ds-btn-sm { padding: 8px 12px; font-size: 13px; }
+.ds-btn:focus-visible { outline: 2px solid var(--brand-green-light); outline-offset: 2px; }
+
+/* Form card — shared dash-panel pattern */
+.dash-panel { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden; }
+.dash-panel-header { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-4); border-bottom: 1px solid var(--border); }
+.dash-panel-header .icon-badge {
+  width: 34px; height: 34px; border-radius: var(--radius-sm); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--brand-green-light); color: var(--brand-green); font-size: 14px;
+}
+.dash-panel-header h6 { margin: 0; font-weight: 700; font-size: 14.5px; color: var(--text-primary); }
+.dash-panel-header .subtitle { font-size: 12px; color: var(--text-muted); margin-top: 1px; }
+.dash-panel-body { padding: var(--space-4); }
+
+.ds-form-group { margin-bottom: var(--space-4); }
+.ds-form-group:last-child { margin-bottom: 0; }
+.ds-label { font-size: 11.5px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; margin-bottom: var(--space-2); display: block; }
+.ds-label .required-mark { color: var(--danger); margin-left: 2px; }
+.ds-helper-text { font-size: 12px; color: var(--text-muted); margin-top: var(--space-2); }
+.ds-char-count { font-size: 11px; color: var(--text-muted); text-align: right; margin-top: var(--space-2); }
+.ds-error-text { font-size: 12px; color: var(--danger); margin-top: var(--space-2); }
+
+/* Targets the existing form-control class rendered by CategoryForm's widgets — no forms.py change needed */
+.dash-panel-body .form-control {
+  width: 100%; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  padding: 10px var(--space-3); font-size: 14px; color: var(--text-primary);
+  background: var(--surface-white); transition: border-color var(--transition), box-shadow var(--transition);
+}
+input.form-control { height: 50px; }
+.dash-panel-body .form-control:focus {
+  outline: none; border-color: var(--brand-green); box-shadow: 0 0 0 3px var(--brand-green-light);
+}
+.dash-panel-body textarea.form-control { resize: vertical; min-height: 130px; line-height: 1.5; }
+.dash-panel-body .form-control.is-invalid { border-color: var(--danger); }
+
+.ds-info-box {
+  display: flex; gap: var(--space-2); align-items: flex-start;
+  background: var(--brand-green-light); border-radius: var(--radius-sm);
+  padding: 12px var(--space-3); margin-bottom: var(--space-4);
+  font-size: 12.5px; color: var(--text-secondary); line-height: 1.5;
+}
+.ds-info-box i { color: var(--brand-green); margin-top: 2px; }
+
+.dash-panel-footer {
+  padding: var(--space-3) var(--space-4); border-top: 1px solid var(--border);
+  display: flex; justify-content: flex-end; gap: var(--space-2);
+}
+
+@media (max-width: 767px) {
+  .ds-page-header { flex-direction: column; }
+  .ds-page-header .ds-btn { align-self: flex-start; }
+  .dash-panel-footer { flex-direction: column-reverse; }
+  .dash-panel-footer .ds-btn { width: 100%; justify-content: center; }
+}
+</style>
+{% endblock %}
+
+{% block dash_content %}
+<nav class="ds-breadcrumb" aria-label="Breadcrumb">
+  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+  <span class="sep">/</span><a href="{% url 'dashboard:category_list' %}">Categories</a>
+  <span class="sep">/</span><span class="current" aria-current="page">{{ title }}</span>
+</nav>
+
+<div class="ds-page-header">
+  <div>
+    <h1>{{ title }}</h1>
+    <p>{% if category %}Update this category's name and description.{% else %}Create a new category to organize your products.{% endif %}</p>
+  </div>
+  <a href="{% url 'dashboard:category_list' %}" class="ds-btn ds-btn-outline-brand ds-btn-sm">
+    <i class="fas fa-arrow-left me-2"></i>Back to Categories
+  </a>
+</div>
+
+<div class="row justify-content-center">
+  <div class="col-12 col-xxl-10">
+    <form method="post" enctype="multipart/form-data" novalidate>
+      {% csrf_token %}
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <div class="icon-badge"><i class="fas fa-tag"></i></div>
+          <div>
+            <h6>Category Details</h6>
+            <div class="subtitle">Update the category information below.</div>
+          </div>
+        </div>
+        <div class="dash-panel-body">
+          <div class="ds-info-box">
+            <i class="fas fa-circle-info"></i>
+            <div><strong>Category information.</strong> Category names help organize products and make it easier for customers to browse the marketplace. Changes will be reflected wherever this category is displayed.</div>
+          </div>
+          <div class="ds-form-group">
+            <label class="ds-label" for="{{ form.name.id_for_label }}">
+              Name<span class="required-mark">*</span>
+            </label>
+            {{ form.name }}
+            <div class="ds-char-count"><span id="name-count">{{ form.name.value|default:""|length }}</span>/100</div>
+            {% if form.name.errors %}
+              <div class="ds-error-text">{{ form.name.errors.0 }}</div>
+            {% endif %}
+          </div>
+          <div class="ds-form-group">
+            <label class="ds-label" for="{{ form.description.id_for_label }}">Description</label>
+            {{ form.description }}
+            <div class="d-flex justify-content-between align-items-start">
+              {% if form.description.errors %}
+                <div class="ds-error-text">{{ form.description.errors.0 }}</div>
+              {% else %}
+                <div class="ds-helper-text">Optional. Shown to customers browsing this category.</div>
+              {% endif %}
+              <div class="ds-char-count"><span id="desc-count">{{ form.description.value|default:""|length }}</span>/500</div>
+            </div>
+          </div>
+        </div>
+        <div class="dash-panel-footer">
+          <a href="{% url 'dashboard:category_list' %}" class="ds-btn ds-btn-secondary">Cancel</a>
+          <button type="submit" class="ds-btn ds-btn-primary">{% if category %}Save Changes{% else %}Create Category{% endif %}</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function() {
+  var nameInput = document.getElementById('{{ form.name.id_for_label }}');
+  var descInput = document.getElementById('{{ form.description.id_for_label }}');
+  var nameCount = document.getElementById('name-count');
+  var descCount = document.getElementById('desc-count');
+  if (nameInput) nameInput.addEventListener('input', function() { nameCount.textContent = nameInput.value.length; });
+  if (descInput) descInput.addEventListener('input', function() { descCount.textContent = descInput.value.length; });
+})();
+</script>
+{% endblock %}

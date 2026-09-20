@@ -1,0 +1,889 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize %}
+{% block page_title %}Reports{% endblock %}
+{% block sb_reports %}active{% endblock %}
+{% block title %}Reports – Dashboard{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+/* =========================================================
+   Reuses the approved Likhalaya design-system tokens and
+   components (ds-kpi-card, dash-panel, ds-table, ds-badge,
+   ds-btn) — same component set as the Dashboard Home and
+   Orders pages, kept local to this template only where the
+   shared design-system.css/dashboard.css files aren't yet
+   wired into this build. No new visual language introduced.
+   ========================================================= */
+:root {
+  --brand-green: #0F6B4F;
+  --brand-green-hover: #0C5940;
+  --brand-green-light: #E6F4EF;
+  --surface-white: #FFFFFF;
+  --surface-subtle: #F9FAF9;
+  --border: #E4E7E4;
+  --text-primary: #1A1D1B;
+  --text-secondary: #5B615D;
+  --text-muted: #9AA09C;
+  --success: #0F6B4F;
+  --warning: #B7791F;
+  --warning-bg: #FBF3E4;
+  --danger: #C0362C;
+  --danger-bg: #FBEAE8;
+  --info: #2980B9;
+  --info-bg: #E8F1FB;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgba(16,24,20,0.06);
+  --shadow-md: 0 4px 12px rgba(16,24,20,0.08);
+  --shadow-lg: 0 12px 32px rgba(16,24,20,0.12);
+  --space-1: 4px; --space-2: 8px; --space-3: 16px; --space-4: 24px; --space-5: 32px; --space-6: 48px;
+  --transition: 150ms ease;
+}
+
+.ds-breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: var(--space-3); display: flex; align-items: center; gap: 6px; }
+.ds-breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color var(--transition); }
+.ds-breadcrumb a:hover { color: var(--brand-green); }
+.ds-breadcrumb .current { color: var(--text-primary); font-weight: 600; }
+.ds-breadcrumb .sep { color: var(--border); }
+
+.dash-greeting-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+.dash-greeting-sub { font-size: 13px; color: var(--text-muted); }
+
+.ds-btn { font-size: 14px; font-weight: 600; border-radius: var(--radius-sm); padding: 10px 16px; border: none; transition: background var(--transition), box-shadow var(--transition); cursor: pointer; display: inline-flex; align-items: center; }
+.ds-btn-primary { background: var(--brand-green); color: #fff; }
+.ds-btn-primary:hover { background: var(--brand-green-hover); box-shadow: var(--shadow-sm); color: #fff; }
+.ds-btn-secondary { background: var(--surface-white); color: var(--text-primary); border: 1px solid var(--border); }
+.ds-btn-secondary:hover { background: var(--surface-subtle); color: var(--text-primary); }
+.ds-btn-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(192,54,44,.25); }
+.ds-btn-danger:hover { background: var(--danger); color: #fff; }
+.ds-btn-sm { padding: 6px 12px; font-size: 12.5px; }
+.ds-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ds-select { font-size: 13.5px; font-weight: 600; padding: 9px 14px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-white); color: var(--text-primary); }
+
+.ds-kpi-card { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-4); box-shadow: var(--shadow-sm); transition: box-shadow var(--transition); height: 100%; }
+.ds-kpi-card:hover { box-shadow: var(--shadow-md); }
+.ds-kpi-card .kpi-label { font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 700; }
+.ds-kpi-card .kpi-value { font-size: 22px; font-weight: 700; color: var(--text-primary); line-height: 1.15; margin-top: 4px; }
+.ds-kpi-card .kpi-delta { font-size: 12px; font-weight: 600; margin-top: 6px; color: var(--text-muted); }
+
+.dash-kpi-icon { width: 40px; height: 40px; border-radius: var(--radius-sm); display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.icon-product  { background: var(--brand-green-light); color: var(--brand-green); }
+.icon-shipping { background: var(--warning-bg); color: var(--warning); }
+.icon-gcash    { background: var(--info-bg); color: var(--info); }
+.icon-cod      { background: #F1E9FB; color: #6E3FA8; }
+.icon-orders   { background: var(--surface-subtle); color: var(--text-secondary); }
+
+.dash-panel { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.dash-panel-header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); gap: var(--space-2); flex-wrap: wrap; }
+.dash-panel-header h6 { font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0; }
+.dash-panel-body { padding: var(--space-3); }
+.dash-panel-empty { text-align: center; padding: var(--space-4); color: var(--text-muted); font-size: 13px; }
+.dash-panel-empty i { color: var(--brand-green); margin-right: 4px; }
+
+.ds-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.ds-badge-neutral { background: var(--surface-subtle); color: var(--text-secondary); }
+.ds-badge-success { background: var(--brand-green-light); color: var(--brand-green); }
+.ds-badge-warning { background: var(--warning-bg); color: var(--warning); }
+.ds-badge-danger { background: var(--danger-bg); color: var(--danger); }
+.ds-badge-info { background: var(--info-bg); color: var(--info); }
+
+.ds-table { width: 100%; border-collapse: collapse; background: var(--surface-white); border-radius: var(--radius-md); overflow: hidden; }
+.ds-table thead th { background: var(--surface-subtle); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); padding: 12px var(--space-3); text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.ds-table tbody td, .ds-table tfoot td { padding: 12px var(--space-3); font-size: 13px; color: var(--text-primary); border-bottom: 1px solid var(--border); }
+.ds-table tbody tr { transition: background var(--transition); }
+.ds-table tbody tr:hover { background: var(--surface-subtle); }
+.ds-table tbody tr:last-child td { border-bottom: none; }
+.ds-table tr.row-total td { background: var(--surface-subtle); font-weight: 700; border-top: 2px solid var(--border); border-bottom: none; }
+
+.ds-empty-state { text-align: center; padding: var(--space-6) var(--space-4); color: var(--text-muted); }
+.ds-empty-state .icon { font-size: 36px; color: var(--border); margin-bottom: var(--space-3); }
+.ds-empty-state .title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+.ds-empty-state .desc { font-size: 13px; }
+
+/* Reports-specific: filter toolbar + financial hierarchy */
+.reports-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-4); }
+.reports-filter-form { display: inline-flex; gap: 8px; align-items: center; }
+.reports-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+
+.data-note { display: flex; align-items: flex-start; gap: 10px; background: var(--warning-bg); border: 1px solid rgba(183,121,31,.25); color: var(--warning); border-radius: var(--radius-md); padding: 12px 16px; font-size: 12.5px; margin-bottom: var(--space-4); }
+.data-note i { margin-top: 2px; }
+
+.financial-row { display: flex; align-items: center; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.financial-row:last-child { border-bottom: none; }
+.financial-row .fr-label { font-size: 13.5px; color: var(--text-secondary); }
+.financial-row .fr-value { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.financial-row.fr-total .fr-label, .financial-row.fr-total .fr-value { color: var(--text-primary); font-weight: 700; }
+.financial-row.fr-highlight { background: var(--brand-green-light); margin: 0 calc(-1 * var(--space-3)); padding: 14px var(--space-3); border-radius: var(--radius-sm); border-bottom: none; }
+.financial-row.fr-highlight .fr-label, .financial-row.fr-highlight .fr-value { color: var(--brand-green); }
+.financial-divider { height: 1px; background: var(--border); margin: 8px 0; }
+
+.status-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 12.5px; font-weight: 700; }
+.status-pill.open { background: var(--info-bg); color: var(--info); }
+.status-pill.finalized { background: var(--brand-green-light); color: var(--brand-green); }
+
+.expense-row-actions form { display: inline; }
+
+/* Section tabs: split the page into "Revenue & PDL" vs "Sales Analytics"
+   so the two different data lenses (delivery-based vs order-date-based)
+   don't blur together into one long wall of panels. */
+.reports-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: var(--space-4); }
+.reports-tab-btn {
+  appearance: none; background: none; border: none; cursor: pointer;
+  padding: 10px 4px; margin-right: var(--space-4); font-size: 14px; font-weight: 700;
+  color: var(--text-muted); border-bottom: 2px solid transparent; transition: color var(--transition), border-color var(--transition);
+}
+.reports-tab-btn:hover { color: var(--text-primary); }
+.reports-tab-btn.active { color: var(--brand-green); border-bottom-color: var(--brand-green); }
+.reports-tab-panel { display: none; }
+.reports-tab-panel.active { display: block; }
+.reports-section-intro { font-size: 12.5px; color: var(--text-muted); margin: -8px 0 var(--space-4); max-width: 640px; }
+
+/* Print-only letterhead, footer, summary table & chart images — hidden on screen */
+.print-letterhead, .print-footer, .print-summary-table, .print-chart-img { display: none; }
+
+@media print {
+  .reports-tabs { display: none !important; }
+  .reports-tab-panel { display: block !important; }
+}
+
+@media print {
+  @page { size: A4 portrait; margin: 14mm 12mm; }
+
+  html, body { background: #fff !important; }
+
+  /* Hide all app chrome — this should read as a standalone document */
+  .dash-sidebar, .dash-topbar, .reports-actions, .ds-breadcrumb,
+  .expense-row-actions, .reports-filter-form, .reports-tabs,
+  .dash-greeting-title, .dash-greeting-sub, .reports-toolbar,
+  .status-pill, .ds-btn, .modal { display: none !important; }
+
+  /* Reclaim the space the sidebar left behind */
+  .dash-main { margin-left: 0 !important; }
+
+  /* Formal document typography */
+  body, .dash-panel, .ds-table, .financial-row, .ds-badge {
+    font-family: Georgia, 'Times New Roman', serif !important;
+    color: #000 !important;
+  }
+
+  .print-letterhead {
+    display: block !important;
+    text-align: center;
+    border-bottom: 2px solid #000;
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+  }
+  .print-org-name { font-size: 22px; font-weight: 700; letter-spacing: 0.08em; }
+  .print-doc-title { font-size: 14px; font-weight: 600; margin-top: 2px; }
+  .print-doc-meta { font-size: 11px; margin-top: 6px; }
+  .print-doc-generated { font-size: 9.5px; font-style: italic; color: #444 !important; margin-top: 2px; }
+
+  .print-footer { display: block !important; margin-top: 12px; page-break-before: avoid; }
+  .print-footer-line { border-top: 1px solid #000; margin-bottom: 6px; }
+  .print-footer-text { font-size: 9px; text-align: center; color: #444 !important; }
+
+  /* Flatten cards into plain sectioned blocks — no shadows, rounded
+     corners, or brand color; just a hairline rule like a printed form */
+  .reports-tab-panel { display: block !important; }
+  .row { display: block !important; }
+  .row > [class*="col-"] { width: 100% !important; max-width: 100% !important; flex: none !important; padding: 0 !important; }
+
+  .dash-panel {
+    box-shadow: none !important;
+    border: none !important;
+    border-bottom: 1px solid #000 !important;
+    border-radius: 0 !important;
+    margin-bottom: 14px !important;
+    /* Let tall panels (long tables) flow across a page break naturally
+       instead of forcing the whole block onto the next page — that's
+       what was leaving a near-empty trailing page behind. */
+    page-break-inside: auto;
+  }
+  .dash-panel-header {
+    border-bottom: 1px solid #000 !important;
+    padding: 4px 0 !important;
+    page-break-after: avoid; /* keep a section's title glued to its first row */
+  }
+  .dash-panel-header h6 {
+    font-size: 12.5px !important;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .dash-panel-body { padding: 8px 0 !important; }
+  .ds-badge { background: none !important; border: 1px solid #000 !important; border-radius: 0 !important; padding: 1px 6px !important; }
+
+  .ds-kpi-card {
+    box-shadow: none !important; border: 1px solid #000 !important; border-radius: 0 !important;
+  }
+  .dash-kpi-icon { display: none !important; }
+
+  .financial-row.fr-highlight {
+    background: none !important; margin: 0 !important; border-top: 1px solid #000 !important; border-bottom: 1px solid #000 !important;
+  }
+  .financial-row.fr-highlight .fr-label, .financial-row.fr-highlight .fr-value { color: #000 !important; }
+
+  /* Tables — clean report style, not a busy ledger: only an outer
+     border and the header rule, no line under every single row */
+  .ds-table { border: 1px solid #000 !important; }
+  .ds-table thead { display: table-header-group; } /* repeat header row if a table spans a page break */
+  .ds-table tr { page-break-inside: avoid; } /* never split a single row across pages */
+  .ds-table thead th {
+    background: none !important; color: #000 !important;
+    border-bottom: 1px solid #000 !important; font-size: 10px !important;
+  }
+  .ds-table tbody td, .ds-table tfoot td { border-bottom: none !important; font-size: 11px !important; }
+  .ds-table tbody tr:not(:last-child) td { border-bottom: 1px solid #eee !important; }
+  .ds-table tr.row-total td { background: none !important; border-top: 1px solid #000 !important; }
+  .ds-table tbody tr:hover { background: none !important; }
+
+  /* KPI cards → plain summary table on paper; the card grid never prints */
+  .ds-kpi-card, .row.g-3.mb-4 { display: none !important; }
+  .print-summary-table { display: table !important; width: 100% !important; margin-bottom: 16px !important; }
+
+  /* Financial Summary rows shown as a plain two-column table, not boxed rows */
+  .financial-row { border-bottom: none !important; padding: 3px 0 !important; }
+  .financial-divider { display: none !important; }
+
+  /* Charts: the live canvas can't print reliably, so it's swapped for a
+     captured image (see script) just for the print pass */
+  canvas { display: none !important; }
+  .print-chart-img { display: block !important; max-width: 100%; margin: 0 auto; }
+
+  a { color: #000 !important; text-decoration: none !important; }
+}
+
+@media (max-width: 991px) {
+  .dash-greeting-title { font-size: 18px; }
+  .reports-toolbar { flex-direction: column; align-items: stretch; }
+  .reports-actions { justify-content: flex-start; }
+  .reports-filter-form { flex-wrap: wrap; }
+}
+</style>
+{% endblock %}
+
+{% block dash_content %}
+<!-- Print-only letterhead: hidden on screen, shown only when printing -->
+<div class="print-letterhead">
+  <div class="print-org-name">LIKHALAYA</div>
+  <div class="print-doc-title">Financial Report</div>
+  <div class="print-doc-meta">
+    Period: {{ period_label }}
+    {% if pdl.is_locked %}&nbsp;·&nbsp;Status: Finalized{% else %}&nbsp;·&nbsp;Status: Open{% endif %}
+  </div>
+  <div class="print-doc-generated">Generated {% now "F d, Y \a\t h:i A" %} by {{ request.user.get_full_name|default:request.user.username }}</div>
+</div>
+
+<!-- Print-only summary table: replaces the KPI card grid on paper -->
+<table class="print-summary-table ds-table">
+  <thead><tr><th colspan="2">Summary</th></tr></thead>
+  <tbody>
+    <tr><td>Product Sales (PDL basis)</td><td>₱{{ financials.product_income|floatformat:2|intcomma }}</td></tr>
+    <tr><td>Shipping Fees</td><td>₱{{ financials.shipping_income|floatformat:2|intcomma }}</td></tr>
+    <tr><td>GCash Sales</td><td>₱{{ gcash_product_income|default:0|floatformat:2|intcomma }}</td></tr>
+    <tr><td>COD Sales</td><td>₱{{ cod_product_income|default:0|floatformat:2|intcomma }}</td></tr>
+    <tr><td>Orders Delivered</td><td>{{ financials.order_count }}</td></tr>
+  </tbody>
+</table>
+
+<nav class="ds-breadcrumb" aria-label="Breadcrumb">
+  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+  <span class="sep">/</span><span class="current" aria-current="page">Reports</span>
+</nav>
+
+<div class="reports-toolbar">
+  <div>
+    <h1 class="dash-greeting-title">Financial Reports</h1>
+    <p class="dash-greeting-sub mb-0">{{ period_label }}</p>
+  </div>
+  <div class="reports-actions">
+    <form method="get" class="reports-filter-form" id="periodFilterForm">
+      <select name="month" class="ds-select" onchange="document.getElementById('periodFilterForm').submit()">
+        {% for m_num, m_name in months %}
+        <option value="{{ m_num }}" {% if m_num == selected_month %}selected{% endif %}>{{ m_name }}</option>
+        {% endfor %}
+      </select>
+      <select name="year" class="ds-select" onchange="document.getElementById('periodFilterForm').submit()">
+        {% for y in available_years %}
+        <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    {% if request.user.is_admin_user %}
+    <a href="{% url 'dashboard:reports_export_excel' %}?year={{ selected_year }}&month={{ selected_month }}" class="ds-btn ds-btn-primary ds-btn-sm">
+      <i class="fas fa-file-excel me-2"></i>Export Excel
+    </a>
+    {% endif %}
+    <button onclick="window.print()" class="ds-btn ds-btn-secondary ds-btn-sm">
+      <i class="fas fa-print me-2"></i>Print
+    </button>
+  </div>
+</div>
+
+{% if financials.legacy_fallback_count %}
+<div class="data-note">
+  <i class="fas fa-triangle-exclamation"></i>
+  <div>
+    <strong>{{ financials.legacy_fallback_count }} order{{ financials.legacy_fallback_count|pluralize }}</strong> counted in {{ period_label }}
+    {{ financials.legacy_fallback_count|pluralize:"has,have" }} no recorded delivery date and {{ financials.legacy_fallback_count|pluralize:"is,are" }}
+    placed here using the order date instead. This affects a small number of legacy orders only; new orders always record a delivery date.
+  </div>
+</div>
+{% endif %}
+
+<!-- Section Tabs -->
+<div class="reports-tabs">
+  <button type="button" class="reports-tab-btn active" data-tab="revenue">Revenue &amp; Income</button>
+  <button type="button" class="reports-tab-btn" data-tab="analytics">Sales Analytics</button>
+</div>
+
+<div class="reports-tab-panel active" id="tab-revenue">
+<p class="reports-section-intro">Money actually received. Counts delivered orders only, grouped by delivery date.</p>
+
+<!-- KPI Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg">
+    <div class="ds-kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Product Sales</div>
+          <div class="kpi-value">₱{{ financials.product_income|floatformat:2|intcomma }}</div>
+          <div class="kpi-delta">PDL basis</div>
+        </div>
+        <div class="dash-kpi-icon icon-product"><i class="fas fa-box"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="ds-kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Shipping Fees</div>
+          <div class="kpi-value">₱{{ financials.shipping_income|floatformat:2|intcomma }}</div>
+          <div class="kpi-delta">excluded from PDL</div>
+        </div>
+        <div class="dash-kpi-icon icon-shipping"><i class="fas fa-truck"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="ds-kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">GCash Sales</div>
+          <div class="kpi-value" style="font-size:19px;">₱{{ gcash_product_income|default:0|floatformat:2|intcomma }}</div>
+          <div class="kpi-delta">product income</div>
+        </div>
+        <div class="dash-kpi-icon icon-gcash"><i class="fas fa-mobile-screen-button"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="ds-kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">COD Sales</div>
+          <div class="kpi-value" style="font-size:19px;">₱{{ cod_product_income|default:0|floatformat:2|intcomma }}</div>
+          <div class="kpi-delta">product income</div>
+        </div>
+        <div class="dash-kpi-icon icon-cod"><i class="fas fa-hand-holding-dollar"></i></div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-lg">
+    <div class="ds-kpi-card">
+      <div class="d-flex justify-content-between align-items-start">
+        <div>
+          <div class="kpi-label">Orders</div>
+          <div class="kpi-value">{{ financials.order_count }}</div>
+          <div class="kpi-delta">delivered, {{ period_label }}</div>
+        </div>
+        <div class="dash-kpi-icon icon-orders"><i class="fas fa-shopping-bag"></i></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Monthly Financial Summary + Month-End Closing -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-7">
+    <div class="dash-panel h-100">
+      <div class="dash-panel-header">
+        <h6>Monthly Financial Summary</h6>
+        <span class="ds-badge ds-badge-neutral">{{ period_label }}</span>
+      </div>
+      <div class="dash-panel-body">
+        <div class="financial-row">
+          <span class="fr-label">Product Revenue</span>
+          <span class="fr-value">₱{{ financials.product_income|floatformat:2|intcomma }}</span>
+        </div>
+        <div class="financial-row">
+          <span class="fr-label">Shipping Fee Income</span>
+          <span class="fr-value">₱{{ financials.shipping_income|floatformat:2|intcomma }}</span>
+        </div>
+        <div class="financial-row fr-total">
+          <span class="fr-label">Gross Order Value</span>
+          <span class="fr-value">₱{{ financials.gross_total|floatformat:2|intcomma }}</span>
+        </div>
+        <div class="financial-divider"></div>
+        <div class="financial-row">
+          <span class="fr-label">Approved Expenses</span>
+          <span class="fr-value">₱{{ pdl.approved_expenses|floatformat:2|intcomma }}</span>
+        </div>
+        <div class="financial-row fr-total fr-highlight">
+          <span class="fr-label">Net Product Income</span>
+          <span class="fr-value">₱{{ pdl.net_product_income|floatformat:2|intcomma }}</span>
+        </div>
+        <p class="dash-panel-empty mb-0 mt-2" style="padding:8px 0; text-align:left;">
+          <i class="fas fa-circle-info"></i>PDL sharing is decided and distributed by the coordinator outside this system.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    <div class="dash-panel h-100">
+      <div class="dash-panel-header">
+        <h6>Month-End Closing</h6>
+      </div>
+      <div class="dash-panel-body">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+          <span class="text-muted small fw-semibold">Status</span>
+          {% if pdl.is_locked %}
+          <span class="status-pill finalized"><i class="fas fa-lock"></i>Finalized</span>
+          {% else %}
+          <span class="status-pill open"><i class="fas fa-lock-open"></i>Open</span>
+          {% endif %}
+        </div>
+        {% if pdl.is_locked and monthly_period %}
+        <p class="text-muted small">
+          Finalized {% if monthly_period.finalized_at %}on {{ monthly_period.finalized_at|date:"M d, Y" }}{% endif %}
+          {% if monthly_period.finalized_by %}by {{ monthly_period.finalized_by.get_full_name|default:monthly_period.finalized_by.username }}{% endif %}.
+          The figures above are the locked snapshot recorded at that time.
+        </p>
+        {% else %}
+        <p class="text-muted small">
+          Finalizing locks this month's figures (Product Income, Expenses, Net Income) so they can no longer
+          change even if expenses are edited afterwards.
+        </p>
+        {% endif %}
+
+        {% if request.user.is_admin_user %}
+        <div class="d-flex gap-2 mt-3">
+          {% if pdl.is_locked %}
+          <form method="post" action="{% url 'dashboard:reports_reopen_month' %}" onsubmit="return confirm('Reopen {{ period_label }}? Its locked figures stay recorded until you finalize again.');">
+            {% csrf_token %}
+            <input type="hidden" name="year" value="{{ selected_year }}">
+            <input type="hidden" name="month" value="{{ selected_month }}">
+            <button type="submit" class="ds-btn ds-btn-secondary ds-btn-sm"><i class="fas fa-lock-open me-2"></i>Reopen Month</button>
+          </form>
+          {% else %}
+          <form method="post" action="{% url 'dashboard:reports_finalize_month' %}" onsubmit="return confirm('Finalize {{ period_label }}? This locks the Product Income, Expenses and Net Income for this month.');">
+            {% csrf_token %}
+            <input type="hidden" name="year" value="{{ selected_year }}">
+            <input type="hidden" name="month" value="{{ selected_month }}">
+            <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm"><i class="fas fa-lock me-2"></i>Finalize Month</button>
+          </form>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Income by Payment Method -->
+<div class="dash-panel mb-4">
+  <div class="dash-panel-header"><h6>Income by Payment Method</h6></div>
+  <div class="table-responsive">
+    <table class="ds-table mb-0">
+      <thead><tr><th>Payment Method</th><th>Product Sales</th><th>Shipping Fees</th><th>Total</th><th>Orders</th></tr></thead>
+      <tbody>
+        {% for row in financials.payment_breakdown %}
+        <tr>
+          <td class="fw-semibold">{{ row.payment_method_label }}</td>
+          <td>₱{{ row.product_income|default:0|floatformat:2|intcomma }}</td>
+          <td>₱{{ row.shipping_income|default:0|floatformat:2|intcomma }}</td>
+          <td class="fw-semibold" style="color:var(--brand-green);">₱{{ row.total|default:0|floatformat:2|intcomma }}</td>
+          <td>{{ row.orders }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5">
+          <div class="ds-empty-state">
+            <i class="fas fa-receipt icon"></i>
+            <div class="title">No delivered orders in {{ period_label }}</div>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+      {% if financials.payment_breakdown %}
+      <tfoot>
+        <tr class="row-total">
+          <td>TOTAL</td>
+          <td>₱{{ financials.product_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ financials.shipping_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ financials.gross_total|floatformat:2|intcomma }}</td>
+          <td>{{ financials.order_count }}</td>
+        </tr>
+      </tfoot>
+      {% endif %}
+    </table>
+  </div>
+</div>
+
+<!-- Expenses -->
+<div class="row g-4 mb-4">
+  <div class="col-12">
+    <div class="dash-panel h-100">
+      <div class="dash-panel-header">
+        <h6>Expenses — {{ period_label }}</h6>
+        {% if request.user.is_staff_user and not pdl.is_locked %}
+        <button type="button" class="ds-btn ds-btn-primary ds-btn-sm" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+          <i class="fas fa-plus me-2"></i>Add Expense
+        </button>
+        {% endif %}
+      </div>
+      <div class="table-responsive">
+        <table class="ds-table mb-0">
+          <thead><tr><th>Description</th><th>Category</th><th>Amount</th><th>Status</th>{% if request.user.is_admin_user %}<th>Actions</th>{% endif %}</tr></thead>
+          <tbody>
+            {% for exp in expenses %}
+            <tr>
+              <td class="fw-semibold" style="font-size:13px;">{{ exp.description }}</td>
+              <td><span class="ds-badge ds-badge-neutral">{{ exp.get_category_display }}</span></td>
+              <td>₱{{ exp.amount|floatformat:2|intcomma }}</td>
+              <td>
+                {% if exp.is_approved %}
+                <span class="ds-badge ds-badge-success">Approved</span>
+                {% else %}
+                <span class="ds-badge ds-badge-warning">Pending</span>
+                {% endif %}
+              </td>
+              {% if request.user.is_admin_user %}
+              <td class="expense-row-actions">
+                {% if not pdl.is_locked %}
+                {% if not exp.is_approved %}
+                <form method="post" action="{% url 'dashboard:reports_expense_approve' exp.pk %}">
+                  {% csrf_token %}
+                  <button type="submit" class="ds-btn ds-btn-secondary ds-btn-sm" title="Approve"><i class="fas fa-check"></i></button>
+                </form>
+                {% endif %}
+                <form method="post" action="{% url 'dashboard:reports_expense_delete' exp.pk %}" onsubmit="return confirm('Delete this expense?');">
+                  {% csrf_token %}
+                  <button type="submit" class="ds-btn ds-btn-danger ds-btn-sm" title="Delete"><i class="fas fa-trash"></i></button>
+                </form>
+                {% else %}
+                <span class="text-muted small">Locked</span>
+                {% endif %}
+              </td>
+              {% endif %}
+            </tr>
+            {% empty %}
+            <tr><td colspan="5">
+              <div class="ds-empty-state">
+                <i class="fas fa-file-invoice-dollar icon"></i>
+                <div class="title">No expenses recorded</div>
+                <div class="desc">Product Income has no deductions yet for {{ period_label }}.</div>
+              </div>
+            </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Monthly History -->
+<div class="dash-panel mb-4">
+  <div class="dash-panel-header">
+    <h6>Monthly History — {{ selected_year }}</h6>
+    <span class="ds-badge ds-badge-neutral">Full year</span>
+  </div>
+  <div class="table-responsive">
+    <table class="ds-table mb-0">
+      <thead>
+        <tr>
+          <th>Month</th><th>Product Income</th><th>Shipping Fees</th><th>GCash</th><th>COD</th>
+          <th>Expenses</th><th>Net Product Income</th><th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in monthly_history %}
+        <tr>
+          <td class="fw-semibold">
+            <a href="?year={{ selected_year }}&month={{ row.month }}" style="color:var(--text-primary); text-decoration:none;{% if row.month == selected_month %}color:var(--brand-green);{% endif %}">
+              {{ row.month_name }}
+            </a>
+          </td>
+          <td>₱{{ row.product_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ row.shipping_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ row.gcash_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ row.cod_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ row.approved_expenses|floatformat:2|intcomma }}</td>
+          <td class="fw-semibold">₱{{ row.net_product_income|floatformat:2|intcomma }}</td>
+          <td>
+            {% if row.is_finalized %}
+            <span class="ds-badge ds-badge-success">Finalized</span>
+            {% else %}
+            <span class="ds-badge ds-badge-info">Open</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+</div><!-- /#tab-revenue -->
+
+<div class="reports-tab-panel" id="tab-analytics">
+<p class="reports-section-intro">Demand and order activity — every order created this period, any status, any payment method. Kept separate from the confirmed-revenue figures above.</p>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-7">
+    <div class="dash-panel h-100">
+      <div class="dash-panel-header">
+        <h6>Revenue Trend</h6>
+        <span class="ds-badge ds-badge-neutral">{{ selected_year }}</span>
+      </div>
+      <div class="dash-panel-body">
+        {% if monthly_trend %}
+        <canvas id="chartRevenueTrend" height="230"></canvas>
+        <img class="print-chart-img" id="printChartRevenueTrend" alt="Revenue Trend chart">
+        {% else %}
+        <div class="dash-panel-empty"><i class="fas fa-chart-line fa-lg mb-2 d-block"></i>No trend data yet.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="dash-panel h-100">
+      <div class="dash-panel-header">
+        <h6>Orders by Status</h6>
+        <span class="ds-badge ds-badge-neutral">{{ period_label }}</span>
+      </div>
+      <div class="dash-panel-body d-flex align-items-center justify-content-center">
+        {% if sales_by_status %}
+        <canvas id="chartStatusBreakdown" height="230"></canvas>
+        <img class="print-chart-img" id="printChartStatusBreakdown" alt="Orders by Status chart">
+        {% else %}
+        <div class="dash-panel-empty"><i class="fas fa-inbox fa-lg mb-2 d-block"></i>No orders placed this month.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="dash-panel h-100">
+      <div class="dash-panel-header"><h6>Orders by Status — Detail</h6></div>
+      <div class="table-responsive">
+        <table class="ds-table mb-0">
+          <thead><tr><th>Status</th><th>Orders</th><th>Order Value</th></tr></thead>
+          <tbody>
+            {% for row in sales_by_status %}
+            <tr>
+              <td>
+                <span class="ds-badge
+                  {% if row.status == 'delivered' or row.status == 'confirmed' %}ds-badge-success
+                  {% elif row.status == 'pending' %}ds-badge-warning
+                  {% elif row.status == 'cancelled' %}ds-badge-danger
+                  {% else %}ds-badge-neutral{% endif %}">
+                  {{ row.status|title }}
+                </span>
+              </td>
+              <td class="fw-semibold">{{ row.count }}</td>
+              <td class="fw-semibold" style="color:var(--brand-green);">₱{{ row.revenue|default:0|floatformat:2|intcomma }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">
+              <div class="ds-empty-state">
+                <i class="fas fa-receipt icon"></i>
+                <div class="title">No orders placed this month</div>
+              </div>
+            </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="dash-panel h-100">
+      <div class="dash-panel-header"><h6>Top Products by Units Sold</h6></div>
+      <div class="table-responsive">
+        <table class="ds-table mb-0">
+          <thead><tr><th>Product</th><th>Units</th><th>Revenue</th></tr></thead>
+          <tbody>
+            {% for p in top_products %}
+            <tr>
+              <td class="fw-semibold" style="font-size:13px;">{{ p.product_name|truncatechars:28 }}</td>
+              <td><span class="ds-badge ds-badge-neutral">{{ p.units }}</span></td>
+              <td class="fw-semibold" style="color:var(--brand-green);">₱{{ p.revenue|floatformat:2|intcomma }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3">
+              <div class="ds-empty-state">
+                <i class="fas fa-box-open icon"></i>
+                <div class="title">No product sales yet</div>
+                <div class="desc">Top sellers will appear here once orders come in.</div>
+              </div>
+            </td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+</div><!-- /#tab-analytics -->
+
+<div class="print-footer">
+  <div class="print-footer-line"></div>
+  <div class="print-footer-text">Likhalaya PDL Marketplace — Confidential Internal Financial Report</div>
+</div>
+
+<!-- Add Expense Modal -->
+{% if request.user.is_staff_user %}
+<div class="modal fade" id="addExpenseModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <form method="post" action="{% url 'dashboard:reports_expense_add' %}">
+        {% csrf_token %}
+        <input type="hidden" name="year" value="{{ selected_year }}">
+        <input type="hidden" name="month" value="{{ selected_month }}">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Add Expense — {{ period_label }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Description</label>
+            <input type="text" name="description" class="form-control" maxlength="255" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Amount (₱)</label>
+            <input type="number" name="amount" class="form-control" step="0.01" min="0.01" required>
+          </div>
+          <div class="mb-1">
+            <label class="form-label small fw-semibold">Category</label>
+            <select name="category" class="form-select">
+              {% for value, label in expense_categories %}
+              <option value="{{ value }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <p class="text-muted small mb-0 mt-2">This expense is subtracted from Product Income only after it's approved.</p>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="ds-btn ds-btn-secondary ds-btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">Add Expense</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+// Section tabs
+document.querySelectorAll('.reports-tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.reports-tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.reports-tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    // Charts inside a display:none panel render at zero width, so resize
+    // them once their tab becomes visible.
+    if (window.__reportsCharts) {
+      window.__reportsCharts.forEach(c => c.resize());
+    }
+  });
+});
+
+const monthlyLabels  = [{% for m in monthly_trend %}"{{ m.month|date:'M Y' }}",{% endfor %}];
+const monthlyRevenue = [{% for m in monthly_trend %}{{ m.revenue|default:0|floatformat:0 }},{% endfor %}];
+const statusLabels   = [{% for row in sales_by_status %}"{{ row.status|title }}",{% endfor %}];
+const statusCounts   = [{% for row in sales_by_status %}{{ row.count }},{% endfor %}];
+const statusKeys     = [{% for row in sales_by_status %}"{{ row.status }}",{% endfor %}];
+
+const STATUS_COLORS = {
+  delivered: '#0F6B4F', confirmed: '#0F6B4F',
+  pending: '#B7791F', processing: '#2980B9',
+  shipped: '#2980B9', cancelled: '#C0362C'
+};
+const statusColors = statusKeys.map(k => STATUS_COLORS[k] || '#9AA09C');
+
+if (document.body.classList.contains('dark-mode')) {
+  Chart.defaults.color = '#aab2c2';
+  Chart.defaults.borderColor = '#2a3448';
+}
+
+window.__reportsCharts = [];
+
+const revenueEl = document.getElementById('chartRevenueTrend');
+let revenueChart = null;
+if (revenueEl) {
+  revenueChart = new Chart(revenueEl, {
+    type: 'line',
+    data: {
+      labels: monthlyLabels,
+      datasets: [{
+        label: 'Revenue',
+        data: monthlyRevenue,
+        borderColor: '#0F6B4F',
+        backgroundColor: 'rgba(15,107,79,.08)',
+        tension: 0.4, fill: true,
+        pointBackgroundColor: '#0F6B4F', pointRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: (ctx) => '₱' + ctx.parsed.y.toLocaleString() } }
+      },
+      scales: { y: { beginAtZero: true, ticks: { callback: (v) => '₱' + v.toLocaleString() } } }
+    }
+  });
+  window.__reportsCharts.push(revenueChart);
+}
+
+const statusEl = document.getElementById('chartStatusBreakdown');
+let statusChart = null;
+if (statusEl && statusCounts.length) {
+  statusChart = new Chart(statusEl, {
+    type: 'doughnut',
+    data: {
+      labels: statusLabels,
+      datasets: [{ data: statusCounts, backgroundColor: statusColors, borderWidth: 0 }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } },
+      cutout: '65%',
+    }
+  });
+  window.__reportsCharts.push(statusChart);
+}
+
+// Canvas charts don't print reliably in most browsers, so right before
+// printing we render each chart to a static image and swap it in; the
+// live canvas stays hidden for print via CSS.
+window.addEventListener('beforeprint', () => {
+  window.__reportsCharts.forEach(c => c.resize());
+  if (revenueChart) {
+    const img = document.getElementById('printChartRevenueTrend');
+    if (img) img.src = revenueChart.toBase64Image();
+  }
+  if (statusChart) {
+    const img = document.getElementById('printChartStatusBreakdown');
+    if (img) img.src = statusChart.toBase64Image();
+  }
+});
+</script>
+{% endblock %}

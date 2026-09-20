@@ -1,0 +1,829 @@
+{% extends 'base.html' %}
+{% block title %}Contact Us – Likhalaya{% endblock %}
+{% block nav_contact %}active{% endblock %}
+
+{% block extra_css %}
+<style>
+.contact-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.07); padding: 36px; }
+.info-item { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 24px; }
+.info-icon { width: 48px; height: 48px; border-radius: 12px; background: rgba(30,95,90,.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.form-control, .form-select { border-radius: 10px; border-color: #ddd; }
+.form-control:focus, .form-select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(30,95,90,.12); }
+.form-control[readonly] { background: #f7f6f3; color: #555; cursor: default; }
+.form-control[readonly]:focus { box-shadow: none; border-color: #ddd; }
+
+/* ---------- Delivery-style info card (reused from checkout) ---------- */
+.delivery-info-card { background: #ffffff; border: 1px solid #eee; border-radius: 14px; padding: 16px 20px; }
+
+/* ---------- Purpose picker ---------- */
+.purpose-section-title { font-family: 'Poppins', sans-serif; font-size: 22px; color: var(--teal); font-weight: 700; }
+.purpose-grid {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 18px;
+}
+.purpose-card {
+  flex: 1 1 180px; max-width: 208px; background: #fff; border: 1.5px solid #e9e9e9; border-radius: 16px;
+  padding: 26px 18px; text-align: center; cursor: pointer;
+  transition: border-color .18s ease, background .18s ease, transform .12s ease, box-shadow .18s ease;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.purpose-card:hover { border-color: var(--gold-lt); transform: translateY(-3px); box-shadow: 0 10px 24px rgba(0,0,0,.07); }
+.purpose-card .purpose-icon {
+  width: 56px; height: 56px; border-radius: 14px; background: rgba(30,95,90,.08);
+  display: flex; align-items: center; justify-content: center; font-size: 21px; color: var(--teal);
+  transition: background .18s ease, color .18s ease;
+}
+.purpose-card .purpose-label { font-size: 14.5px; font-weight: 700; color: #333; line-height: 1.3; }
+.purpose-card .purpose-desc { font-size: 12px; color: #9a9a9a; line-height: 1.45; }
+.purpose-card.active { border-color: var(--gold); background: rgba(201,132,26,.06); box-shadow: 0 10px 26px rgba(201,132,26,.15); }
+.purpose-card.active .purpose-icon { background: var(--gold); color: #fff; }
+.purpose-card.active .purpose-label { color: var(--gold); }
+.purpose-card:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* ---------- Sub-type selector (shown for merged categories) ---------- */
+.subtype-wrap { display: none; justify-content: center; flex-wrap: wrap; gap: 10px; margin-top: 22px; }
+.subtype-wrap.is-visible { display: flex; animation: fieldFadeIn .22s ease; }
+.subtype-pill {
+  border: 1.5px solid #e2e2e2; background: #fff; border-radius: 999px; padding: 9px 20px;
+  font-size: 13px; font-weight: 600; color: #555; cursor: pointer; transition: all .15s ease;
+}
+.subtype-pill:hover { border-color: var(--gold-lt); color: var(--gold); }
+.subtype-pill.active { border-color: var(--gold); background: var(--gold); color: #fff; }
+
+/* ---------- Dynamic fields ---------- */
+.dynamic-field-group { display: none; }
+.dynamic-field-group.is-visible { display: block; animation: fieldFadeIn .25s ease; }
+@keyframes fieldFadeIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+.field-optional-tag { font-weight: 500; color: #9a9a9a; font-size: 12px; }
+
+/* ---------- Donation helper note ---------- */
+.donation-note {
+  background: rgba(30,95,90,.06); border: 1px solid rgba(30,95,90,.14); border-radius: 12px;
+  padding: 14px 16px; font-size: 13px; color: #2c4a48; line-height: 1.55; margin-bottom: 14px;
+}
+.material-chip {
+  display: inline-flex; align-items: center; border: 1px solid #ddd; background: #fff;
+  border-radius: 20px; padding: 5px 13px; font-size: 12.5px; font-weight: 600; color: #555;
+  cursor: pointer; transition: all .15s ease; margin: 3px;
+}
+.material-chip:hover { border-color: var(--gold); color: var(--gold); background: rgba(201,132,26,.06); }
+
+/* ---------- Before-you-send help card ---------- */
+.help-tips-card {
+  background: #fbf9f4; border: 1px dashed rgba(201,132,26,.35); border-radius: 14px;
+  padding: 20px 22px; margin-top: 8px;
+}
+.help-tips-card h6 { color: var(--teal); font-weight: 700; font-size: 15px; margin-bottom: 10px; }
+.help-tips-card ul { padding-left: 18px; margin-bottom: 0; }
+.help-tips-card li { display: none; font-size: 14px; color: #3a3a3a; line-height: 1.65; margin-bottom: 0; font-weight: 600; }
+.help-tips-card li.tip-active { display: list-item; animation: fieldFadeIn .22s ease; }
+
+/* ---------- Submission states ---------- */
+.btn-gold[disabled] { opacity: .75; cursor: progress; }
+.spinner-border-sm-inline { width: 1rem; height: 1rem; border-width: .16em; }
+
+/* ---------- Progressive contact notification (toast) ----------
+   One single floating component that moves through
+   Sending -> Success/Error -> auto-dismiss, instead of separate
+   popups or an inline alert box baked into the form layout. */
+.contact-toast-wrap {
+  position: fixed;
+  top: 88px;
+  right: 20px;
+  z-index: 10050;
+  width: 360px;
+  max-width: calc(100vw - 32px);
+  pointer-events: none;
+}
+.contact-toast {
+  pointer-events: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 14px 36px rgba(26,26,26,.16);
+  padding: 14px 14px;
+  opacity: 0;
+  transform: translateX(24px) scale(.97);
+  transition: transform .32s cubic-bezier(.34,1.56,.64,1), opacity .22s ease;
+}
+.contact-toast.is-open { opacity: 1; transform: translateX(0) scale(1); pointer-events: auto; }
+.contact-toast-icon {
+  flex-shrink: 0;
+  width: 34px; height: 34px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+  transition: background .2s ease, color .2s ease;
+}
+.contact-toast-icon.state-sending { background: rgba(30,95,90,.10); color: var(--teal); }
+.contact-toast-icon.state-success { background: rgba(30,95,90,.12); color: var(--teal); }
+.contact-toast-icon.state-error   { background: rgba(220,53,69,.12); color: #dc3545; }
+.contact-toast-icon .mini-spinner {
+  width: 15px; height: 15px;
+  border: 2px solid rgba(30,95,90,.25);
+  border-top-color: var(--teal);
+  border-radius: 50%;
+  animation: contact-toast-spin .7s linear infinite;
+}
+@keyframes contact-toast-spin { to { transform: rotate(360deg); } }
+.contact-toast-body { flex: 1 1 auto; min-width: 0; }
+.contact-toast-title {
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  font-size: 13.5px;
+  color: var(--charcoal);
+  line-height: 1.35;
+}
+.contact-toast-desc {
+  font-size: 12.5px;
+  color: #7a7a7a;
+  line-height: 1.5;
+  margin-top: 2px;
+}
+.contact-toast-body.is-swapping { opacity: 0; transition: opacity .12s ease; }
+.contact-toast-close {
+  flex-shrink: 0;
+  width: 22px; height: 22px;
+  border: 0; background: transparent;
+  color: #b3b3b3;
+  font-size: 11px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s ease, color .15s ease;
+}
+.contact-toast-close:hover { background: var(--sand); color: var(--gray); }
+@media (max-width: 480px) {
+  .contact-toast-wrap { top: auto; bottom: 16px; right: 16px; left: 16px; width: auto; }
+  .contact-toast { transform: translateY(16px) scale(.98); }
+  .contact-toast.is-open { transform: translateY(0) scale(1); }
+}
+
+/* ---------- Step-1 placeholder / post-submit thank-you panel ---------- */
+.contact-thankyou {
+  display: flex; flex-direction: column; align-items: center; gap: 16px;
+  padding: 64px 32px; background: rgba(30,95,90,.06); border: 1px solid rgba(30,95,90,.14);
+  border-radius: 20px; animation: fieldFadeIn .3s ease;
+}
+.contact-thankyou-icon {
+  width: 88px; height: 88px; border-radius: 50%; background: var(--teal); color: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 36px;
+  box-shadow: 0 10px 28px rgba(30,95,90,.25);
+}
+.contact-thankyou-title { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 30px; color: var(--teal); }
+.contact-thankyou-desc { color: #5a6f6e; font-size: 16px; max-width: 480px; text-align: center; line-height: 1.7; }
+@media (max-width: 767.98px) {
+  .contact-thankyou { padding: 40px 20px; border-radius: 16px; }
+  .contact-thankyou-icon { width: 68px; height: 68px; font-size: 28px; }
+  .contact-thankyou-title { font-size: 24px; }
+  .contact-thankyou-desc { font-size: 14px; }
+}
+
+/* ---------- Purpose section subtitle ---------- */
+.purpose-section-sub { color: #8a8a8a; font-size: 13.5px; margin-top: 4px; }
+
+@media (max-width: 767.98px) {
+  .contact-card { padding: 22px 18px; border-radius: 14px; }
+  .info-item { gap: 12px; margin-bottom: 18px; }
+  .info-icon { width: 40px; height: 40px; border-radius: 10px; font-size: 14px; }
+  .info-item .fw-bold { font-size: 14px; }
+  .info-item .small { font-size: 12.5px; }
+  .purpose-grid { flex-direction: row; flex-wrap: nowrap; gap: 10px; overflow-x: auto; padding-bottom: 6px; justify-content: flex-start; }
+  .purpose-card { flex: 0 0 110px; max-width: 110px; padding: 16px 10px; border-radius: 14px; flex-direction: column; text-align: center; gap: 10px; align-items: center; }
+  .purpose-card .purpose-icon { width: 48px; height: 48px; font-size: 18px; flex-shrink: 0; border-radius: 12px; }
+  .purpose-card .purpose-label { font-size: 12px; }
+  .purpose-card .purpose-desc { display: none; }
+  .subtype-wrap { justify-content: flex-start; }
+}
+
+/* ===== Compact phone spacing ===== */
+@media (max-width: 575.98px) {
+  .contact-card { padding: 16px; border-radius: 14px; }
+  .contact-thankyou { padding: 24px 14px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+
+{# Progressive contact notification: single floating toast that transitions Sending -> Success/Error -> auto-dismiss. #}
+<div class="contact-toast-wrap" aria-live="polite">
+  <div class="contact-toast" id="contact-toast" role="status">
+    <div class="contact-toast-icon" id="contact-toast-icon"></div>
+    <div class="contact-toast-body" id="contact-toast-body">
+      <div class="contact-toast-title" id="contact-toast-title"></div>
+      <div class="contact-toast-desc" id="contact-toast-desc" style="display:none;"></div>
+    </div>
+    <button type="button" class="contact-toast-close" id="contact-toast-close" aria-label="Dismiss notification" style="display:none;">
+      <i class="fas fa-times"></i>
+    </button>
+  </div>
+</div>
+
+{% include 'partials/compact_page_header.html' with eyebrow='Contact & Support' eyebrow_icon='fa-comment-dots' title='How Can We Help?' subtitle='Send us an inquiry about products, custom orders, bulk requests, material donations, partnerships, or other concerns.' %}
+
+<div class="container pt-4 pb-5">
+
+  {# ===================== PURPOSE PICKER ===================== #}
+  <div class="text-center mb-4">
+    <div class="purpose-section-title">What can we help you with?</div>
+    <div class="purpose-section-sub">Choose an option below so we can direct your request appropriately.</div>
+    <div class="divider"></div>
+  </div>
+
+  <div class="purpose-grid mb-2" id="purpose-grid">
+    <button type="button" class="purpose-card" data-type="general">
+      <span class="purpose-icon"><i class="fas fa-comment-dots"></i></span>
+      <span class="purpose-label">General Inquiry</span>
+      <span class="purpose-desc">Questions or general concerns</span>
+    </button>
+    <button type="button" class="purpose-card" data-type="custom_order">
+      <span class="purpose-icon"><i class="fas fa-boxes-stacked"></i></span>
+      <span class="purpose-label">Product &amp; Custom Orders</span>
+      <span class="purpose-desc">Ask about, request, or customize a product</span>
+    </button>
+    <button type="button" class="purpose-card" data-type="bulk_order">
+      <span class="purpose-icon"><i class="fas fa-boxes"></i></span>
+      <span class="purpose-label">Bulk Orders</span>
+      <span class="purpose-desc">Wholesale or large quantity orders</span>
+    </button>
+    <button type="button" class="purpose-card" data-type="partnership_donations" data-default-subtype="partnership">
+      <span class="purpose-icon"><i class="fas fa-handshake"></i></span>
+      <span class="purpose-label">Partnerships &amp; Donations</span>
+      <span class="purpose-desc">Collaborate or donate materials</span>
+    </button>
+    <button type="button" class="purpose-card" data-type="feedback">
+      <span class="purpose-icon"><i class="fas fa-comments"></i></span>
+      <span class="purpose-label">Feedback</span>
+      <span class="purpose-desc">Share suggestions or comments</span>
+    </button>
+  </div>
+
+  {# ---------- Sub-type pills for the merged Partnerships & Donations category ---------- #}
+  <div class="subtype-wrap" id="subtype-partnership_donations" data-parent="partnership_donations">
+    <button type="button" class="subtype-pill" data-subtype="partnership">Partnership &amp; Collaboration</button>
+    <button type="button" class="subtype-pill" data-subtype="donate_materials">Donate Raw Materials</button>
+  </div>
+
+  <div class="mb-5"></div>
+
+  {# ===================== INFO + FORM ===================== #}
+  <div class="row g-5">
+    <div class="col-lg-5 order-2 order-lg-1">
+      <h5 class="fw-bold mb-4" style="color:var(--teal);">Contact Information</h5>
+      <div class="info-item">
+        <div class="info-icon"><i class="fas fa-map-marker-alt" style="color:var(--teal);"></i></div>
+        <div>
+          <div class="fw-bold mb-1">Location</div>
+          <div class="text-muted small" style="line-height:1.6;">Carigara District Jail<br>Bureau of Jail Management and Penology<br>Carigara, Leyte 6529</div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-icon"><i class="fas fa-envelope" style="color:var(--teal);"></i></div>
+        <div>
+          <div class="fw-bold mb-1">Email</div>
+          <div class="text-muted small">likhalaya@bjmp.gov.ph</div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-icon"><i class="fas fa-phone" style="color:var(--teal);"></i></div>
+        <div>
+          <div class="fw-bold mb-1">Phone</div>
+          <div class="text-muted small">(053) XXX-XXXX</div>
+        </div>
+      </div>
+      <div class="info-item">
+        <div class="info-icon"><i class="fas fa-clock" style="color:var(--teal);"></i></div>
+        <div>
+          <div class="fw-bold mb-1">Office Hours</div>
+          <div class="text-muted small">Monday – Friday<br>8:00 AM – 5:00 PM</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-7 order-1 order-lg-2">
+      {# ---------- Step-1 placeholder / post-submit thank-you panel: lives beside Contact Information until a category is chosen or a request is sent ---------- #}
+      <div class="text-center text-muted" id="contact-placeholder" style="padding:18px 0;font-size:16px;">
+        <span id="contact-placeholder-body">
+          <i class="fas fa-arrow-up me-1"></i>Choose an option above to show the relevant form.
+        </span>
+      </div>
+
+      <div class="contact-card d-none" id="contact-form-section">
+        <h5 class="fw-bold mb-1" style="color:var(--teal);">Send Us a Message</h5>
+        <p class="text-muted small mb-3">Fields marked <span class="text-danger">*</span> are required.</p>
+
+        <div class="help-tips-card mb-4">
+          <h6><i class="fas fa-lightbulb me-2"></i>Before You Send a Request</h6>
+          <ul>
+            <li data-tip-for="general">For general questions or concerns, just describe what's on your mind.</li>
+            <li data-tip-for="custom_order">For product and custom orders, describe the size, color, material, or design you want.</li>
+            <li data-tip-for="bulk_order">For bulk orders, indicate your estimated quantity.</li>
+            <li data-tip-for="partnership">For partnerships, share your organization and the kind of collaboration you have in mind.</li>
+            <li data-tip-for="donate_materials">For material donations, describe the type and condition of the materials.</li>
+            <li data-tip-for="feedback">For feedback, let us know what worked well or what we can improve.</li>
+          </ul>
+        </div>
+
+        <form method="post" enctype="multipart/form-data" novalidate id="contact-form">
+          {% csrf_token %}
+          <div style="position:absolute; left:-9999px; top:-9999px;" aria-hidden="true">
+            <label for="website">Leave this field empty</label>
+            <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
+          </div>
+          <div class="d-none">{{ form.inquiry_type }}{{ form.product }}{{ form.subject }}</div>
+          <div class="row g-3">
+
+            {% if context_product %}
+            <div class="col-12 dynamic-field-group" data-field="product_context" data-show-for="custom_order">
+              <div class="donation-note" style="background:rgba(201,132,26,.07);border-color:rgba(201,132,26,.2);">
+                <i class="fas fa-box me-1" style="color:var(--gold);"></i>
+                Asking about: <strong>{{ context_product.name }}</strong>
+              </div>
+            </div>
+            {% endif %}
+
+            {# ---------- Common fields (Name / Email / Contact Number) ---------- #}
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold small">Full Name <span class="text-danger">*</span></label>
+              {{ form.name }}
+              {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold small">Email Address <span class="text-danger">*</span></label>
+              {{ form.email }}
+              {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold small">Contact Number</label>
+              {{ form.phone }}
+              {% if form.phone.errors %}<div class="text-danger small mt-1">{{ form.phone.errors.0 }}</div>{% endif %}
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label fw-semibold small">Location</label>
+              {{ form.location }}
+              {% if form.location.errors %}<div class="text-danger small mt-1">{{ form.location.errors.0 }}</div>{% endif %}
+            </div>
+            {% if form.subject.errors %}<div class="col-sm-6"><div class="text-danger small mt-1">{{ form.subject.errors.0 }}</div></div>{% endif %}
+
+            {# ---------- Donation helper note (only visible for donate_materials) ---------- #}
+            <div class="col-12 dynamic-field-group" data-field="donation_note" data-show-for="donate_materials">
+              <div class="donation-note">
+                <i class="fas fa-heart me-1" style="color:var(--gold);"></i>
+                Donations of usable raw materials can help support the creation of livelihood opportunities for PDL artisans.
+                <div class="mt-2">
+                  <span class="text-muted" style="font-size:12px;">Examples:</span><br>
+                  <span class="material-chip" data-fill="Fabric">Fabric</span><span class="material-chip" data-fill="Yarn">Yarn</span><span class="material-chip" data-fill="Wood">Wood</span><span class="material-chip" data-fill="Paint">Paint</span><span class="material-chip" data-fill="Paper">Paper</span><span class="material-chip" data-fill="Packaging Materials">Packaging Materials</span><span class="material-chip" data-fill="Craft Supplies">Craft Supplies</span><span class="material-chip" data-fill="Buffing Paper">Buffing Paper</span><span class="material-chip" data-fill="Coffee Waste (Packs)">Coffee Waste (Packs)</span>
+                </div>
+              </div>
+            </div>
+
+            {# ---------- item_name: "Product" (custom_order / bulk_order) or "Material Type" (donate_materials) ---------- #}
+            <div class="col-sm-6 dynamic-field-group" data-field="item_name" data-show-for="custom_order bulk_order donate_materials">
+              <label class="form-label fw-semibold small" id="label_item_name" for="{{ form.item_name.id_for_label }}">Product</label>
+              {{ form.item_name }}
+              {% if form.item_name.errors %}<div class="text-danger small mt-1">{{ form.item_name.errors.0 }}</div>{% endif %}
+            </div>
+
+            {# ---------- quantity ---------- #}
+            <div class="col-sm-6 dynamic-field-group" data-field="quantity" data-show-for="custom_order bulk_order donate_materials">
+              <label class="form-label fw-semibold small" id="label_quantity" for="{{ form.quantity.id_for_label }}">Quantity</label>
+              {{ form.quantity }}
+              {% if form.quantity.errors %}<div class="text-danger small mt-1">{{ form.quantity.errors.0 }}</div>{% endif %}
+            </div>
+
+            {# ---------- customization_request (Product & Custom Orders only) ---------- #}
+            <div class="col-12 dynamic-field-group" data-field="customization_request" data-show-for="custom_order">
+              <label class="form-label fw-semibold small" for="{{ form.customization_request.id_for_label }}">Customization Details <span class="text-danger">*</span></label>
+              {{ form.customization_request }}
+              {% if form.customization_request.errors %}<div class="text-danger small mt-1">{{ form.customization_request.errors.0 }}</div>{% endif %}
+            </div>
+
+            {# ---------- target_budget (Product & Custom Orders only, always optional) ---------- #}
+            <div class="col-sm-6 dynamic-field-group" data-field="target_budget" data-show-for="custom_order">
+              <label class="form-label fw-semibold small">Budget <span class="field-optional-tag">(Optional)</span></label>
+              {{ form.target_budget }}
+              {% if form.target_budget.errors %}<div class="text-danger small mt-1">{{ form.target_budget.errors.0 }}</div>{% endif %}
+            </div>
+
+            {# ---------- organization_name: optional for Bulk Orders, required for Partnership ---------- #}
+            <div class="col-sm-6 dynamic-field-group" data-field="organization_name" data-show-for="bulk_order partnership">
+              <label class="form-label fw-semibold small" id="label_organization_name" for="{{ form.organization_name.id_for_label }}">Organization / Business Name</label>
+              {{ form.organization_name }}
+              {% if form.organization_name.errors %}<div class="text-danger small mt-1">{{ form.organization_name.errors.0 }}</div>{% endif %}
+            </div>
+
+            {# ---------- additional_details (Bulk Orders only, always optional) ---------- #}
+            <div class="col-12 dynamic-field-group" data-field="additional_details" data-show-for="bulk_order">
+              <label class="form-label fw-semibold small">Additional Details <span class="field-optional-tag">(Optional)</span></label>
+              {{ form.additional_details }}
+              {% if form.additional_details.errors %}<div class="text-danger small mt-1">{{ form.additional_details.errors.0 }}</div>{% endif %}
+            </div>
+
+            {# ---------- partnership_type (Partnership only) ---------- #}
+            <div class="col-sm-6 dynamic-field-group" data-field="partnership_type" data-show-for="partnership">
+              <label class="form-label fw-semibold small" for="{{ form.partnership_type.id_for_label }}">Partnership Type <span class="text-danger">*</span></label>
+              {{ form.partnership_type }}
+              {% if form.partnership_type.errors %}<div class="text-danger small mt-1">{{ form.partnership_type.errors.0 }}</div>{% endif %}
+            </div>
+
+            {# ---------- partnership_details (Partnership only) ---------- #}
+            <div class="col-12 dynamic-field-group" data-field="partnership_details" data-show-for="partnership">
+              <label class="form-label fw-semibold small" for="{{ form.partnership_details.id_for_label }}">Collaboration Details <span class="text-danger">*</span></label>
+              {{ form.partnership_details }}
+              {% if form.partnership_details.errors %}<div class="text-danger small mt-1">{{ form.partnership_details.errors.0 }}</div>{% endif %}
+            </div>
+
+            {# ---------- materials_condition (Donate Raw Materials only) ---------- #}
+            <div class="col-sm-6 dynamic-field-group" data-field="materials_condition" data-show-for="donate_materials">
+              <label class="form-label fw-semibold small" for="{{ form.materials_condition.id_for_label }}">Condition <span class="text-danger">*</span></label>
+              {{ form.materials_condition }}
+              {% if form.materials_condition.errors %}<div class="text-danger small mt-1">{{ form.materials_condition.errors.0 }}</div>{% endif %}
+            </div>
+
+            {# ---------- feedback_type (Feedback only) ---------- #}
+            <div class="col-sm-6 dynamic-field-group" data-field="feedback_type" data-show-for="feedback">
+              <label class="form-label fw-semibold small" for="{{ form.feedback_type.id_for_label }}">Feedback Type <span class="text-danger">*</span></label>
+              {{ form.feedback_type }}
+              {% if form.feedback_type.errors %}<div class="text-danger small mt-1">{{ form.feedback_type.errors.0 }}</div>{% endif %}
+            </div>
+
+            {# ---------- Message: shown for General, Feedback, Donate Raw Materials (as description), and optionally for Partnership ---------- #}
+            <div class="col-12 dynamic-field-group" data-field="message" data-show-for="general donate_materials feedback">
+              <label class="form-label fw-semibold small" id="label_message" for="{{ form.message.id_for_label }}">Message</label>
+              {{ form.message }}
+              {% if form.message.errors %}<div class="text-danger small mt-1">{{ form.message.errors.0 }}</div>{% endif %}
+            </div>
+
+            <div class="col-12">
+              <button type="submit" class="btn btn-gold btn-lg w-100 rounded-3" id="contact-submit-btn">
+                <i class="fas fa-paper-plane me-2" id="contact-submit-icon"></i><span id="contact-submit-label">Send Message</span>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  const FIELD_CONFIG = {
+    item_name: {
+      custom_order:      { label: 'Product',       required: true },
+      bulk_order:        { label: 'Product',       required: true },
+      donate_materials:  { label: 'Material Type', required: true },
+    },
+    quantity: {
+      custom_order:      { label: 'Quantity',                     required: true },
+      bulk_order:        { label: 'Quantity',                     required: true },
+      donate_materials:  { label: 'Quantity / Estimated Amount',  required: true },
+    },
+    customization_request: {
+      custom_order: { required: true },
+    },
+    target_budget: {
+      custom_order: { required: false },
+    },
+    organization_name: {
+      bulk_order:  { label: 'Organization / Business Name (Optional)', required: false },
+      partnership: { label: 'Organization / Business Name', required: true },
+    },
+    additional_details: {
+      bulk_order: { required: false },
+    },
+    partnership_type: {
+      partnership: { required: true },
+    },
+    partnership_details: {
+      partnership: { required: true },
+    },
+    materials_condition: {
+      donate_materials: { required: true },
+    },
+    feedback_type: {
+      feedback: { required: true },
+    },
+    message: {
+      general:           { label: 'Message', required: true },
+      donate_materials:  { label: 'Condition / Description', required: true },
+      feedback:          { label: 'Message', required: true },
+    },
+  };
+
+  // Fields whose "required" state actually varies by inquiry type (mirrors
+  // ContactForm.REQUIRED_BY_TYPE server-side). Anything not listed here that
+  // has a dynamic-field-group is always optional when visible.
+  const ALWAYS_OPTIONAL_WHEN_VISIBLE = new Set(['target_budget', 'additional_details']);
+
+  const SUBMIT_LABELS = {
+    general: 'Send Message',
+    custom_order: 'Submit Order Request',
+    bulk_order: 'Submit Bulk Order Inquiry',
+    donate_materials: 'Submit Donation Offer',
+    partnership: 'Submit Partnership Inquiry',
+    feedback: 'Send Feedback',
+  };
+
+  // Smart default subjects per inquiry type, so the (hidden, auto-filled)
+  // Subject field always carries something meaningful without the customer
+  // having to see or type it.
+  const SUBJECT_DEFAULTS = {
+    general: 'General Inquiry',
+    custom_order: 'Product & Custom Order Inquiry',
+    bulk_order: 'Bulk Order Inquiry',
+    donate_materials: 'Raw Materials Donation',
+    partnership: 'Partnership / Collaboration',
+    feedback: 'Feedback / Suggestion',
+  };
+
+  const cards = document.querySelectorAll('.purpose-card');
+  const groups = document.querySelectorAll('.dynamic-field-group');
+  const inquiryInput = document.getElementById('id_inquiry_type');
+  const submitLabel = document.getElementById('contact-submit-label');
+  const tips = document.querySelectorAll('.help-tips-card li[data-tip-for]');
+  const subtypeWraps = document.querySelectorAll('.subtype-wrap');
+  const placeholder = document.getElementById('contact-placeholder');
+  const placeholderBody = document.getElementById('contact-placeholder-body');
+  const PLACEHOLDER_DEFAULT_HTML = placeholderBody ? placeholderBody.innerHTML : '';
+  const formSection = document.getElementById('contact-form-section');
+
+  const productInputEl = document.getElementById('{{ form.product.id_for_label }}');
+  if (productInputEl) productInputEl.dataset.originalValue = productInputEl.value;
+  const CONTEXT_PRODUCT_NAME = '{% if context_product %}{{ context_product.name|escapejs }}{% endif %}';
+
+  // The "Partnerships & Donations" card maps to two real inquiry_type
+  // values. This maps each real leaf type back to the card (group) it
+  // belongs under, so the right card + pill stay highlighted no matter
+  // which subtype is active.
+  const GROUP_FOR_TYPE = {
+    partnership: 'partnership_donations', donate_materials: 'partnership_donations',
+  };
+  const lastSubtype = { partnership_donations: 'partnership' };
+
+  function applyInquiryType(type) {
+    const group = GROUP_FOR_TYPE[type] || type;
+    cards.forEach(c => c.classList.toggle('active', c.dataset.type === group));
+
+    subtypeWraps.forEach(wrap => {
+      const isThisGroup = wrap.dataset.parent === group;
+      wrap.classList.toggle('is-visible', isThisGroup);
+      if (isThisGroup) {
+        wrap.querySelectorAll('.subtype-pill').forEach(pill =>
+          pill.classList.toggle('active', pill.dataset.subtype === type));
+      }
+    });
+
+    groups.forEach(fieldGroup => {
+      const showFor = (fieldGroup.dataset.showFor || '').split(' ');
+      const visible = showFor.includes(type);
+      fieldGroup.classList.toggle('is-visible', visible);
+
+      const field = fieldGroup.dataset.field;
+      const cfg = (FIELD_CONFIG[field] && FIELD_CONFIG[field][type]) || null;
+      const label = fieldGroup.querySelector('label');
+      const input = fieldGroup.querySelector('input, select, textarea');
+
+      if (cfg && label && label.id) {
+        const asteriskHtml = cfg.required ? ' <span class="text-danger">*</span>' : '';
+        const baseLabel = cfg.label.replace(' (Optional)', '');
+        const optionalHtml = cfg.label.includes('(Optional)') ? ' <span class="field-optional-tag">(Optional)</span>' : '';
+        label.innerHTML = baseLabel + asteriskHtml + optionalHtml;
+      }
+
+      if (input && field !== 'donation_note' && field !== 'product_context') {
+        const isRequired = visible && !ALWAYS_OPTIONAL_WHEN_VISIBLE.has(field) &&
+          (cfg ? cfg.required : false);
+        input.required = isRequired;
+        if (!visible) input.required = false;
+      }
+    });
+
+    if (inquiryInput) inquiryInput.value = type;
+    if (submitLabel) submitLabel.textContent = SUBMIT_LABELS[type] || 'Send Message';
+
+    // The product reference (and its "Asking about: X" banner) only belongs
+    // to Product Inquiry. Moving to any other category should both hide the
+    // banner (handled by the group loop above) and drop the hidden product
+    // id, so a request submitted under a different category never silently
+    // carries the old product along. Switching back to Product Inquiry
+    // restores it from the original page-load context, if any.
+    const productInput = document.getElementById('{{ form.product.id_for_label }}');
+    if (productInput) {
+      if (type === 'custom_order') {
+        productInput.value = productInput.dataset.originalValue || '';
+      } else {
+        productInput.value = '';
+      }
+    }
+
+    // Subject is a locked, auto-filled field — always set from the category
+    // (and, once typed, the item/product name) rather than free text.
+    const subjectInput = document.getElementById('{{ form.subject.id_for_label }}');
+    if (subjectInput) {
+      const itemInput = document.getElementById('{{ form.item_name.id_for_label }}');
+      const base = SUBJECT_DEFAULTS[type] || '';
+      let suffix = (itemInput && itemInput.value) ? itemInput.value : '';
+      if (type === 'custom_order' && CONTEXT_PRODUCT_NAME) suffix = CONTEXT_PRODUCT_NAME;
+      subjectInput.value = suffix ? `${base} — ${suffix}` : base;
+    }
+
+    tips.forEach(li => {
+      const forTypes = (li.dataset.tipFor || '').split(' ');
+      li.classList.toggle('tip-active', forTypes.includes(type));
+    });
+  }
+
+  // Step 1 -> Step 2: the form stays hidden (with a placeholder prompt in
+  // its place) until the customer picks a category, so nobody is greeted
+  // with a wall of fields before they've said what they need.
+  function revealForm(type) {
+    if (placeholder) placeholder.classList.add('d-none');
+    if (placeholderBody && PLACEHOLDER_DEFAULT_HTML) placeholderBody.innerHTML = PLACEHOLDER_DEFAULT_HTML;
+    if (formSection) formSection.classList.remove('d-none');
+    applyInquiryType(type);
+  }
+
+  cards.forEach(card => {
+    card.addEventListener('click', () => {
+      const cardType = card.dataset.type;
+      const isGroup = !!card.dataset.defaultSubtype;
+      const actualType = isGroup ? (lastSubtype[cardType] || card.dataset.defaultSubtype) : cardType;
+      revealForm(actualType);
+    });
+  });
+
+  document.querySelectorAll('.subtype-pill').forEach(pill => {
+    pill.addEventListener('click', () => {
+      const type = pill.dataset.subtype;
+      const group = GROUP_FOR_TYPE[type];
+      if (group) lastSubtype[group] = type;
+      revealForm(type);
+    });
+  });
+
+  // Refine the auto-filled subject with the item/product name once typed,
+  // e.g. "Custom Order Request" -> "Custom Order Request — Handwoven Basket".
+  const itemNameInput = document.getElementById('{{ form.item_name.id_for_label }}');
+  if (itemNameInput) {
+    itemNameInput.addEventListener('input', () => {
+      const type = inquiryInput ? inquiryInput.value : 'general';
+      const base = SUBJECT_DEFAULTS[type] || '';
+      const subjectInput = document.getElementById('{{ form.subject.id_for_label }}');
+      if (!subjectInput) return;
+      subjectInput.value = itemNameInput.value ? `${base} — ${itemNameInput.value}` : base;
+    });
+  }
+
+  document.querySelectorAll('.material-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const itemInput = document.getElementById('{{ form.item_name.id_for_label }}');
+      if (itemInput) { itemInput.value = chip.dataset.fill; itemInput.focus(); }
+    });
+  });
+
+  // Initialize on load: always reveal the form immediately.
+  // Default to General Inquiry; restore previous category on failed submit or product context.
+  const hasPreviousContext = ({{ form.errors|length }} > 0) || {% if context_product %}true{% else %}false{% endif %};
+  const initialType = hasPreviousContext
+    ? ((inquiryInput && inquiryInput.value) || 'general')
+    : 'general';
+  if (GROUP_FOR_TYPE[initialType]) lastSubtype[GROUP_FOR_TYPE[initialType]] = initialType;
+  revealForm(initialType);
+
+  // ---------- Progressive contact notification (Sending -> Success/Error) ----------
+  const form = document.getElementById('contact-form');
+  const submitBtn = document.getElementById('contact-submit-btn');
+  const submitIcon = document.getElementById('contact-submit-icon');
+
+  const toastEl = document.getElementById('contact-toast');
+  const toastIcon = document.getElementById('contact-toast-icon');
+  const toastBody = document.getElementById('contact-toast-body');
+  const toastTitle = document.getElementById('contact-toast-title');
+  const toastDesc = document.getElementById('contact-toast-desc');
+  const toastClose = document.getElementById('contact-toast-close');
+
+  const TOAST_ICONS = {
+    sending: '<span class="mini-spinner" aria-hidden="true"></span>',
+    success: '<i class="fas fa-check"></i>',
+    error: '<i class="fas fa-exclamation"></i>',
+  };
+
+  let autoHideTimer = null;
+  let isToastOpen = false;
+
+  function renderToastContent(state, title, desc) {
+    toastIcon.className = 'contact-toast-icon state-' + state;
+    toastIcon.innerHTML = TOAST_ICONS[state];
+    toastTitle.textContent = title;
+    if (desc) {
+      toastDesc.textContent = desc;
+      toastDesc.style.display = 'block';
+    } else {
+      toastDesc.style.display = 'none';
+    }
+    toastClose.style.display = state === 'sending' ? 'none' : 'flex';
+  }
+
+  function openToast(state, title, desc) {
+    window.clearTimeout(autoHideTimer);
+
+    if (!isToastOpen) {
+      // First appearance for this submission: render then fade/slide in.
+      renderToastContent(state, title, desc);
+      requestAnimationFrame(() => toastEl.classList.add('is-open'));
+      isToastOpen = true;
+      return;
+    }
+
+    // Already open (moving from "sending" to a final state): cross-fade
+    // the content in place instead of popping a new notification.
+    toastBody.classList.add('is-swapping');
+    window.setTimeout(() => {
+      renderToastContent(state, title, desc);
+      toastBody.classList.remove('is-swapping');
+    }, 120);
+  }
+
+  function closeToast() {
+    window.clearTimeout(autoHideTimer);
+    toastEl.classList.remove('is-open');
+    isToastOpen = false;
+  }
+
+  toastClose.addEventListener('click', closeToast);
+
+  function clearFieldErrors() {
+    form.querySelectorAll('.text-danger.small.mt-1').forEach(el => el.remove());
+  }
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    clearFieldErrors();
+
+    const originalLabel = submitLabel.textContent;
+    submitBtn.disabled = true;
+    submitIcon.className = 'spinner-border spinner-border-sm-inline me-2';
+    submitLabel.textContent = 'Sending…';
+
+    // Stage 1: Sending
+    openToast('sending', 'Sending…');
+
+    fetch(form.action || window.location.href, {
+      method: 'POST',
+      body: new FormData(form),
+      headers: { 'X-Requested-With': 'XMLHttpRequest' },
+    })
+      .then(res => res.json().then(data => ({ status: res.status, data })))
+      .then(({ status, data }) => {
+        if (status === 200 && data.ok) {
+          // Stage 2: Success
+          openToast('success', 'Message Sent!', data.message || 'Your request has been submitted successfully.');
+          autoHideTimer = window.setTimeout(closeToast, 5000);
+          form.reset();
+          cards.forEach(c => c.classList.remove('active'));
+          subtypeWraps.forEach(w => w.classList.remove('is-visible'));
+          if (formSection) formSection.classList.add('d-none');
+          if (placeholder && placeholderBody) {
+            placeholderBody.innerHTML = `
+              <div class="contact-thankyou">
+                <div class="contact-thankyou-icon"><i class="fas fa-check"></i></div>
+                <div class="contact-thankyou-title">Thank You!</div>
+                <div class="contact-thankyou-desc">${data.message || 'Your request has been received. Our team will review it and get back to you as soon as possible.'}</div>
+              </div>`;
+            placeholder.classList.remove('d-none');
+          }
+        } else {
+          // Stage 2: Error
+          openToast('error', 'Something went wrong', "We couldn't send your request. Please try again.");
+          autoHideTimer = window.setTimeout(closeToast, 8000);
+          if (data.errors) {
+            Object.entries(data.errors).forEach(([field, errs]) => {
+              const input = form.querySelector('[name="' + field + '"]');
+              if (input) {
+                const wrap = input.closest('.col-12, .col-sm-6') || input.parentElement;
+                const msg = document.createElement('div');
+                msg.className = 'text-danger small mt-1';
+                msg.textContent = typeof errs[0] === 'string' ? errs[0] : (errs[0].message || 'This field is required.');
+                wrap.appendChild(msg);
+              }
+            });
+          }
+        }
+      })
+      .catch(() => {
+        openToast('error', 'Something went wrong', "We couldn't send your request. Please try again.");
+        autoHideTimer = window.setTimeout(closeToast, 8000);
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+        submitIcon.className = 'fas fa-paper-plane me-2';
+        submitLabel.textContent = originalLabel;
+      });
+  });
+})();
+</script>
+{% endblock %}

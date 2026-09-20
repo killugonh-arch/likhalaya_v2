@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Page Not Found – Likhalaya{% endblock %}
+{% block content %}
+<div class="container py-5 text-center" style="min-height:60vh;display:flex;align-items:center;justify-content:center;">
+  <div>
+    <div style="font-size:80px;margin-bottom:16px;">🔍</div>
+    <h1 class="fw-bold mb-2" style="font-family:'Playfair Display',serif;color:var(--teal);font-size:56px;">404</h1>
+    <h4 class="fw-bold text-muted mb-3">Page Not Found</h4>
+    <p class="text-muted mb-4">The page you're looking for doesn't exist or has been moved.</p>
+    <div class="d-flex gap-3 justify-content-center flex-wrap">
+      <a href="{% url 'store:home' %}" class="btn btn-teal px-4 rounded-3"><i class="fas fa-home me-2"></i>Go Home</a>
+      <a href="{% url 'store:shop' %}" class="btn btn-outline-secondary px-4 rounded-3"><i class="fas fa-store me-2"></i>Browse Shop</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}Sign-in paused – Likhalaya{% endblock %}
+
+{# Same treatment as the login page: no navbar/footer, just the card. #}
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,700;9..144,800&display=swap" rel="stylesheet">
+<style>
+.locked-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vw, 40px) clamp(12px, 4vw, 20px);
+  background:
+    radial-gradient(circle at 8% 12%, rgba(30,95,90,.10), transparent 40%),
+    radial-gradient(circle at 92% 18%, rgba(232,168,42,.12), transparent 38%),
+    radial-gradient(circle at 85% 88%, rgba(30,95,90,.09), transparent 42%),
+    linear-gradient(135deg, #f4f8f6 0%, #ffffff 50%, #eef6f1 100%);
+}
+.locked-card {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  background: #fff;
+  border-radius: 22px;
+  padding: clamp(28px, 6vw, 44px) clamp(22px, 6vw, 40px) clamp(24px, 5vw, 34px);
+  text-align: center;
+  box-shadow: 0 24px 60px -20px rgba(30,95,90,.28), 0 4px 14px rgba(0,0,0,.05);
+  overflow: hidden;
+  animation: locked-rise .45s ease-out both;
+}
+.locked-card::before {            /* teal → gold brand strip */
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 6px;
+  background: linear-gradient(90deg, #1E5F5A 0%, #1E5F5A 55%, #E8A82A 100%);
+}
+.locked-icon {
+  width: 84px; height: 84px;
+  margin: 6px auto 20px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 30% 25%, #fff7e3, #fbe7b8);
+  box-shadow: 0 0 0 8px rgba(232,168,42,.14);
+}
+.locked-icon svg { width: 38px; height: 38px; }
+.locked-title {
+  font-family: 'Fraunces', 'Poppins', serif;
+  font-weight: 800;
+  font-size: clamp(1.45rem, 4.6vw, 1.8rem);
+  color: #1E5F5A;
+  margin: 0 0 12px;
+  line-height: 1.2;
+}
+.locked-text {
+  color: #4a4a4a;
+  font-size: .98rem;
+  line-height: 1.6;
+  margin: 0 auto 18px;
+  max-width: 38ch;
+}
+.locked-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: #eaf3f1;
+  color: #1E5F5A;
+  font-weight: 600;
+  font-size: .9rem;
+  margin-bottom: 22px;
+}
+.locked-pill svg { width: 16px; height: 16px; flex: none; }
+.locked-tip {
+  background: #fffaf0;
+  border: 1px solid #f3dfae;
+  border-left: 4px solid #E8A82A;
+  border-radius: 10px;
+  padding: 12px 14px;
+  text-align: left;
+  font-size: .86rem;
+  line-height: 1.5;
+  color: #5a4a1f;
+  margin-bottom: 26px;
+}
+.locked-btn {
+  display: inline-block;
+  width: 100%;
+  padding: 13px 20px;
+  border-radius: 12px;
+  background: #1E5F5A;
+  color: #fff !important;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background .2s, transform .2s, box-shadow .2s;
+  box-shadow: 0 8px 18px -8px rgba(30,95,90,.6);
+}
+.locked-btn:hover, .locked-btn:focus-visible {
+  background: #174a46;
+  transform: translateY(-1px);
+}
+@keyframes locked-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .locked-card { animation: none; }
+  .locked-btn { transition: none; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="locked-page">
+  <div class="locked-card" role="alert">
+    <div class="locked-icon" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#C9841A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="11" width="16" height="10" rx="2.5" fill="#E8A82A" fill-opacity=".25"/>
+        <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+        <circle cx="12" cy="16" r="1.3" fill="#C9841A" stroke="none"/>
+      </svg>
+    </div>
+
+    <h1 class="locked-title">Sign-in paused</h1>
+    <p class="locked-text">
+      We noticed several unsuccessful sign-in attempts on this account from
+      your connection. To keep it safe, sign-in is paused for a little while.
+    </p>
+
+    <div class="locked-pill">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>
+      </svg>
+      Please try again in about 1 hour
+    </div>
+
+    <div class="locked-tip">
+      <strong>Wasn't you?</strong> Someone may be guessing your password.
+      Once you can sign in again, we recommend changing it.
+    </div>
+
+    <a href="{% url 'store:home' %}" class="locked-btn">Back to home</a>
+  </div>
+</div>
+{% endblock %}

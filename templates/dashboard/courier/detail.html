@@ -1,0 +1,202 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize %}
+{% block page_title %}Delivery – {{ order.order_number }}{% endblock %}
+{% block sb_deliveries %}active{% endblock %}
+{% block sb_deliveries2 %}active{% endblock %}
+{% block title %}Delivery {{ order.order_number }} – Likhalaya Dashboard{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+:root {
+  --brand-green: #0F6B4F; --brand-green-hover: #0C5940; --brand-green-light: #E6F4EF;
+  --surface-white: #FFFFFF; --surface-subtle: #F9FAF9; --border: #E4E7E4;
+  --text-primary: #1A1D1B; --text-secondary: #5B615D; --text-muted: #9AA09C;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgba(16,24,20,0.06);
+  --space-2: 8px; --space-3: 16px; --space-4: 24px;
+}
+.ds-breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: var(--space-3); display: flex; align-items: center; gap: 6px; }
+.ds-breadcrumb a { color: var(--text-muted); text-decoration: none; }
+.ds-breadcrumb .current { color: var(--text-primary); font-weight: 600; }
+.ds-breadcrumb .sep { color: var(--border); }
+.dash-greeting-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+.dash-greeting-sub { font-size: 13px; color: var(--text-muted); }
+.dash-panel { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); margin-bottom: var(--space-4); }
+.dash-panel-header { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.dash-panel-body { padding: var(--space-4); }
+.info-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 6px 0; border-bottom: 1px solid var(--surface-subtle); }
+.info-row:last-child { border-bottom: none; }
+.info-row .label { color: var(--text-muted); }
+.info-row .value { font-weight: 600; color: var(--text-primary); text-align: right; }
+.ds-btn { font-size: 14px; font-weight: 600; border-radius: var(--radius-sm); padding: 11px 16px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
+.ds-btn-primary { background: var(--brand-green); color: #fff; }
+.ds-btn-primary:hover { background: var(--brand-green-hover); color: #fff; }
+.upload-drop { border: 2px dashed var(--border); border-radius: 14px; padding: 22px; text-align: center; cursor: pointer; transition: border-color .15s, background .15s; display: block; }
+.upload-drop:hover { border-color: var(--brand-green); background: var(--brand-green-light); }
+.upload-drop.has-file { border-color: var(--brand-green); background: var(--brand-green-light); }
+.proof-preview { max-width: 100%; max-height: 260px; border-radius: 12px; margin-top: 10px; display: block; margin-left: auto; margin-right: auto; }
+.proof-final { border-radius: 12px; border: 1px solid var(--border); width: 100%; max-height: 260px; object-fit: cover; }
+.badge-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+.badge-warning { background: #FBF3E4; color: #B7791F; }
+.badge-success { background: var(--brand-green-light); color: var(--brand-green); }
+</style>
+{% endblock %}
+
+{% block dash_content %}
+<nav class="ds-breadcrumb" aria-label="Breadcrumb">
+  <a href="{% url 'dashboard:courier_order_list' %}">My Deliveries</a>
+  <span class="sep">/</span><span class="current" aria-current="page">{{ order.order_number }}</span>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+  <div>
+    <h1 class="dash-greeting-title">{{ order.order_number }}</h1>
+    <p class="dash-greeting-sub mb-0">{{ order.full_name }}</p>
+  </div>
+  {% if order.status == 'confirmed' %}
+  <span class="badge-pill badge-warning"><i class="fas fa-box"></i>Awaiting Pickup</span>
+  {% elif order.status == 'shipped' %}
+  <span class="badge-pill badge-warning"><i class="fas fa-truck-fast"></i>Awaiting Delivery</span>
+  {% elif order.status == 'delivered' %}
+  <span class="badge-pill badge-success"><i class="fas fa-circle-check"></i>Delivered</span>
+  {% endif %}
+</div>
+
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="dash-panel">
+      <div class="dash-panel-header">Delivery Details</div>
+      <div class="dash-panel-body">
+        <div class="info-row"><span class="label">Recipient</span><span class="value">{{ order.full_name }}</span></div>
+        <div class="info-row"><span class="label">Phone</span><span class="value">{{ order.phone }}</span></div>
+        <div class="info-row"><span class="label">Address</span><span class="value">{{ order.address }}, {{ order.city }}, {{ order.province }} {{ order.zip_code }}</span></div>
+        <div class="info-row"><span class="label">Payment Method</span><span class="value">{{ order.get_payment_method_display }}</span></div>
+        <div class="info-row"><span class="label">Total</span><span class="value">₱{{ order.total|floatformat:2|intcomma }}</span></div>
+        {% if order.notes %}
+        <div class="info-row"><span class="label">Notes</span><span class="value">{{ order.notes }}</span></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="dash-panel">
+      <div class="dash-panel-header">Items ({{ order.items.count }})</div>
+      <div class="dash-panel-body">
+        {% for item in order.items.all %}
+        <div class="info-row">
+          <span class="label">{{ item.quantity }}× {{ item.product_name }}{% if item.size %} ({{ item.size_display }}{% if item.design_name %} · {{ item.design_name }}{% endif %}){% elif item.design_name %} ({{ item.design_name }}){% endif %}</span>
+          <span class="value">₱{{ item.item_total|floatformat:2|intcomma }}</span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-5">
+    {% if order.status == 'confirmed' %}
+    <!-- Confirm Pickup task -->
+    <div class="dash-panel">
+      <div class="dash-panel-header">Confirm Pickup</div>
+      <div class="dash-panel-body">
+        <p class="text-muted" style="font-size:13px;">Upload a photo proving you've picked up this order from the workshop. The order becomes <strong>Shipped</strong> automatically once submitted.</p>
+        <form method="post" enctype="multipart/form-data" id="pickupForm">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="confirm_pickup">
+          <label class="upload-drop mb-2" id="pickupDropLabel" for="pickupInput">
+            <i class="fas fa-camera fs-3 mb-2" style="color:var(--brand-green);"></i>
+            <div class="fw-semibold" id="pickupDropText">Tap to take/upload a pickup photo</div>
+            <div class="small text-muted">PNG or JPG</div>
+            <input type="file" name="pickup_proof" id="pickupInput" accept="image/*" capture="environment" class="d-none" required>
+            <img id="pickupPreview" class="proof-preview d-none">
+          </label>
+          <button type="button" class="btn btn-sm btn-outline-danger d-none mb-2 w-100" id="pickupClearBtn"><i class="fas fa-xmark me-1"></i>Remove image</button>
+          <button type="submit" class="ds-btn ds-btn-primary"><i class="fas fa-paper-plane"></i>Confirm Pickup</button>
+        </form>
+      </div>
+    </div>
+    {% elif order.status == 'shipped' %}
+    <!-- Pickup already done -->
+    <div class="dash-panel">
+      <div class="dash-panel-header">Pickup Proof</div>
+      <div class="dash-panel-body">
+        {% if order.pickup_proof %}<img src="{{ order.pickup_proof.url }}" class="proof-final mb-2" alt="Pickup proof">{% endif %}
+        <div class="text-muted" style="font-size:12.5px;">Confirmed {{ order.pickup_confirmed_at|date:"M d, Y \a\t H:i" }}</div>
+      </div>
+    </div>
+
+    <!-- Confirm Delivery task -->
+    <div class="dash-panel">
+      <div class="dash-panel-header">Confirm Delivery</div>
+      <div class="dash-panel-body">
+        <p class="text-muted" style="font-size:13px;">Upload a photo proving the order was handed to the customer. The order becomes <strong>Delivered</strong> automatically once submitted.</p>
+        <form method="post" enctype="multipart/form-data" id="deliveryForm">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="confirm_delivery">
+          <label class="upload-drop mb-2" id="deliveryDropLabel" for="deliveryInput">
+            <i class="fas fa-camera fs-3 mb-2" style="color:var(--brand-green);"></i>
+            <div class="fw-semibold" id="deliveryDropText">Tap to take/upload a delivery photo</div>
+            <div class="small text-muted">PNG or JPG</div>
+            <input type="file" name="delivery_proof" id="deliveryInput" accept="image/*" capture="environment" class="d-none" required>
+            <img id="deliveryPreview" class="proof-preview d-none">
+          </label>
+          <button type="button" class="btn btn-sm btn-outline-danger d-none mb-2 w-100" id="deliveryClearBtn"><i class="fas fa-xmark me-1"></i>Remove image</button>
+          <button type="submit" class="ds-btn ds-btn-primary"><i class="fas fa-paper-plane"></i>Confirm Delivery</button>
+        </form>
+      </div>
+    </div>
+    {% elif order.status == 'delivered' %}
+    <div class="dash-panel">
+      <div class="dash-panel-header">Pickup Proof</div>
+      <div class="dash-panel-body">
+        {% if order.pickup_proof %}<img src="{{ order.pickup_proof.url }}" class="proof-final mb-2" alt="Pickup proof">{% endif %}
+        <div class="text-muted" style="font-size:12.5px;">Confirmed {{ order.pickup_confirmed_at|date:"M d, Y \a\t H:i" }}</div>
+      </div>
+    </div>
+    <div class="dash-panel">
+      <div class="dash-panel-header">Delivery Proof</div>
+      <div class="dash-panel-body">
+        {% if order.delivery_proof %}<img src="{{ order.delivery_proof.url }}" class="proof-final mb-2" alt="Delivery proof">{% endif %}
+        <div class="text-muted" style="font-size:12.5px;">Confirmed {{ order.delivery_confirmed_at|date:"M d, Y \a\t H:i" }}</div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<script>
+function wireProofUpload(inputId, dropLabelId, dropTextId, previewId, clearBtnId, defaultText) {
+  const input = document.getElementById(inputId);
+  const dropLabel = document.getElementById(dropLabelId);
+  const dropText = document.getElementById(dropTextId);
+  const preview = document.getElementById(previewId);
+  const clearBtn = document.getElementById(clearBtnId);
+  if (!input) return;
+
+  input.addEventListener('change', () => {
+    const file = input.files[0];
+    if (!file) return;
+    dropLabel.classList.add('has-file');
+    dropText.textContent = file.name;
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.src = e.target.result;
+      preview.classList.remove('d-none');
+    };
+    reader.readAsDataURL(file);
+    clearBtn.classList.remove('d-none');
+  });
+
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    dropLabel.classList.remove('has-file');
+    dropText.textContent = defaultText;
+    preview.classList.add('d-none');
+    preview.src = '';
+    clearBtn.classList.add('d-none');
+  });
+}
+
+wireProofUpload('pickupInput', 'pickupDropLabel', 'pickupDropText', 'pickupPreview', 'pickupClearBtn', 'Tap to take/upload a pickup photo');
+wireProofUpload('deliveryInput', 'deliveryDropLabel', 'deliveryDropText', 'deliveryPreview', 'deliveryClearBtn', 'Tap to take/upload a delivery photo');
+</script>
+{% endblock %}

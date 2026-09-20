@@ -1,0 +1,402 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}{{ thread.subject }} – Likhalaya{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* =========================================================
+       MESSAGE DETAIL PAGE (scoped to .message-detail-page only)
+       ========================================================= */
+
+    .message-detail-page {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 36px 20px 64px;
+    }
+
+    .message-detail-page .back-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: #14584A;
+        font-weight: 700;
+        text-decoration: none;
+        margin-bottom: 18px;
+    }
+    .message-detail-page .back-link:hover { color: #0F3D39; text-decoration: underline; }
+
+    /* ===== Card ===== */
+    .message-detail-page .thread-card {
+        background: #fff;
+        border: none;
+        border-radius: 22px;
+        box-shadow: 0 10px 40px rgba(20,60,50,.10);
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* ===== Header ===== */
+    .message-detail-page .thread-header {
+        padding: 22px 28px 18px;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+    .message-detail-page .thread-header-icon {
+        width: 56px; height: 56px; border-radius: 50%;
+        background: #E3F3EC; color: #14584A;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 21px; flex-shrink: 0;
+    }
+    .message-detail-page .thread-header-main { flex: 1; min-width: 0; }
+    .message-detail-page .thread-type-badge {
+        font-size: 10.5px; font-weight: 700;
+        color: #14584A; background: #E3F3EC;
+        border-radius: 20px; padding: 3px 11px;
+        display: inline-block; margin-bottom: 5px;
+    }
+    .message-detail-page .thread-type-badge.type-bulk    { background: #E6F0FD; color: #2563EB; }
+    .message-detail-page .thread-type-badge.type-donate  { background: #F1ECFD; color: #7C3AED; }
+    .message-detail-page .thread-type-badge.type-request { background: #FDF1E6; color: #C9841A; }
+    .message-detail-page .thread-subject {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700; font-size: 21px; line-height: 1.2;
+        color: #1a2420; margin: 0;
+    }
+    .message-detail-page .thread-meta { font-size: 12.5px; color: #8b9490; margin-top: 3px; }
+
+    .message-detail-page .thread-status-badge {
+        align-self: flex-start;
+        font-size: 11px; font-weight: 700;
+        border-radius: 20px; padding: 4px 12px;
+        white-space: nowrap; flex-shrink: 0;
+    }
+    .message-detail-page .thread-status-badge.status-new { background: #E3F3EC; color: #14584A; }
+    .message-detail-page .thread-status-badge.status-default { background: #eef0f2; color: #5a5a5a; }
+
+    /* ===== Conversation area ===== */
+    .message-detail-page .thread-body {
+        padding: 24px 28px;
+        background: #F4F4F0;
+        max-height: 480px;
+        min-height: 0;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+    }
+    .message-detail-page .msg-bubble-row {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+    .message-detail-page .msg-bubble-row:last-child { margin-bottom: 0; }
+    .message-detail-page .msg-bubble-row.from-staff { justify-content: flex-start; }
+    .message-detail-page .msg-bubble-row.from-customer { justify-content: flex-end; }
+
+    .message-detail-page .msg-avatar {
+        width: 56px; height: 56px; border-radius: 50%;
+        background: #fff; border: 1px solid #E6E8E4;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden; flex-shrink: 0;
+    }
+    .message-detail-page .msg-avatar img { width: 90%; height: 90%; object-fit: contain; }
+
+    .message-detail-page .msg-bubble {
+        width: fit-content;
+        max-width: 68%;
+        padding: 12px 16px;
+        border-radius: 16px;
+        font-size: 13.5px;
+        line-height: 1.5;
+    }
+    .message-detail-page .msg-bubble.staff {
+        background: #fff;
+        color: #1a2420;
+        border: 1px solid #E6E8E4;
+        border-bottom-left-radius: 4px;
+    }
+    .message-detail-page .msg-bubble.customer {
+        background: #14584A;
+        color: #fff;
+        border-bottom-right-radius: 4px;
+    }
+    .message-detail-page .msg-bubble-sender { font-size: 11.5px; font-weight: 700; margin-bottom: 3px; }
+    .message-detail-page .msg-bubble.staff .msg-bubble-sender { color: #14584A; }
+    .message-detail-page .msg-bubble-text { white-space: pre-wrap; word-break: break-word; }
+    .message-detail-page .msg-bubble-time { font-size: 10.5px; margin-top: 8px; opacity: .65; }
+
+    .message-detail-page .thread-load-more {
+        text-align: center; font-size: 12px; color: #8b9490;
+        padding: 6px 0 12px; flex-shrink: 0;
+    }
+
+    /* ===== Reply ===== */
+    .message-detail-page .thread-reply-area {
+        padding: 18px 28px 8px;
+        background: #fff;
+        flex-shrink: 0;
+    }
+    .message-detail-page .reply-form-row { display: flex; gap: 12px; align-items: stretch; }
+    .message-detail-page .reply-box {
+        flex: 1;
+        border: 1.5px solid #E3E3DD;
+        border-radius: 12px;
+        background: #fff;
+        padding: 10px 14px 8px;
+        transition: border-color .15s, box-shadow .15s;
+    }
+    .message-detail-page .reply-box:focus-within {
+        border-color: #14584A;
+        box-shadow: 0 0 0 3px rgba(20,88,74,.10);
+    }
+    .message-detail-page .reply-textarea {
+        display: block; width: 100%;
+        border: none; outline: none; resize: none;
+        font-size: 13.5px; background: transparent;
+        height: 48px; min-height: 48px; max-height: 160px;
+        padding: 0;
+    }
+    .message-detail-page .reply-tools { display: flex; gap: 12px; margin-top: 4px; color: #9aa19e; font-size: 13px; }
+
+    .message-detail-page .reply-send-btn {
+        align-self: flex-end;
+        background: #14584A;
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        padding: 0 24px;
+        height: 46px;
+        font-size: 14px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        white-space: nowrap;
+        transition: background .15s;
+    }
+    .message-detail-page .reply-send-btn:hover { background: #0F3D39; color: #fff; }
+    .message-detail-page .reply-send-btn:disabled { background: #b7c2c0; cursor: not-allowed; }
+    .message-detail-page .cooldown-note { font-size: 11.5px; color: #8b9490; margin-top: 6px; }
+
+    .message-detail-page .encrypted-note {
+        font-size: 12px; color: #8b9490;
+        padding: 6px 28px 20px; background: #fff;
+    }
+
+    @media (max-width: 576px) {
+        .message-detail-page { padding: 22px 12px 48px; }
+        .message-detail-page .thread-header { padding: 18px 16px 14px; gap: 12px; flex-wrap: wrap; }
+        .message-detail-page .thread-header-icon { width: 44px; height: 44px; font-size: 17px; }
+        .message-detail-page .thread-subject { font-size: 18px; }
+        .message-detail-page .thread-body { padding: 16px; }
+        .message-detail-page .msg-bubble { max-width: 78%; }
+        .message-detail-page .msg-avatar { width: 42px; height: 42px; }
+        .message-detail-page .thread-reply-area { padding: 14px 16px 6px; }
+        .message-detail-page .reply-form-row { flex-direction: column; }
+        .message-detail-page .reply-send-btn { align-self: stretch; justify-content: center; }
+        .message-detail-page .encrypted-note { padding: 6px 16px 16px; }
+    }
+
+    /* ===== Compact phone spacing ===== */
+    @media (max-width: 575.98px) {
+        .message-detail-page { padding: 10px 8px 24px; }
+        .message-detail-page .back-link { margin-bottom: 8px; font-size: 12.5px; }
+        .message-detail-page .thread-card { border-radius: 16px; }
+        .message-detail-page .thread-header { padding: 10px 12px 8px; gap: 10px; flex-wrap: nowrap; }
+        .message-detail-page .thread-header-icon { width: 36px; height: 36px; font-size: 14px; }
+        .message-detail-page .thread-type-badge { font-size: 9.5px; padding: 2px 9px; margin-bottom: 2px; }
+        .message-detail-page .thread-subject { font-size: 15px; }
+        .message-detail-page .thread-meta { font-size: 11px; margin-top: 1px; }
+        .message-detail-page .thread-status-badge { font-size: 10px; padding: 3px 9px; }
+        .message-detail-page .thread-body { padding: 10px; max-height: 55vh; }
+        .message-detail-page .msg-bubble-row { margin-bottom: 8px; gap: 6px; }
+        .message-detail-page .msg-avatar { width: 30px; height: 30px; }
+        .message-detail-page .msg-bubble { max-width: 86%; padding: 8px 11px; font-size: 13px; border-radius: 14px; }
+        .message-detail-page .msg-bubble-time { margin-top: 4px; font-size: 10px; }
+        .message-detail-page .thread-reply-area { padding: 8px 10px 4px; }
+        .message-detail-page .reply-form-row { gap: 8px; }
+        .message-detail-page .reply-box { padding: 7px 11px 5px; }
+        .message-detail-page .reply-textarea { height: 40px; min-height: 40px; font-size: 16px; }
+        .message-detail-page .reply-tools { margin-top: 2px; }
+        .message-detail-page .reply-send-btn { height: 42px; }
+        .message-detail-page .encrypted-note { padding: 4px 12px 10px; font-size: 11px; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="message-detail-page">
+  <a href="{% url 'store:my_messages' %}" class="back-link">
+    <i class="fas fa-arrow-left"></i>Back to Messages
+  </a>
+
+  <div class="thread-card">
+    <div class="thread-header">
+      <div class="thread-header-icon"><i class="fas fa-comment-dots"></i></div>
+      <div class="thread-header-main">
+        <span class="thread-type-badge {% if thread.inquiry_type == 'bulk_order' %}type-bulk{% elif thread.inquiry_type == 'donate_materials' %}type-donate{% elif thread.inquiry_type == 'custom_order' or thread.inquiry_type == 'product_request' %}type-request{% endif %}">{{ thread.get_inquiry_type_display }}</span>
+        <h5 class="thread-subject">{{ thread.subject }}</h5>
+        <div class="thread-meta">Started {{ thread.created_at|date:"F d, Y" }} · {{ thread.created_at|date:"g:i A" }}</div>
+      </div>
+      {% if thread.has_unread_for_customer %}
+        <span class="thread-status-badge status-new">New</span>
+      {% else %}
+        <span class="thread-status-badge status-default">{{ thread.get_status_display }}</span>
+      {% endif %}
+    </div>
+
+    <div class="thread-body"
+         id="threadBody"
+         data-thread-id="{{ thread.pk }}"
+         data-has-more="{{ has_more_replies|yesno:'1,0' }}"
+         data-oldest-id="{{ oldest_loaded_reply_id|default:'' }}">
+      <div class="thread-load-more" id="threadLoadMore" style="{% if not has_more_replies %}display:none;{% endif %}">
+        Loading earlier messages…
+      </div>
+
+      <div class="msg-bubble-row from-customer">
+        <div class="msg-bubble customer">
+          <div class="msg-bubble-sender">You</div>
+          <div class="msg-bubble-text">{{ thread.message }}</div>
+          <div class="msg-bubble-time">{{ thread.created_at|date:"M d, Y H:i" }}</div>
+        </div>
+      </div>
+
+      {% for reply in replies %}
+      <div class="msg-bubble-row {% if reply.is_staff_reply %}from-staff{% else %}from-customer{% endif %}" data-reply-id="{{ reply.id }}">
+        {% if reply.is_staff_reply %}
+        <span class="msg-avatar"><img src="{% static 'imgs/likhalaya.png' %}" alt="" onerror="this.parentElement.style.display='none'"></span>
+        {% endif %}
+        <div class="msg-bubble {% if reply.is_staff_reply %}staff{% else %}customer{% endif %}">
+          <div class="msg-bubble-sender">{% if reply.is_staff_reply %}Likhalaya Team{% else %}You{% endif %}</div>
+          <div class="msg-bubble-text">{{ reply.body }}</div>
+          <div class="msg-bubble-time">{{ reply.created_at|date:"M d, Y H:i" }}</div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="thread-reply-area">
+      <form method="post" id="replyForm">
+        {% csrf_token %}
+        <div class="reply-form-row">
+          <div class="reply-box">
+            <textarea name="body" class="reply-textarea" rows="2" placeholder="Type your reply…" required></textarea>
+            <div class="reply-tools" aria-hidden="true"><i class="fas fa-paperclip"></i><i class="far fa-face-smile"></i></div>
+          </div>
+          <button type="submit" class="reply-send-btn" id="replySendBtn"><i class="fas fa-paper-plane"></i><span id="replySendBtnLabel">Send</span></button>
+        </div>
+        <div class="cooldown-note" id="cooldownNote" style="{% if not cooldown_remaining %}display:none;{% endif %}"></div>
+      </form>
+    </div>
+
+    <div class="encrypted-note"><i class="fas fa-lock me-1"></i>Messages in this conversation are encrypted at rest.</div>
+  </div>
+</div>
+
+<script>
+(function () {
+  // ---- Infinite scroll: load older replies when scrolled near the top ----
+  var body = document.getElementById('threadBody');
+  var loadMoreEl = document.getElementById('threadLoadMore');
+  var loading = false;
+
+  function escapeHtml(str) {
+    var div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  var STAFF_AVATAR = '<span class="msg-avatar"><img src="{% static 'imgs/likhalaya.png' %}" alt="" onerror="this.parentElement.style.display=\'none\'"></span>';
+
+  function bubbleHtml(reply) {
+    var side = reply.is_staff_reply ? 'from-staff' : 'from-customer';
+    var kind = reply.is_staff_reply ? 'staff' : 'customer';
+    return (
+      '<div class="msg-bubble-row ' + side + '" data-reply-id="' + reply.id + '">' +
+        (reply.is_staff_reply ? STAFF_AVATAR : '') +
+        '<div class="msg-bubble ' + kind + '">' +
+          '<div class="msg-bubble-sender">' + escapeHtml(reply.sender_label) + '</div>' +
+          '<div class="msg-bubble-text">' + escapeHtml(reply.body) + '</div>' +
+          '<div class="msg-bubble-time">' + escapeHtml(reply.created_at) + '</div>' +
+        '</div>' +
+      '</div>'
+    );
+  }
+
+  function loadOlder() {
+    if (loading || !body || body.dataset.hasMore !== '1') return;
+    var oldestId = body.dataset.oldestId;
+    if (!oldestId) return;
+
+    loading = true;
+    loadMoreEl.style.display = 'block';
+    loadMoreEl.textContent = 'Loading earlier messages…';
+
+    var url = window.location.pathname + 'older/?before_id=' + encodeURIComponent(oldestId);
+    fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+      .then(function (res) {
+        if (res.status === 429) {
+          // Throttled server-side — back off instead of hammering it.
+          body.dataset.hasMore = '0';
+          loadMoreEl.style.display = 'none';
+          throw new Error('throttled');
+        }
+        return res.json();
+      })
+      .then(function (data) {
+        var previousHeight = body.scrollHeight;
+
+        if (data.replies && data.replies.length) {
+          var html = data.replies.map(bubbleHtml).join('');
+          loadMoreEl.insertAdjacentHTML('afterend', html);
+          body.dataset.oldestId = data.replies[0].id;
+          // Keep the viewport anchored on the message the user was looking at.
+          body.scrollTop += (body.scrollHeight - previousHeight);
+        }
+
+        body.dataset.hasMore = data.has_more ? '1' : '0';
+        loadMoreEl.style.display = data.has_more ? 'block' : 'none';
+      })
+      .catch(function (err) {
+        if (err && err.message === 'throttled') return;
+        loadMoreEl.textContent = 'Couldn’t load earlier messages — scroll to retry.';
+      })
+      .finally(function () { loading = false; });
+  }
+
+  if (body) {
+    body.scrollTop = body.scrollHeight; // start at the newest message
+    body.addEventListener('scroll', function () {
+      if (body.scrollTop < 80) loadOlder();
+    });
+  }
+
+  // ---- 20s cooldown between messages: disable Send and count down ----
+  var sendBtn = document.getElementById('replySendBtn');
+  var sendLabel = document.getElementById('replySendBtnLabel');
+  var cooldownNote = document.getElementById('cooldownNote');
+  var remaining = {{ cooldown_remaining|default:0 }};
+
+  function tickCooldown() {
+    if (remaining <= 0) {
+      sendBtn.disabled = false;
+      sendLabel.textContent = 'Send';
+      cooldownNote.style.display = 'none';
+      return;
+    }
+    sendBtn.disabled = true;
+    sendLabel.textContent = 'Wait ' + remaining + 's';
+    cooldownNote.style.display = 'block';
+    cooldownNote.textContent = 'You can send another message in ' + remaining + 's.';
+    remaining -= 1;
+    setTimeout(tickCooldown, 1000);
+  }
+
+  if (sendBtn) tickCooldown();
+})();
+</script>
+{% endblock %}

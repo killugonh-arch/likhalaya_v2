@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% load humanize %}
+{% block title %}{{ category.name }} – Likhalaya{% endblock %}
+{% block nav_shop %}active{% endblock %}
+
+{% block content %}
+{% include 'partials/compact_page_header.html' with eyebrow='Category' eyebrow_icon='fa-table-cells-large' title=category.name subtitle=category.description|default:'Explore handcrafted products made with creativity and purpose.' %}
+<div class="container py-4">
+  {% if products %}
+  <div class="row g-3">
+    {% for product in products %}
+    <div class="col-6 col-md-4 col-lg-3">
+      <div class="product-card h-100">
+        {% if product.image %}<img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-img">
+        {% else %}<div class="img-placeholder">🎨</div>{% endif %}
+        <div class="p-3">
+          <h6 class="fw-bold mb-1" style="font-size:13px;">
+            <a href="{{ product.get_absolute_url }}" class="stretched-link text-decoration-none" style="color:inherit;">{{ product.name }}</a>
+          </h6>
+          <div class="d-flex justify-content-between align-items-center mt-2">
+            <div class="product-price">{{ product.price_display }}</div>
+            <div class="d-flex gap-1 position-relative" style="z-index:2;">
+              {% if product.in_stock %}
+              <form method="post" action="{% url 'orders:cart_add' product.pk %}">{% csrf_token %}<input type="hidden" name="quantity" value="1">
+                <button type="submit" class="btn btn-sm btn-outline-secondary py-0 px-2" style="font-size:11px;" title="Add to cart"><i class="fas fa-cart-plus"></i></button>
+              </form>
+              {% if user.is_authenticated %}
+              <form method="post" action="{% url 'orders:cart_add' product.pk %}">{% csrf_token %}<input type="hidden" name="quantity" value="1"><input type="hidden" name="buy_now" value="1">
+                <button type="submit" class="btn btn-sm btn-gold py-0 px-2" style="font-size:11px;">Buy Now</button>
+              </form>
+              {% else %}
+              <a href="{% url 'accounts:register' %}?next={{ product.get_absolute_url|urlencode }}" class="btn btn-sm btn-gold py-0 px-2" style="font-size:11px;">Buy Now</a>
+              {% endif %}
+              {% else %}
+              <button class="btn btn-sm btn-secondary py-0 px-2" disabled style="font-size:11px;">Sold Out</button>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-5">
+    <div style="font-size:52px;margin-bottom:12px;">📦</div>
+    <h5 class="text-muted">No products in this category yet.</h5>
+    <a href="{% url 'store:shop' %}" class="btn btn-teal mt-3">Browse All Products</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,2760 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="fil">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+
+    <title>{% block title %}Likhalaya – PDL Marketplace{% endblock %}</title>
+
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    />
+
+    <!-- Bootstrap (self-hosted) -->
+    <link
+        rel="stylesheet"
+        href="{% static 'vendor/bootstrap/css/bootstrap.min.css' %}"
+    />
+
+    <!-- Font Awesome (self-hosted) -->
+    <link
+        rel="stylesheet"
+        href="{% static 'vendor/fontawesome/css/all.min.css' %}"
+    />
+
+    <!-- Bootstrap Icons (self-hosted) -->
+    <link
+        rel="stylesheet"
+        href="{% static 'vendor/bootstrap-icons/font/bootstrap-icons.css' %}"
+    />
+
+
+    <style>
+
+        /* =========================================================
+           ROOT COLORS
+           ========================================================= */
+
+        :root {
+            --gold: #C9841A;
+            --gold-lt: #E8A82A;
+
+            --teal: #1E5F5A;
+            --teal-lt: #e9ec52;
+
+            --cream: #FFFFFF;
+            --sand: #EEF5F0;
+
+            --charcoal: #1A1A1A;
+            --gray: #5A5A5A;
+        }
+
+
+        /* =========================================================
+           GLOBAL
+           ========================================================= */
+
+        html, body {
+            height: 100%;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--cream);
+            color: var(--charcoal);
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .public-page-main {
+            flex: 1 0 auto;
+        }
+
+        body > footer {
+            flex-shrink: 0;
+            margin-top: auto;
+        }
+
+
+        /* =========================================================
+           NAVBAR
+           ========================================================= */
+
+        .navbar {
+            background: #fff !important;
+            border-bottom: 1px solid #e0ece4;
+        }
+
+        .navbar .nav-link {
+            color: var(--gray) !important;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .navbar .nav-link:hover,
+        .navbar .nav-link.active {
+            color: var(--gold) !important;
+            font-weight: 600;
+        }
+
+        .navbar-brand-text {
+            font-family: 'Poppins', sans-serif;
+            font-size: 18px;
+            color: var(--teal);
+            font-weight: 700;
+        }
+
+
+        /* =========================================================
+           BUTTONS
+           ========================================================= */
+
+        .btn-gold {
+            background: var(--gold);
+            color: #fff !important;
+            font-weight: 600;
+            border: none;
+        }
+
+        .btn-gold:hover {
+            background: var(--gold-lt);
+        }
+
+        .btn-teal {
+            background: var(--teal);
+            color: #fff !important;
+            font-weight: 600;
+            border: none;
+            flex-shrink: 0;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-teal:hover {
+            background: var(--teal-lt);
+        }
+
+
+        /* =========================================================
+           SECTION / PRODUCT
+           ========================================================= */
+
+        .section-title {
+            font-family: 'Poppins', sans-serif;
+            font-size: 26px;
+            color: var(--teal);
+        }
+
+        .divider {
+            width: 48px;
+            height: 3px;
+            background: var(--gold);
+            border-radius: 2px;
+            margin: 8px auto 28px;
+        }
+
+        .product-card {
+            position: relative;
+            background: #fff;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 1px solid #e0ece4;
+            transition: box-shadow .25s, transform .25s;
+        }
+
+        .product-card:hover {
+            box-shadow: 0 12px 32px rgba(0, 0, 0, .12);
+            transform: translateY(-3px);
+        }
+
+        .product-img {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            display: block;
+            background: var(--sand);
+        }
+
+        .product-price {
+            font-family: 'Poppins', sans-serif;
+            font-size: clamp(15px, 4vw, 22px);
+            color: var(--gold);
+            font-weight: 800;
+            letter-spacing: .3px;
+        }
+
+        .product-tag {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--teal);
+            text-transform: uppercase;
+            letter-spacing: .6px;
+            background: rgba(30, 95, 90, .08);
+            padding: 3px 10px;
+            border-radius: 20px;
+            margin-bottom: 4px;
+        }
+
+
+        /* =========================================================
+           FOOTER
+           ========================================================= */
+
+        footer {
+            position: relative;
+            background: linear-gradient(
+                180deg,
+                var(--teal) 0%,
+                #163f3c 100%
+            );
+            color: rgba(255, 255, 255, .72);
+        }
+
+        footer::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(
+                90deg,
+                var(--gold) 0%,
+                var(--gold-lt) 50%,
+                var(--gold) 100%
+            );
+        }
+
+        footer a {
+            color: rgba(255, 255, 255, .72);
+            text-decoration: none;
+        }
+
+        footer a:hover {
+            color: var(--gold-lt);
+        }
+
+        .footer-brand-name {
+            font-family: 'Poppins', sans-serif;
+            font-size: 22px;
+            letter-spacing: .5px;
+        }
+
+        .footer-brand-logo {
+            width: 40px;
+            height: 40px;
+            object-fit: contain;
+            flex-shrink: 0;
+            background: #fff;
+            border-radius: 50%;
+            padding: 4px;
+        }
+
+        .footer-heading {
+            font-size: 12.5px;
+            letter-spacing: .8px;
+            color: var(--gold-lt);
+        }
+
+        .footer-body-text {
+            color: rgba(255, 255, 255, .65);
+            line-height: 1.7;
+        }
+
+        .footer-link-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .footer-link-list li {
+            margin-bottom: 10px;
+        }
+
+        .footer-link-list a {
+            position: relative;
+            color: rgba(255, 255, 255, .75);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition:
+                color .2s ease,
+                transform .2s ease,
+                padding-left .2s ease;
+        }
+
+        .footer-link-list a::before {
+            content: '\f105';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            font-size: 11px;
+            color: var(--gold-lt);
+            opacity: 0;
+            transform: translateX(-4px);
+            transition:
+                opacity .2s ease,
+                transform .2s ease;
+        }
+
+        .footer-link-list a:hover {
+            color: var(--gold-lt);
+            padding-left: 4px;
+        }
+
+        .footer-link-list a:hover::before {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .footer-contact-list {
+            display: inline-flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .footer-contact-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .footer-contact-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, .08);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            color: var(--gold-lt);
+            font-size: 12.5px;
+            transition:
+                background .2s ease,
+                transform .2s ease;
+        }
+
+        .footer-contact-item:hover .footer-contact-icon {
+            background: rgba(232, 168, 42, .22);
+            transform: translateY(-1px);
+        }
+
+        .footer-contact-item .footer-contact-text {
+            color: rgba(255, 255, 255, .75);
+            line-height: 1.5;
+        }
+
+        .footer-contact-item a.footer-contact-text:hover {
+            color: var(--gold-lt);
+        }
+
+        .footer-support-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: rgba(232, 168, 42, .14);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gold-lt);
+            font-size: 13px;
+            margin-bottom: 12px;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255, 255, 255, .10);
+            margin-top: 8px;
+            padding-top: 18px;
+        }
+
+        .footer-bottom small {
+            color: rgba(255, 255, 255, .5);
+        }
+
+
+        /* =========================================================
+           FOOTER RESPONSIVE
+           ========================================================= */
+
+        @media (max-width: 991px) {
+
+            footer .row.g-4 > div {
+                text-align: center;
+            }
+
+            .footer-contact-item {
+                gap: 12px;
+            }
+
+            .footer-contact-icon {
+                margin-top: 0;
+            }
+
+            .footer-support-icon {
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            .footer-brand-logos-wrap {
+                justify-content: center;
+            }
+
+            .footer-bottom {
+                text-align: center;
+            }
+
+            .footer-bottom .d-flex {
+                flex-direction: column;
+                align-items: center;
+                gap: 6px !important;
+            }
+
+            footer .row.g-4 > div {
+                margin-bottom: 8px;
+            }
+
+            .footer-heading {
+                margin-bottom: 14px !important;
+            }
+        }
+
+
+        /* =========================================================
+           TOAST
+           ========================================================= */
+
+        .toast-container-fixed {
+            position: fixed;
+            top: 80px;
+            right: 20px;
+            z-index: 9999;
+            min-width: 300px;
+        }
+
+
+        /* =========================================================
+           UTILITY ICONS
+           ========================================================= */
+
+        .utility-icon {
+            color: var(--charcoal);
+            font-size: 20px;
+            line-height: 1;
+            transition: color .15s;
+        }
+
+        .utility-icon:hover {
+            color: var(--gold);
+        }
+
+        .utility-icon-btn {
+            padding: 0 !important;
+            border: 0;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .utility-cart-badge {
+            background: var(--gold);
+            font-size: 9px;
+            font-weight: 600;
+            min-width: 15px;
+            height: 15px;
+            line-height: 15px;
+            padding: 0 3px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+
+        /* =========================================================
+           USER
+           ========================================================= */
+
+        .user-chip {
+            color: var(--charcoal);
+            background: none;
+            border: none;
+            padding: 0;
+        }
+
+        .user-chip:hover {
+            color: var(--gold);
+        }
+
+        .user-email-text {
+            font-size: 12.5px;
+            color: var(--gray);
+            max-width: 160px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .user-chip:hover .user-email-text {
+            color: var(--gold);
+        }
+
+
+        /* =========================================================
+           ACCOUNT DROPDOWN (public/customer navbar only)
+           ========================================================= */
+
+        .account-dropdown-menu {
+            width: 205px;
+            min-width: 205px;
+            max-width: 205px;
+            padding: 6px 0;
+            border-radius: 10px 10px 8px 8px;
+            box-shadow: 0 10px 28px rgba(0,0,0,.12) !important;
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .account-dropdown-menu .account-dropdown-name {
+            display: block;
+            padding: 8px 16px 6px;
+            color: var(--charcoal);
+            font-size: 12.5px;
+        }
+
+        .account-dropdown-menu .dropdown-divider {
+            border-top: 1px solid #ececec;
+            margin: 2px 0;
+        }
+
+        .account-dropdown-menu .dropdown-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 16px;
+            font-size: 13px;
+            color: #3a3a3a;
+            line-height: 1.2;
+        }
+
+        .account-dropdown-menu .dropdown-item i {
+            width: 14px;
+            text-align: center;
+            font-size: 13px;
+            color: #8a8a8a !important;
+            flex-shrink: 0;
+        }
+
+        .account-dropdown-menu .dropdown-item:hover {
+            background: var(--sand);
+            color: var(--teal);
+        }
+
+        .account-dropdown-menu .dropdown-item:hover i {
+            color: var(--teal) !important;
+        }
+
+        .account-dropdown-menu .dropdown-item.text-danger {
+            color: #d9432e !important;
+        }
+
+        .account-dropdown-menu .dropdown-item.text-danger i {
+            color: #d9432e !important;
+        }
+
+        .account-dropdown-menu .dropdown-item.text-danger:hover {
+            background: #fdeceb;
+            color: #c0392b !important;
+        }
+
+        .account-dropdown-menu form {
+            margin: 0;
+        }
+
+
+        /* =========================================================
+           PRODUCT PLACEHOLDER
+           ========================================================= */
+
+        .img-placeholder {
+            aspect-ratio: 1 / 1;
+            background: var(--sand);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+        }
+
+        .badge-gold {
+            background: rgba(201, 132, 26, .2);
+            color: var(--gold);
+            border: 1px solid rgba(201, 132, 26, .4);
+            font-size: 10px;
+            border-radius: 20px;
+            padding: 3px 10px;
+            font-weight: 600;
+        }
+
+
+        /* =========================================================
+           STATUS
+           ========================================================= */
+
+        .status-pending {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-confirmed {
+            background: #cff4fc;
+            color: #055160;
+        }
+
+        .status-processing {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .status-shipped {
+            background: #cfe2ff;
+            color: #084298;
+        }
+
+        .status-delivered {
+            background: #d1e7dd;
+            color: #0a3622;
+        }
+
+        .status-cancelled {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+
+        /* =========================================================
+           NAVBAR BASE
+           ========================================================= */
+
+        .navbar .container {
+            flex-wrap: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .navbar-utility-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        #navbarMain .btn.btn-teal,
+        #navbarMain .btn.btn-outline-secondary {
+            flex-shrink: 0;
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+
+        /* =========================================================
+           DESKTOP / TABLET NAVBAR
+           ========================================================= */
+
+        @media (min-width: 768px) {
+
+            .navbar-toggler {
+                display: none !important;
+            }
+
+            .navbar-collapse {
+                display: flex !important;
+                flex-basis: auto !important;
+            }
+
+            #navbarMain {
+                display: flex !important;
+                flex-wrap: nowrap;
+                align-items: center;
+                flex: 1 1 auto;
+                gap: 10px;
+            }
+
+            #navbarMain .navbar-nav {
+                flex-direction: row;
+                flex-wrap: nowrap;
+                white-space: nowrap;
+            }
+
+            #navbarMain .d-flex.align-items-center.gap-4 {
+                flex-wrap: nowrap;
+                white-space: nowrap;
+            }
+        }
+
+
+        /* =========================================================
+           TABLET
+           ========================================================= */
+
+        @media (min-width: 768px) and (max-width: 991.98px) {
+
+            .navbar-brand img {
+                height: 30px !important;
+            }
+
+            .navbar-brand {
+                gap: 4px !important;
+            }
+
+            .navbar-nav .nav-link {
+                padding: 6px 5px !important;
+                font-size: 10px;
+            }
+
+            #navbarMain .d-flex.align-items-center.gap-4 {
+                gap: 6px !important;
+            }
+
+            #navbarMain form .input-group {
+                width: 90px;
+            }
+
+            #navbarMain form input.form-control {
+                font-size: 11px;
+                padding: 2px 8px;
+            }
+
+            .utility-icon {
+                font-size: 15px;
+            }
+
+            .user-email-text {
+                max-width: 70px;
+                font-size: 10px;
+            }
+
+            #navbarMain .btn.btn-teal,
+            #navbarMain .btn.btn-outline-secondary {
+                padding: 4px 8px;
+                font-size: 11px;
+                white-space: nowrap;
+            }
+        }
+
+
+        /* =========================================================
+           MOBILE NAVBAR
+           ========================================================= */
+
+        @media (max-width: 767.98px) {
+
+            .navbar-toggler {
+                display: none !important;
+            }
+
+            .navbar-brand img {
+                height: 28px !important;
+            }
+
+            .navbar-brand {
+                gap: 2px !important;
+            }
+
+            .navbar .container {
+                flex-wrap: nowrap;
+                justify-content: space-between;
+                gap: 6px;
+            }
+
+            .navbar-collapse {
+                display: flex !important;
+                flex-basis: auto;
+                flex: 1 1 auto;
+                flex-direction: row;
+                align-items: center;
+                justify-content: flex-end;
+                min-width: 0;
+            }
+
+            #navbarMain {
+                display: flex !important;
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+                gap: 6px;
+                min-width: 0;
+            }
+
+            #navbarMain .navbar-nav {
+                flex-direction: row;
+                flex-wrap: nowrap;
+                gap: 0px;
+                margin: 0 !important;
+                overflow-x: auto;
+                scrollbar-width: none;
+            }
+
+            #navbarMain .navbar-nav::-webkit-scrollbar {
+                display: none;
+            }
+
+            #navbarMain .navbar-nav .nav-link {
+                font-size: 9.5px;
+                padding: 4px 3px !important;
+                white-space: nowrap;
+            }
+
+            /* Hide search on mobile */
+            #navbarMain form:not(#mobileLogoutForm) {
+                display: none !important;
+            }
+
+            #navbarMain .d-flex.align-items-center.gap-4 {
+                width: auto;
+                justify-content: flex-end;
+                flex-shrink: 0;
+            }
+
+            .navbar-utility-row {
+                justify-content: flex-end;
+                gap: 8px !important;
+                margin-top: 0;
+                padding-right: 2px;
+            }
+
+            .utility-icon {
+                font-size: 16px;
+            }
+
+            .navbar-utility-row .utility-icon-btn,
+            .navbar-utility-row > a.utility-icon {
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                min-width: 24px;
+                min-height: 24px;
+            }
+
+            .navbar-utility-row .utility-cart-badge {
+                font-size: 8px;
+                min-width: 12px;
+                height: 12px;
+                line-height: 12px;
+                padding: 0 2px;
+            }
+
+
+
+            .notif-dropdown {
+                min-width: 220px !important;
+                max-width: calc(100vw - 32px);
+                max-height: 260px !important;
+                font-size: 12.5px;
+            }
+
+            .notif-dropdown .dropdown-header {
+                font-size: 12px;
+                padding: 8px 12px 4px;
+            }
+
+            .notif-dropdown .dropdown-item,
+            .notif-dropdown .dropdown-item-text {
+                padding: 8px 12px;
+                font-size: 12px;
+            }
+
+            #navbarMain .btn.btn-teal,
+            #navbarMain .btn.btn-outline-secondary {
+                width: auto;
+                padding: 5px 8px;
+                font-size: 10px;
+                white-space: nowrap;
+            }
+        }
+
+
+        @media (max-width: 400px) {
+
+            .navbar-brand img {
+                height: 28px !important;
+            }
+
+            #navbarMain .btn.btn-teal,
+            #navbarMain .btn.btn-outline-secondary {
+                padding: 5px 8px;
+                font-size: 10px;
+            }
+
+            .navbar-utility-row {
+                gap: 8px !important;
+            }
+        }
+        }
+
+
+        /* =========================================================
+           MOBILE APP ACCOUNT MENU
+           ========================================================= */
+
+        .mobile-menu-wrapper {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .mobile-menu-button {
+            width: 36px;
+            height: 36px;
+
+            padding: 0 !important;
+
+            display: inline-flex !important;
+            align-items: center;
+            justify-content: center;
+
+            border: 0 !important;
+            background: transparent !important;
+        }
+
+        .mobile-menu-button i {
+            font-size: 25px;
+            line-height: 1;
+        }
+
+
+        /* =========================================================
+           MOBILE MENU BOX
+           ========================================================= */
+
+        .mobile-account-menu {
+            min-width: 220px !important;
+            width: 220px !important;
+
+            padding: 6px 0 !important;
+
+            margin-top: 8px !important;
+
+            background: #ffffff !important;
+
+            border: 0 !important;
+            border-radius: 14px !important;
+
+            box-shadow: 0 8px 30px rgba(0, 0, 0, .18) !important;
+
+            z-index: 999999 !important;
+
+            /* Cap the height so a long menu (many items, long name,
+               notifications growing over time) scrolls instead of
+               running off the bottom of a short viewport, and clip
+               the corners so the scrollbar respects the rounded box. */
+            max-height: min(70vh, 420px) !important;
+            overflow-y: auto !important;
+            overscroll-behavior: contain;
+        }
+
+        /* Thin, unobtrusive scrollbar for the mobile menu when it
+           actually needs to scroll (WebKit browsers). */
+        .mobile-account-menu::-webkit-scrollbar {
+            width: 5px;
+        }
+
+        .mobile-account-menu::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, .18);
+            border-radius: 10px;
+        }
+
+        .mobile-account-menu::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        /* Firefox */
+        .mobile-account-menu {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, .18) transparent;
+        }
+
+
+        /* =========================================================
+           MOBILE MENU HEADER
+           ========================================================= */
+
+        .mobile-menu-header {
+            padding: 14px 16px !important;
+
+            /* Keep the user's name pinned to the top of the visible
+               list while the items below it scroll. */
+            position: sticky;
+            top: 0;
+            background: #ffffff;
+            z-index: 1;
+        }
+
+        .mobile-menu-user {
+            display: flex !important;
+            align-items: center !important;
+
+            gap: 10px;
+
+            color: var(--gray);
+
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .mobile-menu-user i {
+            width: 22px;
+            min-width: 22px;
+
+            text-align: center;
+
+            font-size: 20px;
+
+            color: var(--teal);
+        }
+
+
+        /* =========================================================
+           MOBILE MENU DIVIDER
+           ========================================================= */
+
+        .mobile-menu-divider {
+            width: 100%;
+            height: 1px;
+
+            background: #e5e5e5;
+
+            margin: 4px 0;
+        }
+
+
+        /* =========================================================
+           MOBILE MENU ITEMS
+           ========================================================= */
+
+        .mobile-account-menu .mobile-menu-item {
+            width: 100% !important;
+
+            min-height: 46px !important;
+
+            padding: 12px 16px !important;
+
+            display: flex !important;
+            align-items: center !important;
+
+            gap: 12px;
+
+            background: transparent;
+
+            border: 0 !important;
+
+            font-family: 'Inter', sans-serif;
+
+            font-size: 13px !important;
+            font-weight: 500;
+
+            color: #343a40 !important;
+
+            text-align: left;
+
+            white-space: nowrap;
+
+            cursor: pointer;
+        }
+
+
+        /* =========================================================
+           MOBILE MENU ICONS
+           ========================================================= */
+
+        .mobile-account-menu .mobile-menu-item i {
+            width: 20px;
+            min-width: 20px;
+
+            text-align: center;
+
+            font-size: 15px;
+
+            color: #6c757d;
+        }
+
+
+        /* =========================================================
+           MOBILE MENU HOVER
+           ========================================================= */
+
+        .mobile-account-menu .mobile-menu-item:hover,
+        .mobile-account-menu .mobile-menu-item:focus {
+            background: #f1f7f5 !important;
+            color: var(--teal) !important;
+        }
+
+        .mobile-account-menu .mobile-menu-item:hover i,
+        .mobile-account-menu .mobile-menu-item:focus i {
+            color: var(--teal);
+        }
+
+
+        /* =========================================================
+           MOBILE LOGOUT
+           ========================================================= */
+
+        .mobile-logout-container {
+            display: block !important;
+
+            width: 100% !important;
+
+            margin: 0 !important;
+            padding: 0 !important;
+
+            /* Keep Logout pinned to the bottom of the visible list
+               too, so it's always reachable without scrolling all
+               the way down when the menu is capped in height. */
+            position: sticky;
+            bottom: 0;
+            background: #ffffff;
+        }
+
+        .mobile-logout-item {
+            color: #dc3545 !important;
+
+            font-weight: 600 !important;
+
+            border: 0 !important;
+
+            background: transparent !important;
+        }
+
+        .mobile-logout-item i {
+            color: #dc3545 !important;
+        }
+
+        .mobile-logout-item:hover,
+        .mobile-logout-item:focus,
+        .mobile-logout-item:active {
+            background: rgba(220, 53, 69, .08) !important;
+
+            color: #dc3545 !important;
+        }
+
+        .mobile-logout-item:hover i,
+        .mobile-logout-item:focus i {
+            color: #dc3545 !important;
+        }
+
+
+        /* =========================================================
+           MOBILE MENU DISPLAY
+           ========================================================= */
+
+        @media (max-width: 767.98px) {
+
+            .mobile-menu-wrapper {
+                display: block !important;
+
+                position: relative !important;
+
+                flex-shrink: 0 !important;
+            }
+
+            .mobile-menu-button {
+                display: inline-flex !important;
+
+                visibility: visible !important;
+
+                opacity: 1 !important;
+            }
+
+            .mobile-account-menu {
+                position: absolute !important;
+
+                right: 0 !important;
+                left: auto !important;
+
+                top: 100% !important;
+
+                min-width: 220px !important;
+                width: 220px !important;
+
+                margin-top: 8px !important;
+
+                z-index: 999999 !important;
+            }
+
+            .mobile-account-menu.show {
+                display: block !important;
+            }
+        }
+
+
+        /* =========================================================
+           GENERIC FLUID SECTION SCALING
+           ========================================================= */
+
+        .section-title {
+            font-size: clamp(20px, 4vw, 26px);
+        }
+
+        @media (max-width: 575.98px) {
+
+            .container {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+
+            h1 {
+                font-size: clamp(22px, 6vw, 32px);
+            }
+
+            .btn {
+                font-size: 14px;
+            }
+
+            .product-card .card-body {
+                padding: 10px !important;
+            }
+
+            .product-card .card-title {
+                font-size: 13px !important;
+            }
+
+            .product-tag {
+                font-size: 9px;
+                padding: 2px 8px;
+            }
+        }
+
+
+        /* =====================================================================
+           GLOBAL PHONE-FIRST COMPACT SPACING  (phones <= 575.98px only)
+           Low specificity on purpose: page-level rules loaded after this
+           (via each page's extra_css block) still win where a page needs its own look.
+           ===================================================================== */
+        @media (max-width: 575.98px) {
+            /* Tighter Bootstrap spacing scale (5 -> 1.5rem, 4 -> 1rem, 3 -> .75rem) */
+            .py-5 { padding-top: 1.25rem !important; padding-bottom: 1.25rem !important; }
+            .py-4 { padding-top: 1rem !important;    padding-bottom: 1rem !important; }
+            .pt-5 { padding-top: 1.25rem !important; }  .pb-5 { padding-bottom: 1.25rem !important; }
+            .pt-4 { padding-top: 1rem !important; }     .pb-4 { padding-bottom: 1rem !important; }
+            .p-5  { padding: 1.25rem !important; }      .p-4 { padding: 1rem !important; }
+            .px-5 { padding-left: 1.25rem !important; padding-right: 1.25rem !important; }
+            .px-4 { padding-left: 1rem !important;    padding-right: 1rem !important; }
+            .my-5 { margin-top: 1.25rem !important; margin-bottom: 1.25rem !important; }
+            .mt-5 { margin-top: 1.25rem !important; }   .mb-5 { margin-bottom: 1.25rem !important; }
+            .mt-4 { margin-top: 1rem !important; }      .mb-4 { margin-bottom: .85rem !important; }
+            .mb-3 { margin-bottom: .65rem !important; } .mt-3 { margin-top: .65rem !important; }
+            .row { --bs-gutter-x: 1rem; }
+            .g-4, .gy-4 { --bs-gutter-y: .85rem; }  .g-4, .gx-4 { --bs-gutter-x: .85rem; }
+            .g-3, .gy-3 { --bs-gutter-y: .65rem; }  .g-3, .gx-3 { --bs-gutter-x: .65rem; }
+
+            /* Type scale */
+            h1, .h1 { font-size: 1.55rem; }  h2, .h2 { font-size: 1.35rem; }
+            h3, .h3 { font-size: 1.2rem; }   h4, .h4 { font-size: 1.1rem; }
+            h5, .h5 { font-size: 1rem; }     .display-4, .display-5, .display-6 { font-size: 1.8rem; }
+            .lead { font-size: 1rem; }
+            .fs-4 { font-size: 1.15rem !important; }
+
+            /* Cards, modals, alerts, tables */
+            .card-body { padding: .9rem; }
+            .card-header, .card-footer { padding: .6rem .9rem; }
+            .modal-dialog { margin: .5rem; }
+            .modal-header { padding: .7rem .9rem; }
+            .modal-body { padding: .9rem; }
+            .modal-footer { padding: .6rem .9rem; gap: .4rem; }
+            .alert { padding: .6rem .8rem; font-size: .9rem; }
+            .table > :not(caption) > * > * { padding: .5rem .5rem; }
+            .pagination .page-link { padding: .35rem .65rem; font-size: .9rem; }
+            .breadcrumb { font-size: .8rem; margin-bottom: .5rem; }
+
+            /* Forms & buttons: 16px text stops iOS zoom-on-focus; comfortable tap size */
+            .form-control, .form-select { font-size: 16px; }
+            .btn { --bs-btn-padding-y: .45rem; }
+            .btn-lg { padding: .6rem 1rem; font-size: 1rem; }
+            .btn-sm { min-height: 34px; }
+
+            /* Media & long content never force sideways scroll */
+            img, video, iframe { max-width: 100%; }
+            pre, code { white-space: pre-wrap; word-break: break-word; }
+            .table-responsive { -webkit-overflow-scrolling: touch; }
+
+            /* iPhone home-bar safe area */
+            body { padding-bottom: env(safe-area-inset-bottom); }
+        }
+    </style>
+
+    {% block extra_css %}{% endblock %}
+
+</head>
+
+
+<body>
+
+
+{% block navbar %}
+
+<!-- =========================================================
+     NAVBAR
+     ========================================================= -->
+
+<nav class="navbar navbar-expand-lg navbar-light sticky-top shadow-sm">
+
+    <div class="container">
+
+        <!-- LOGOS -->
+        <a
+            class="navbar-brand d-flex align-items-center gap-2"
+            href="{% url 'store:home' %}"
+        >
+
+            <img
+                src="{% static 'imgs/likhalaya.png' %}"
+                alt="Likhalaya"
+                style="height:42px; width:auto;"
+                onerror="this.style.display='none'"
+            >
+
+            <img
+                src="{% static 'imgs/c_logo.png' %}"
+                alt="BJMP"
+                style="height:42px; width:auto;"
+                onerror="this.style.display='none'"
+            >
+
+        </a>
+
+
+        <!-- ORIGINAL BOOTSTRAP TOGGLER
+             Hidden on mobile by CSS because the mobile layout
+             uses the account hamburger below. -->
+        <button
+            class="navbar-toggler border-0"
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#navbarMain"
+            aria-label="Toggle navigation"
+        >
+            <i
+                class="bi bi-list"
+                style="font-size:28px; color:var(--teal); line-height:1;"
+            ></i>
+        </button>
+
+
+        <div class="collapse navbar-collapse" id="navbarMain">
+
+            <!-- =================================================
+                 NAV LINKS
+                 ================================================= -->
+
+            <ul class="navbar-nav me-auto ms-3">
+
+                <li class="nav-item">
+
+                    <a
+                        class="nav-link {% block nav_home %}{% endblock %}"
+                        href="{% url 'store:home' %}"
+                    >
+                        HOME
+                    </a>
+
+                </li>
+
+
+                <li class="nav-item">
+
+                    <a
+                        class="nav-link {% block nav_shop %}{% endblock %}"
+                        href="{% url 'store:shop' %}"
+                    >
+                        SHOP
+                    </a>
+
+                </li>
+
+
+                <!-- CATEGORIES - DESKTOP ONLY -->
+                <li class="nav-item dropdown d-none d-md-block">
+
+                    <a
+                        class="nav-link dropdown-toggle"
+                        data-bs-toggle="dropdown"
+                        href="#"
+                    >
+                        CATEGORIES
+                    </a>
+
+                    <ul class="dropdown-menu border-0 shadow">
+
+                        {% for cat in nav_categories %}
+
+                        <li>
+
+                            <a
+                                class="dropdown-item small"
+                                href="{{ cat.get_absolute_url }}"
+                            >
+                                {{ cat.name }}
+                            </a>
+
+                        </li>
+
+                        {% endfor %}
+
+                    </ul>
+
+                </li>
+
+
+                <li class="nav-item">
+
+                    <a
+                        class="nav-link {% block nav_about %}{% endblock %}"
+                        href="{% url 'store:about' %}"
+                    >
+                        ABOUT
+                    </a>
+
+                </li>
+
+
+                <li class="nav-item">
+
+                    <a
+                        class="nav-link {% block nav_contact %}{% endblock %}"
+                        href="{% url 'store:contact' %}"
+                    >
+                        CONTACT
+                    </a>
+
+                </li>
+
+            </ul>
+
+
+            <!-- =================================================
+                 RIGHT SIDE
+                 ================================================= -->
+
+            <div class="d-flex align-items-center gap-4">
+
+
+                <!-- SEARCH -->
+                <form
+                    class="d-flex"
+                    action="{% url 'store:shop' %}"
+                    method="get"
+                >
+
+                    <div class="input-group input-group-sm">
+
+                        <input
+                            type="text"
+                            name="q"
+                            class="form-control"
+                            placeholder="Search…"
+                            style="border-radius:20px 0 0 20px;font-size:12px;"
+                            value="{{ request.GET.q }}"
+                        >
+
+                        <button
+                            class="btn btn-gold btn-sm"
+                            style="border-radius:0 20px 20px 0;"
+                        >
+                            <i class="fas fa-search fa-xs"></i>
+                        </button>
+
+                    </div>
+
+                </form>
+
+
+                <!-- =================================================
+                     UTILITY ICONS
+                     ================================================= -->
+
+                <div class="navbar-utility-row d-flex align-items-center gap-4">
+
+
+                    <!-- CART -->
+                    <a
+                        href="{% url 'orders:cart_detail' %}"
+                        class="position-relative text-decoration-none utility-icon"
+                        title="Cart"
+                    >
+
+                        <i class="bi bi-cart3"></i>
+
+                        {% if cart_count %}
+
+                        <span
+                            class="position-absolute top-0 start-100 translate-middle badge rounded-pill utility-cart-badge"
+                        >
+                            {{ cart_count }}
+                        </span>
+
+                        {% endif %}
+
+                    </a>
+
+
+                    <!-- ORDERS -->
+                    {% if user.is_authenticated %}
+
+                    <a
+                        href="{% url 'orders:my_orders' %}"
+                        class="position-relative text-decoration-none utility-icon"
+                        title="My Orders"
+                    >
+                        <i class="bi bi-box-seam"></i>
+                    </a>
+
+                    {% endif %}
+
+
+                    <!-- =================================================
+                         NOTIFICATIONS
+                         ================================================= -->
+
+                    <div class="dropdown">
+
+                        <button
+                            class="btn btn-sm border-0 position-relative utility-icon utility-icon-btn"
+                            data-bs-toggle="dropdown"
+                            style="background:transparent;"
+                            title="Notifications"
+                        >
+
+                            <i class="bi bi-bell"></i>
+
+                            {% if notification_count %}
+
+                            <span
+                                class="position-absolute top-0 start-100 translate-middle badge rounded-pill utility-cart-badge"
+                            >
+                                {{ notification_count }}
+                            </span>
+
+                            {% endif %}
+
+                        </button>
+
+
+                        <ul
+                            class="dropdown-menu dropdown-menu-end border-0 shadow notif-dropdown"
+                            style="min-width:280px;max-height:340px;overflow-y:auto;"
+                        >
+
+                            <li>
+
+                                <h6 class="dropdown-header small fw-bold">
+                                    Notifications
+                                </h6>
+
+                            </li>
+
+
+                            {% if notifications %}
+
+                                {% for note in notifications %}
+
+                                <li>
+
+                                    <a
+                                        class="dropdown-item small py-2 {% if not note.is_read %}fw-semibold{% endif %}"
+                                        href="{{ note.url|default:'#' }}"
+                                    >
+
+                                        {% if not note.is_read %}
+
+                                        <span
+                                            class="me-1"
+                                            style="color:#e74c3c;"
+                                        >
+                                            &bull;
+                                        </span>
+
+                                        {% endif %}
+
+                                        {{ note.message }}
+
+                                        <div
+                                            class="text-muted"
+                                            style="font-size:10px;font-weight:normal;"
+                                        >
+                                            {{ note.created_at|timesince }} ago
+                                        </div>
+
+                                    </a>
+
+                                </li>
+
+                                {% endfor %}
+
+                            {% else %}
+
+                                <li>
+
+                                    <span class="dropdown-item-text small text-muted">
+                                        No new notifications
+                                    </span>
+
+                                </li>
+
+                            {% endif %}
+
+                        </ul>
+
+                    </div>
+
+
+                    {% if user.is_authenticated %}
+
+
+                    <!-- =================================================
+                         DESKTOP ACCOUNT MENU
+                         ================================================= -->
+
+                    <div class="dropdown d-none d-md-block">
+
+                        <button
+                            class="d-flex align-items-center gap-2 user-chip"
+                            data-bs-toggle="dropdown"
+                            type="button"
+                        >
+
+                            <i class="bi bi-person utility-icon"></i>
+
+                            <span class="user-email-text">
+                                {{ user.email|default:user.get_full_name|default:user.username }}
+                            </span>
+
+                        </button>
+
+
+                        <ul
+                            class="dropdown-menu dropdown-menu-end border-0 shadow account-dropdown-menu"
+                        >
+
+                            <li>
+
+                                <span
+                                    class="dropdown-item-text small fw-semibold account-dropdown-name"
+                                >
+                                    {{ user.get_full_name|default:user.username }}
+                                </span>
+
+                            </li>
+
+
+                            <li>
+                                <hr class="dropdown-divider my-1">
+                            </li>
+
+
+                            <!-- PROFILE -->
+                            <li>
+
+                                <a
+                                    class="dropdown-item small"
+                                    href="{% url 'accounts:profile' %}"
+                                >
+
+                                    <i class="fas fa-user-edit me-2 text-muted"></i>
+
+                                    Profile
+
+                                </a>
+
+                            </li>
+
+
+                            <!-- ORDERS -->
+                            <li>
+
+                                <a
+                                    class="dropdown-item small"
+                                    href="{% url 'orders:my_orders' %}"
+                                >
+
+                                    <i class="fas fa-box me-2 text-muted"></i>
+
+                                    Orders
+
+                                </a>
+
+                            </li>
+
+
+                            <!-- MESSAGES -->
+                            <li>
+
+                                <a
+                                    class="dropdown-item small"
+                                    href="{% url 'store:my_messages' %}"
+                                >
+
+                                    <i class="fas fa-envelope me-2 text-muted"></i>
+
+                                    Messages
+
+                                </a>
+
+                            </li>
+
+
+                            <!-- DASHBOARD -->
+                            {% if user.is_staff_user %}
+
+                            <li>
+
+                                <a
+                                    class="dropdown-item small"
+                                    href="{% url 'dashboard:home' %}"
+                                >
+
+                                    <i class="fas fa-tachometer-alt me-2 text-muted"></i>
+
+                                    Dashboard
+
+                                </a>
+
+                            </li>
+
+                            {% endif %}
+
+
+                            <li>
+                                <hr class="dropdown-divider my-1">
+                            </li>
+
+
+                            <!-- DESKTOP LOGOUT -->
+                            <li>
+
+                                <form
+                                    method="post"
+                                    action="{% url 'accounts:logout' %}"
+                                    class="js-logout-form"
+                                >
+
+                                    {% csrf_token %}
+
+                                    <button
+                                        type="submit"
+                                        class="dropdown-item small text-danger"
+                                    >
+
+                                        <i class="fas fa-sign-out-alt me-2"></i>
+
+                                        Logout
+
+                                    </button>
+
+                                </form>
+
+                            </li>
+
+                        </ul>
+
+                    </div>
+
+
+                    <!-- =================================================
+                         MOBILE APP ACCOUNT MENU
+
+                         IMPORTANT:
+                         The logout FORM is OUTSIDE the dropdown.
+                         The visible Logout button uses:
+                         form="mobileLogoutForm"
+                         ================================================= -->
+
+                    <div class="dropdown d-md-none mobile-menu-wrapper">
+
+
+                        <!-- =================================================
+                             MOBILE LOGOUT FORM
+
+                             This is deliberately OUTSIDE the dropdown.
+                             ================================================= -->
+
+                        <form
+                            id="mobileLogoutForm"
+                            method="post"
+                            action="{% url 'accounts:logout' %}"
+                            class="d-none js-logout-form"
+                        >
+
+                            {% csrf_token %}
+
+                        </form>
+
+
+                        <!-- =================================================
+                             MOBILE HAMBURGER
+                             ================================================= -->
+
+                        <button
+                            class="btn btn-sm border-0 utility-icon utility-icon-btn mobile-menu-button"
+                            type="button"
+                            data-bs-toggle="dropdown"
+                            data-bs-auto-close="true"
+                            aria-expanded="false"
+                            title="Menu"
+                        >
+
+                            <i class="bi bi-list"></i>
+
+                        </button>
+
+
+                        <!-- =================================================
+                             MOBILE MENU
+                             ================================================= -->
+
+                        <ul
+                            class="dropdown-menu dropdown-menu-end mobile-account-menu"
+                        >
+
+
+                            <!-- USER -->
+                            <li>
+
+                                <div class="mobile-menu-header">
+
+                                    <div class="mobile-menu-user">
+
+                                        <i class="bi bi-person-circle"></i>
+
+                                        <span>
+                                            {{ user.get_full_name|default:user.username }}
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                            </li>
+
+
+                            <!-- DIVIDER -->
+                            <li>
+
+                                <div class="mobile-menu-divider"></div>
+
+                            </li>
+
+
+                            <!-- PROFILE -->
+                            <li>
+
+                                <a
+                                    class="dropdown-item mobile-menu-item"
+                                    href="{% url 'accounts:profile' %}"
+                                >
+
+                                    <i class="fas fa-user-edit"></i>
+
+                                    <span>
+                                        Profile
+                                    </span>
+
+                                </a>
+
+                            </li>
+
+
+                            <!-- MESSAGES -->
+                            <li>
+
+                                <a
+                                    class="dropdown-item mobile-menu-item"
+                                    href="{% url 'store:my_messages' %}"
+                                >
+
+                                    <i class="fas fa-envelope"></i>
+
+                                    <span>
+                                        Messages
+                                    </span>
+
+                                </a>
+
+                            </li>
+
+
+                            <!-- DASHBOARD -->
+                            {% if user.is_staff_user %}
+
+                            <li>
+
+                                <a
+                                    class="dropdown-item mobile-menu-item"
+                                    href="{% url 'dashboard:home' %}"
+                                >
+
+                                    <i class="fas fa-tachometer-alt"></i>
+
+                                    <span>
+                                        Dashboard
+                                    </span>
+
+                                </a>
+
+                            </li>
+
+                            {% endif %}
+
+
+                            <!-- DIVIDER -->
+                            <li>
+
+                                <div class="mobile-menu-divider"></div>
+
+                            </li>
+
+
+                            <!-- =================================================
+                                 MOBILE LOGOUT
+
+                                 NOT inside a FORM.
+
+                                 It submits the form above using:
+                                 form="mobileLogoutForm"
+                                 ================================================= -->
+
+                            <li class="mobile-logout-container">
+
+                                <button
+                                    type="submit"
+                                    form="mobileLogoutForm"
+                                    class="dropdown-item mobile-menu-item mobile-logout-item"
+                                >
+
+                                    <i class="fas fa-sign-out-alt"></i>
+
+                                    <span>
+                                        Logout
+                                    </span>
+
+                                </button>
+
+                            </li>
+
+
+                        </ul>
+
+                    </div>
+
+
+                    {% else %}
+
+
+                    <!-- =================================================
+                         GUEST
+                         ================================================= -->
+
+                    <a
+                        href="{% url 'accounts:login' %}"
+                        class="btn btn-teal btn-sm px-3"
+                    >
+                        Login
+                    </a>
+
+                    <a
+                        href="{% url 'accounts:register' %}"
+                        class="btn btn-sm btn-outline-secondary px-3"
+                    >
+                        Register
+                    </a>
+
+                    {% endif %}
+
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</nav>
+
+{% endblock %}
+
+
+<!-- =========================================================
+     FLASH MESSAGES
+     ========================================================= -->
+
+{% block flash_messages %}
+{% if messages %}
+
+<div class="toast-container-fixed">
+
+    {% for msg in messages %}
+
+    <div
+        class="toast show align-items-center text-white border-0 mb-2 bg-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %}"
+        role="alert"
+    >
+
+        <div class="d-flex">
+
+            <div class="toast-body small">
+                {{ msg }}
+            </div>
+
+            <button
+                type="button"
+                class="btn-close btn-close-white me-2 m-auto"
+                data-bs-dismiss="toast"
+            ></button>
+
+        </div>
+
+    </div>
+
+    {% endfor %}
+
+</div>
+
+{% endif %}
+{% endblock %}
+
+
+<!-- =========================================================
+     PAGE CONTENT
+     ========================================================= -->
+
+<main class="public-page-main">
+{% block content %}{% endblock %}
+</main>
+
+
+<!-- =========================================================
+     LOGOUT CONFIRM MODAL
+     A custom-styled, production-grade confirmation dialog —
+     not a browser confirm() and not a plain Yes/No box.
+     Built on top of Bootstrap's modal (for focus-trap, Escape-
+     to-close, backdrop-click-to-close and ARIA wiring) with a
+     fully custom visual design layered on top.
+     ========================================================= -->
+
+<div
+    class="modal fade logout-modal"
+    id="logoutConfirmModal"
+    tabindex="-1"
+    aria-labelledby="logoutConfirmTitle"
+    aria-describedby="logoutConfirmDesc"
+    aria-hidden="true"
+>
+
+    <div class="modal-dialog modal-dialog-centered logout-modal-dialog">
+
+        <div class="modal-content logout-modal-content">
+
+            <button
+                type="button"
+                class="logout-modal-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+            >
+                <i class="fas fa-times"></i>
+            </button>
+
+            <div class="modal-body logout-modal-body">
+
+                <div class="logout-modal-icon">
+                    <i class="fas fa-sign-out-alt"></i>
+                </div>
+
+                <h2 class="logout-modal-title" id="logoutConfirmTitle">
+                    Log out of your account?
+                </h2>
+
+                <p class="logout-modal-desc" id="logoutConfirmDesc">
+                    Are you sure you want to log out? You will need to
+                    sign in again to access your account.
+                </p>
+
+                <div class="logout-modal-actions">
+
+                    <button
+                        type="button"
+                        class="logout-btn logout-btn-cancel"
+                        data-bs-dismiss="modal"
+                        id="logoutConfirmCancel"
+                    >
+                        Cancel
+                    </button>
+
+                    <button
+                        type="button"
+                        class="logout-btn logout-btn-confirm"
+                        id="logoutConfirmYes"
+                    >
+                        <span class="logout-btn-label">
+                            <i class="fas fa-sign-out-alt"></i>
+                            Log Out
+                        </span>
+                        <span class="logout-btn-spinner" aria-hidden="true">
+                            <span class="logout-spinner"></span>
+                            Logging out...
+                        </span>
+                    </button>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<style>
+
+    /* =========================================================
+       LOGOUT MODAL — visual design
+       Matches the site's design system: teal/gold palette,
+       Poppins headings, Inter body text, soft shadows and
+       generously rounded corners.
+       ========================================================= */
+
+    /* Force true, viewport-relative centering (independent of page
+       scroll position/height) instead of relying solely on
+       Bootstrap's margin-based .modal-dialog-centered, which can
+       drift on very tall or short pages.
+
+       IMPORTANT: only apply flex display while Bootstrap has the
+       modal open (.show is added right as it sets display:block).
+       Do NOT use !important on display here — Bootstrap manages
+       display:none/block on this same element via inline style to
+       hide it when closed, and an !important display rule would
+       override that and leave an invisible-but-interactive layer
+       sitting over the whole page, blocking clicks everywhere. */
+    .logout-modal.show {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px !important;
+    }
+
+    .logout-modal .modal-dialog {
+        max-width: 420px;
+        width: 100%;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .logout-modal-content {
+        width: 100%;
+        border: 0;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 20px 60px rgba(26, 26, 26, .22);
+
+        /* Custom fade + scale animation (in addition to Bootstrap's
+           opacity fade) for a smoother, more deliberate open/close. */
+        transform: scale(.92) translateY(8px);
+        opacity: 0;
+        transition: transform .25s cubic-bezier(.34, 1.56, .64, 1),
+                    opacity .2s ease;
+    }
+
+    .logout-modal.show .logout-modal-content {
+        transform: scale(1) translateY(0);
+        opacity: 1;
+    }
+
+    /* Darker, softer backdrop */
+    .logout-modal ~ .modal-backdrop,
+    .modal-backdrop.logout-modal-backdrop {
+        --bs-backdrop-opacity: .55;
+        background-color: #0e1a18;
+    }
+
+    .logout-modal-close {
+        position: absolute;
+        top: 14px;
+        right: 14px;
+        width: 32px;
+        height: 32px;
+        border: 0;
+        border-radius: 50%;
+        background: var(--sand);
+        color: var(--gray);
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: background .15s ease, color .15s ease;
+        z-index: 2;
+    }
+
+    .logout-modal-close:hover,
+    .logout-modal-close:focus-visible {
+        background: #e3ece6;
+        color: var(--charcoal);
+    }
+
+    .logout-modal-body {
+        padding: 40px 32px 32px;
+        text-align: center;
+    }
+
+    .logout-modal-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 20px;
+        border-radius: 50%;
+        background: rgba(30, 95, 90, .10);
+        color: var(--teal);
+        font-size: 26px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .logout-modal-title {
+        font-family: 'Poppins', sans-serif;
+        font-size: 20px;
+        font-weight: 700;
+        color: var(--charcoal);
+        margin: 0 0 10px;
+    }
+
+    .logout-modal-desc {
+        font-family: 'Inter', sans-serif;
+        font-size: 13.5px;
+        line-height: 1.6;
+        color: var(--gray);
+        margin: 0 0 28px;
+    }
+
+    .logout-modal-actions {
+        display: flex;
+        gap: 12px;
+    }
+
+    .logout-btn {
+        flex: 1 1 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        height: 46px;
+        border-radius: 12px;
+        font-family: 'Inter', sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        border: 1px solid transparent;
+        transition: background .15s ease, color .15s ease,
+                    border-color .15s ease, transform .1s ease,
+                    box-shadow .15s ease, opacity .15s ease;
+        cursor: pointer;
+    }
+
+    .logout-btn:active {
+        transform: translateY(1px);
+    }
+
+    .logout-btn-cancel {
+        background: #fff;
+        border-color: #dfe6e2;
+        color: var(--charcoal);
+    }
+
+    .logout-btn-cancel:hover:not(:disabled) {
+        background: var(--sand);
+        border-color: #c9d6ce;
+    }
+
+    .logout-btn-confirm {
+        background: #dc3545;
+        color: #fff;
+        box-shadow: 0 6px 16px rgba(220, 53, 69, .28);
+    }
+
+    .logout-btn-confirm:hover:not(:disabled) {
+        background: #c62d3a;
+        box-shadow: 0 8px 20px rgba(220, 53, 69, .34);
+    }
+
+    .logout-btn:disabled {
+        cursor: not-allowed;
+        opacity: .85;
+        transform: none;
+    }
+
+    .logout-btn-spinner {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    /* Loading state: swap the label for the spinner + text */
+    .logout-btn-confirm.is-loading .logout-btn-label {
+        display: none;
+    }
+
+    .logout-btn-confirm.is-loading .logout-btn-spinner {
+        display: inline-flex;
+    }
+
+    .logout-spinner {
+        width: 15px;
+        height: 15px;
+        border: 2px solid rgba(255, 255, 255, .45);
+        border-top-color: #fff;
+        border-radius: 50%;
+        animation: logout-spin .7s linear infinite;
+    }
+
+    @keyframes logout-spin {
+        to { transform: rotate(360deg); }
+    }
+
+    @media (max-width: 420px) {
+
+        .logout-modal .modal-dialog {
+            max-width: calc(100vw - 32px);
+        }
+
+        .logout-modal-body {
+            padding: 34px 22px 26px;
+        }
+
+        .logout-modal-actions {
+            flex-direction: column-reverse;
+        }
+    }
+
+</style>
+
+
+<!-- =========================================================
+     LOGOUT JAVASCRIPT
+     Progressive confirm → loading → redirect flow, fully
+     custom (no browser confirm()), with focus/keyboard
+     handling delegated to Bootstrap's modal component.
+     ========================================================= -->
+
+<script>
+
+document.addEventListener('DOMContentLoaded', function () {
+
+    let pendingForm = null;
+
+    const modalEl = document.getElementById('logoutConfirmModal');
+    const yesBtn = document.getElementById('logoutConfirmYes');
+    const cancelBtn = document.getElementById('logoutConfirmCancel');
+
+
+    /* =========================================================
+       FIND ALL LOGOUT FORMS
+       ========================================================= */
+
+    document.querySelectorAll('form.js-logout-form').forEach(function (form) {
+
+        form.addEventListener('submit', function (e) {
+
+            e.preventDefault();
+
+            pendingForm = form;
+
+
+            /*
+             * Safety fallback:
+             * If the modal does not exist, logout immediately.
+             */
+            if (!modalEl) {
+
+                HTMLFormElement.prototype.submit.call(form);
+
+                return;
+            }
+
+
+            resetLogoutButton();
+
+            const modal =
+                bootstrap.Modal.getOrCreateInstance(modalEl, {
+                    backdrop: true,
+                    keyboard: true,
+                    focus: true
+                });
+
+
+            modal.show();
+
+        });
+
+    });
+
+
+    /* =========================================================
+       RESET BUTTON STATE
+       (used when the modal opens, and if the user cancels
+       mid-flow before the request has actually gone out)
+       ========================================================= */
+
+    function resetLogoutButton() {
+
+        if (!yesBtn) return;
+
+        yesBtn.classList.remove('is-loading');
+        yesBtn.disabled = false;
+
+        if (cancelBtn) cancelBtn.disabled = false;
+    }
+
+
+    if (modalEl) {
+
+        modalEl.addEventListener('hidden.bs.modal', function () {
+
+            /*
+             * Only clear the pending form / reset the button if the
+             * logout request hasn't actually been fired yet — once
+             * we've started submitting, the page is about to
+             * navigate away anyway.
+             */
+            if (yesBtn && !yesBtn.classList.contains('is-loading')) {
+                pendingForm = null;
+            }
+
+        });
+
+    }
+
+
+    /* =========================================================
+       CONFIRM (LOG OUT) BUTTON
+       ========================================================= */
+
+    if (yesBtn) {
+
+        yesBtn.addEventListener('click', function () {
+
+            if (!pendingForm || yesBtn.disabled) return;
+
+
+            /* 1. Disable both buttons to prevent double submits. */
+            yesBtn.disabled = true;
+            if (cancelBtn) cancelBtn.disabled = true;
+
+            /* 2 & 3. Swap the button into its loading state. */
+            yesBtn.classList.add('is-loading');
+
+
+            /*
+             * 4. Small deliberate delay so the "Logging out..."
+             *    state is actually visible before the browser
+             *    navigates away — otherwise the spinner would
+             *    flash for a single frame or not render at all.
+             *
+             * 5/6. The server handles the real session teardown
+             *    and redirects to the login page on submit; we
+             *    don't fabricate a client-side "success" state.
+             */
+            window.setTimeout(function () {
+
+                /*
+                 * IMPORTANT:
+                 *
+                 * Do NOT call pendingForm.submit()
+                 * directly because it can be shadowed by
+                 * form controls.
+                 *
+                 * Using the native prototype guarantees that
+                 * the actual form is submitted without triggering
+                 * our confirmation listener again.
+                 */
+
+                HTMLFormElement.prototype.submit.call(
+                    pendingForm
+                );
+
+            }, 450);
+
+        });
+
+    }
+
+});
+
+</script>
+
+
+<!-- =========================================================
+     FOOTER
+     ========================================================= -->
+
+{% block footer %}
+
+<footer class="mt-5 pt-5 pb-4">
+
+    <div class="container">
+
+        <div class="row g-4 mb-2">
+
+
+            <!-- =================================================
+                 BRAND
+                 ================================================= -->
+
+            <div class="col-lg-4">
+
+                <div
+                    class="d-flex align-items-center gap-2 mb-2 footer-brand-logos-wrap"
+                >
+
+                    <img
+                        src="{% static 'imgs/likhalaya.png' %}"
+                        alt="Likhalaya"
+                        class="footer-brand-logo"
+                        onerror="this.style.display='none'"
+                    >
+
+                    <h5
+                        class="fw-bold text-white mb-0 footer-brand-name"
+                    >
+                        LIKHALAYA
+                    </h5>
+
+                </div>
+
+
+                <small style="color:rgba(255,255,255,.5);">
+                    PDL Marketplace · Carigara, Leyte
+                </small>
+
+
+                <p class="mt-3 small footer-body-text">
+
+                    Empowering Persons Deprived of Liberty through
+                    creativity, craftsmanship, and opportunity.
+
+                </p>
+
+            </div>
+
+
+            <!-- =================================================
+                 QUICK LINKS
+                 ================================================= -->
+
+            <div class="col-lg-2 col-6">
+
+                <h6
+                    class="text-uppercase fw-bold mb-3 footer-heading"
+                >
+                    Quick Links
+                </h6>
+
+
+                <ul class="footer-link-list small">
+
+                    <li>
+                        <a href="{% url 'store:home' %}">
+                            Home
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="{% url 'store:shop' %}">
+                            Shop
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="{% url 'store:about' %}">
+                            About
+                        </a>
+                    </li>
+
+                    <li>
+                        <a href="{% url 'store:contact' %}">
+                            Contact
+                        </a>
+                    </li>
+
+                </ul>
+
+            </div>
+
+
+            <!-- =================================================
+                 CONTACT
+                 ================================================= -->
+
+            <div class="col-lg-3 col-6">
+
+                <h6
+                    class="text-uppercase fw-bold mb-3 footer-heading"
+                >
+                    Contact
+                </h6>
+
+
+                <div class="footer-contact-list">
+
+                <div class="footer-contact-item">
+
+                    <div class="footer-contact-icon">
+                        <i class="fas fa-map-marker-alt"></i>
+                    </div>
+
+                    <div class="small footer-contact-text">
+                        Carigara District Jail, Leyte
+                    </div>
+
+                </div>
+
+
+                <div class="footer-contact-item">
+
+                    <div class="footer-contact-icon">
+                        <i class="fas fa-envelope"></i>
+                    </div>
+
+                    <div class="small footer-contact-text">
+                        r8.carigaradj@bjmp.gov.ph
+                    </div>
+
+                </div>
+
+
+                <div class="footer-contact-item">
+
+                    <div class="footer-contact-icon">
+                        <i class="fab fa-facebook-f"></i>
+                    </div>
+
+                    <a
+                        href="https://www.facebook.com/BJMPCarigaraDistrictJailOfficial/"
+                        target="_blank"
+                        class="small footer-contact-text"
+                    >
+                        BJMP Carigara
+                    </a>
+
+                </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- =================================================
+                 SUPPORT
+                 ================================================= -->
+
+            <div class="col-lg-3">
+
+                <h6
+                    class="text-uppercase fw-bold mb-3 footer-heading"
+                >
+                    Support Rehabilitation
+                </h6>
+
+
+                <p class="small footer-body-text mb-0">
+
+                    Every purchase helps provide livelihood
+                    opportunities for PDL artisans and supports
+                    their reintegration into society.
+
+                </p>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- =================================================
+             FOOTER BOTTOM
+             ================================================= -->
+
+        <div class="footer-bottom">
+
+            <div
+                class="d-flex justify-content-between flex-wrap gap-2"
+            >
+
+                <small>
+                    © 2026 LIKHALAYA. All Rights Reserved.
+                </small>
+
+                <small>
+                    Developed by PAGBA · EVSU-Carigara Campus
+                </small>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</footer>
+
+{% endblock %}
+
+
+<!-- =========================================================
+     BOOTSTRAP JS
+     ========================================================= -->
+
+<script
+    src="{% static 'vendor/bootstrap/js/bootstrap.bundle.min.js' %}"
+></script>
+
+
+<!-- =========================================================
+     TOAST JAVASCRIPT
+     ========================================================= -->
+
+<script>
+
+document.querySelectorAll('.toast').forEach(function (toast) {
+
+    setTimeout(function () {
+
+        bootstrap.Toast
+            .getOrCreateInstance(toast)
+            .hide();
+
+    }, 5000);
+
+});
+
+</script>
+
+
+{% block extra_js %}{% endblock %}
+
+
+</body>
+
+</html>

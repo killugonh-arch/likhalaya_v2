@@ -1,0 +1,569 @@
+{% extends 'base.html' %}
+{% block title %}Register – Likhalaya{% endblock %}
+
+{% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
+
+{% load static %}
+{% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&display=swap" rel="stylesheet">
+<style>
+/* ============ Page shell ============ */
+.auth-page {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: clamp(16px, 4vw, 40px) clamp(12px, 4vw, 20px);
+  padding-top: max(clamp(16px, 4vw, 40px), env(safe-area-inset-top));
+  padding-right: max(clamp(12px, 4vw, 20px), env(safe-area-inset-right));
+  padding-bottom: max(clamp(16px, 4vw, 40px), env(safe-area-inset-bottom));
+  padding-left: max(clamp(12px, 4vw, 20px), env(safe-area-inset-left));
+  background:
+    radial-gradient(circle at 8% 12%, rgba(30,95,90,.10), transparent 40%),
+    radial-gradient(circle at 92% 18%, rgba(232,168,42,.10), transparent 38%),
+    radial-gradient(circle at 85% 88%, rgba(30,95,90,.09), transparent 42%),
+    radial-gradient(circle at 10% 90%, rgba(232,168,42,.07), transparent 36%),
+    linear-gradient(135deg, #f4f8f6 0%, #ffffff 50%, #eef6f1 100%);
+}
+.auth-page::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(30,95,90,.14) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 72%);
+  -webkit-mask-image: radial-gradient(circle at 50% 45%, #000 0%, transparent 72%);
+}
+.auth-page::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("{% static 'imgs/likhalaya_bg.png' %}") center/cover no-repeat;
+  opacity: .025;
+  mix-blend-mode: multiply;
+}
+.auth-page-shape {
+  position: absolute; border-radius: 50%; z-index: 1; pointer-events: none;
+}
+.auth-page-shape.shape-1 { width:260px;height:260px;top:6%;left:5%;background:radial-gradient(circle,rgba(30,95,90,.14),transparent 72%);filter:blur(2px); }
+.auth-page-shape.shape-2 { width:180px;height:180px;bottom:10%;right:7%;background:radial-gradient(circle,rgba(232,168,42,.20),transparent 72%);filter:blur(1px); }
+.auth-page-shape.shape-3 { width:120px;height:120px;top:14%;right:14%;border:1.5px solid rgba(30,95,90,.16);background:transparent; }
+.auth-page-shape.shape-4 { width:70px;height:70px;bottom:16%;left:12%;border:1.5px solid rgba(232,168,42,.28);background:transparent; }
+
+/* ============ Split card ============ */
+.auth-split-card {
+  position: relative; z-index: 2;
+  display: flex; width: 100%; max-width: 1180px; min-height: min(660px, 82dvh);
+  background: #fff; border-radius: 24px;
+  box-shadow: 0 25px 70px rgba(15,61,57,.14);
+  overflow: hidden;
+  animation: auth-fade-up .5s ease both;
+}
+@keyframes auth-fade-up {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ============ LEFT: brand panel ============ */
+.auth-brand-panel {
+  flex: 0 0 40%; position: relative; overflow: hidden;
+  padding: 48px 44px 56px; display: flex; flex-direction: column;
+  justify-content: center;
+  background: linear-gradient(150deg, #0F3D39 0%, #1E5F5A 55%, #2D7A73 100%);
+  color: #fff;
+}
+.auth-brand-panel::before {
+  content:'';position:absolute;inset:0;
+  background:url("{% static 'imgs/likhalaya_bg.png' %}") center/cover no-repeat;opacity:.07;
+}
+.auth-brand-panel::after {
+  content:'';position:absolute;width:420px;height:420px;border-radius:50%;
+  background:radial-gradient(circle,rgba(232,168,42,.22),transparent 70%);
+  top:-140px;right:-140px;filter:blur(2px);
+}
+.auth-shape-ring {
+  position:absolute;width:320px;height:320px;
+  border:1px solid rgba(255,255,255,.10);border-radius:50%;bottom:-110px;left:-90px;
+}
+.auth-shape-ring::before {
+  content:'';position:absolute;inset:38px;
+  border:1px solid rgba(255,255,255,.08);border-radius:50%;
+}
+.auth-shape-blob {
+  position:absolute;width:200px;height:200px;
+  border-radius:42% 58% 60% 40%/45% 40% 60% 55%;
+  background:rgba(255,255,255,.05);backdrop-filter:blur(6px);top:58%;right:-55px;
+}
+.auth-brand-panel .auth-dot-cluster {
+  position:absolute;top:32px;right:36px;
+  display:grid;grid-template-columns:repeat(3,6px);gap:8px;z-index:2;
+}
+.auth-brand-panel .auth-dot-cluster span {
+  width:6px;height:6px;border-radius:50%;background:rgba(232,168,42,.55);
+}
+.auth-brand-panel .auth-diagonal-line {
+  position:absolute;width:1px;height:120px;
+  background:linear-gradient(to bottom,transparent,rgba(255,255,255,.18),transparent);
+  transform:rotate(22deg);bottom:50px;left:58%;
+}
+.auth-brand-content { position:relative;z-index:2; }
+.auth-brand-logos { display:flex;align-items:center;justify-content:center;gap:16px;margin-bottom:30px;width:100%; }
+.auth-brand-logos .logo-chip { width:88px;height:88px;display:flex;align-items:center;justify-content:center;background:#fff;border-radius:50%;padding:10px; }
+.auth-brand-logos .logo-chip img { width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 3px 8px rgba(0,0,0,.25)); }
+.auth-brand-logos .logo-divider { width:1px;height:38px;background:rgba(255,255,255,.28); }
+.auth-brand-heading { font-family:'Fraunces',serif;font-weight:800;font-size:clamp(27px, 18px + 2.3vw, 46px);line-height:1.12;letter-spacing:-.5px;margin-bottom:18px; }
+.auth-brand-sub { font-size:14.5px;color:rgba(255,255,255,.8);line-height:1.6;max-width:320px;margin-bottom:34px; }
+.auth-feature-list { list-style:none;padding:0;margin:0 0 auto; }
+.auth-feature-list li { display:flex;align-items:center;gap:12px;font-size:13.5px;font-weight:500;color:rgba(255,255,255,.9);padding:8px 10px;border-radius:10px;transition:background .18s ease; }
+.auth-feature-list li:hover { background:rgba(255,255,255,.06); }
+.auth-feature-list li i { width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.10);display:flex;align-items:center;justify-content:center;font-size:12.5px;color:var(--gold,#e8a82a);flex-shrink:0; }
+.auth-brand-footer { position:relative;z-index:2;font-size:12px;color:rgba(255,255,255,.55);margin-top:40px; }
+
+/* Compact brand mark shown only when the illustration panel is hidden on phones */
+.auth-mobile-brand {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+.auth-mobile-brand .logo-chip {
+  display: flex; align-items: center; justify-content: center;
+  width: 46px; height: 46px;
+}
+.auth-mobile-brand .logo-chip img { height: 100%; width: 100%; object-fit: contain; }
+.auth-mobile-brand .logo-divider { width: 1px; height: 30px; background: #e0e0e0; }
+
+/* ============ RIGHT: form panel ============ */
+.auth-form-panel {
+  flex: 1; background: #fff; padding: 56px 60px;
+  display: flex; flex-direction: column; justify-content: center;
+  overflow-y: auto;
+}
+.auth-form-inner { width: 100%; max-width: 460px; margin: 0 auto; }
+.auth-form-heading { font-family:'Fraunces',serif;font-weight:700;font-size:26px;color:#1a2420;margin-bottom:6px; }
+.auth-form-sub { font-size:14px;color:#8b9490;margin-bottom:32px; }
+
+/* Inputs */
+.auth-input-group { margin-bottom: 20px; }
+.auth-input-label { font-size:12.5px;font-weight:600;color:#4b5563;margin-bottom:7px;display:block; }
+.auth-input-label .req { color:#c0392b; }
+.auth-input-wrap { position:relative; }
+.auth-input-group .form-control,
+.auth-input-wrap .form-control,
+.auth-input {
+  width:100%;height:52px;border:1.5px solid #E5E5E5 !important;
+  border-radius:12px !important;padding:0 18px;font-size:14.5px;
+  color:#1a2420;background:#fff;
+  transition:border-color .18s ease, box-shadow .18s ease;
+}
+.auth-input-wrap .form-control { padding-right: 46px; }
+.auth-input-group .form-control::placeholder, .auth-input::placeholder { color:#b5bcb9; }
+.auth-input-group .form-control:focus,
+.auth-input-wrap .form-control:focus,
+.auth-input:focus {
+  outline:none;border-color:var(--teal) !important;
+  box-shadow:0 0 0 4px rgba(30,95,90,.10);
+}
+
+
+.auth-input-toggle {
+  position:absolute;right:16px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:#a8b0ad;font-size:14px;
+  cursor:pointer;padding:4px;z-index:5;transition:color .15s ease;
+}
+.auth-input-toggle:hover { color:var(--teal); }
+.auth-input-toggle:focus-visible { outline:2px solid var(--teal);outline-offset:2px;border-radius:6px; }
+.auth-field-error { color:#c0392b;font-size:12px;margin-top:6px;display:flex;align-items:center;gap:5px; }
+.auth-field-error i { font-size:11px; }
+
+/* Inline hint */
+.auth-field-hint { font-size:11.5px;color:#8b9490;margin-top:5px;display:flex;align-items:center;gap:4px; }
+
+/* Password strength */
+.pw-strength-bar { height:4px;border-radius:4px;margin-top:8px;background:#eee;overflow:hidden; }
+.pw-strength-bar-fill { height:100%;border-radius:4px;width:0%;transition:width .3s ease,background .3s ease; }
+.pw-strength-label { font-size:11px;margin-top:4px;font-weight:600;color:#aaa;min-height:16px; }
+
+/* Terms checkbox */
+.auth-check-row { display:flex;align-items:flex-start;gap:10px;margin:10px 0 28px; }
+.auth-check-row .form-check-input { width:18px;height:18px;margin-top:2px;border-radius:5px;border:1.5px solid #cfd4d1;cursor:pointer;flex-shrink:0; }
+.auth-check-row .form-check-input:checked { background-color:var(--teal);border-color:var(--teal); }
+.auth-check-row label { font-size:13.5px;color:#5b6663;cursor:pointer;margin:0; }
+.auth-check-row a { color:var(--teal);font-weight:600; }
+
+/* Submit */
+.btn-auth {
+  height:56px;width:100%;border-radius:12px;border:none;
+  background:linear-gradient(135deg,var(--gold),#e8a82a);
+  color:#fff;font-size:15px;font-weight:700;letter-spacing:.2px;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  transition:transform .18s ease,box-shadow .18s ease,opacity .18s ease;
+}
+.btn-auth:hover { transform:translateY(-2px);box-shadow:0 10px 26px rgba(201,132,26,.35);color:#fff; }
+.btn-auth:active { transform:translateY(0); }
+.btn-auth:focus-visible { outline:2px solid #0F3D39;outline-offset:2px; }
+.btn-auth:disabled { opacity:.6;transform:none;cursor:not-allowed; }
+
+.auth-footer-links { text-align:center;margin-top:20px; }
+.auth-footer-links .auth-muted { font-size:13.5px;color:#8b9490; }
+.auth-footer-links .auth-link { font-weight:700;color:var(--teal);text-decoration:none;font-size:13.5px;margin-left:4px; }
+.auth-footer-links .auth-link:hover { text-decoration:underline; }
+.auth-back-link { display:flex;align-items:center;justify-content:center;gap:6px;margin-top:22px;font-size:13px;font-weight:600;color:#8b9490;text-decoration:none;transition:color .18s ease; }
+.auth-back-link:hover { color:var(--teal); }
+
+/* ============ Responsive — progressive scaling ============ */
+
+/* Small desktop / tablet: 900px–1199px — two-column stays, everything shrinks */
+@media (max-width: 1199px) {
+  .auth-split-card { max-width: 760px; min-height: unset; }
+  .auth-brand-panel { flex: 0 0 38%; padding: 42px 32px; }
+  .auth-form-panel { padding: 44px 34px; }
+}
+
+/* Tablet: 600px–899px — two-column may still remain if there's room */
+@media (max-width: 899px) {
+  .auth-page-shape { display: none; }
+  .auth-split-card { max-width: 620px; }
+  .auth-brand-panel { flex: 0 0 36%; padding: 34px 26px; }
+  .auth-feature-list li { font-size: 12.5px; padding: 6px 8px; }
+  .auth-form-panel { padding: 38px 30px; }
+}
+
+/* Mobile: 381px–599px — single column, branding illustration panel hidden */
+@media (max-width: 599px) {
+  .auth-split-card { min-height: unset; border-radius: 18px; max-width: 480px; }
+  .auth-brand-panel { display: none; }
+  .auth-mobile-brand {
+    display: flex; align-items: center; justify-content: center;
+    padding: clamp(20px, 6vw, 28px) 0 0;
+  }
+  .auth-form-panel { padding: 8px clamp(16px, 5vw, 24px) clamp(28px, 7vw, 36px); }
+  .auth-form-heading { text-align: center; font-size: 22px; }
+  .auth-form-sub { text-align: center; font-size: 13px; }
+  .auth-input-group .form-control,
+  .auth-input-wrap .form-control,
+  .auth-input {
+    font-size: 16px; /* prevents iOS Safari auto-zoom on focus */
+  }
+}
+
+/* Small mobile: 320px–380px — compact form */
+@media (max-width: 380px) {
+  .auth-mobile-brand { gap: 10px; }
+  .auth-mobile-brand .logo-chip { width: 38px; height: 38px; }
+  .auth-mobile-brand .logo-divider { height: 24px; }
+  .auth-form-panel { padding: 6px 14px 24px; }
+  .auth-form-heading { font-size: 22px; }
+  .auth-form-sub { font-size: 13px; margin-bottom: 20px; }
+  .auth-input-label { font-size: 12px; }
+  .auth-input-group .form-control,
+  .auth-input-wrap .form-control,
+  .auth-input { height: 48px; }
+  .btn-auth { height: 50px; font-size: 14px; }
+}
+
+/* Short / landscape phones — keep the form reachable without excess scrolling */
+@media (orientation: landscape) and (max-height: 500px) {
+  .auth-page { align-items: flex-start; }
+  .auth-split-card { min-height: unset; }
+  .auth-brand-panel { padding: 20px 28px; }
+  .auth-feature-list { display: none; }
+  .auth-brand-logos { margin-bottom: 12px; }
+  .auth-form-panel { padding: 20px 30px; }
+  .auth-form-heading { margin-bottom: 3px; }
+  .auth-form-sub { margin-bottom: 14px; }
+}
+</style>
+{% include 'accounts/_auth_theme.html' %}
+{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <span class="auth-page-shape shape-1"></span>
+  <span class="auth-page-shape shape-2"></span>
+  <span class="auth-page-shape shape-3"></span>
+  <span class="auth-page-shape shape-4"></span>
+  <div class="auth-split-card">
+
+    <!-- LEFT BRAND PANEL -->
+    <div class="auth-brand-panel">
+      <div class="auth-shape-ring"></div>
+      <div class="auth-shape-blob"></div>
+      <div class="auth-dot-cluster"><span></span><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="auth-diagonal-line"></div>
+      <div class="auth-brand-content">
+        <div class="auth-brand-logos">
+          <span class="logo-chip"><img src="{% static 'imgs/likhalaya.png' %}" alt="Likhalaya" onerror="this.parentElement.style.display='none'"></span>
+          <span class="logo-divider"></span>
+          <span class="logo-chip"><img src="{% static 'imgs/c_logo.png' %}" alt="BJMP" onerror="this.parentElement.style.display='none'"></span>
+        </div>
+        <h2 class="auth-brand-heading">Create Your<br>Likhalaya Account</h2>
+        <p class="auth-brand-sub">Join Likhalaya and support PDL artisans through every purchase you make.</p>
+        <ul class="auth-feature-list">
+          <li><i class="fas fa-hands"></i> Handcrafted Products</li>
+          <li><i class="fas fa-shield-halved"></i> Secure Shopping</li>
+          <li><i class="fas fa-seedling"></i> Support Rehabilitation</li>
+          <li><i class="fas fa-people-group"></i> Community Marketplace</li>
+        </ul>
+      </div>
+      <div class="auth-brand-footer">© 2026 Likhalaya</div>
+    </div>
+
+    <!-- RIGHT REGISTER PANEL -->
+    <div class="auth-form-panel">
+      <div class="auth-mobile-brand">
+        <span class="logo-chip"><img src="{% static 'imgs/likhalaya.png' %}" alt="Likhalaya" onerror="this.parentElement.style.display='none'"></span>
+        <span class="logo-divider"></span>
+        <span class="logo-chip"><img src="{% static 'imgs/c_logo.png' %}" alt="BJMP" onerror="this.parentElement.style.display='none'"></span>
+      </div>
+      <div class="auth-form-inner">
+        <h1 class="auth-form-heading">Join Our Community</h1>
+        <p class="auth-form-sub">Create your account and be part of something meaningful.</p>
+
+        <form method="post" novalidate id="registerForm" autocomplete="on">
+          {% csrf_token %}
+          <div style="position:absolute; left:-9999px; top:-9999px;" aria-hidden="true">
+            <label for="website">Leave this field empty</label>
+            <input type="text" name="website" id="website" tabindex="-1" autocomplete="off">
+          </div>
+          {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+          <!-- Name + Email -->
+          <div class="row g-3">
+            <div class="col-sm-6">
+              <div class="auth-input-group mb-0">
+                <label class="auth-input-label" for="{{ form.first_name.id_for_label }}">First Name <span class="req">*</span></label>
+                <div class="auth-input-wrap"><i class="far fa-user auth-input-icon"></i>{{ form.first_name }}</div>
+                {% if form.first_name.errors %}<div class="auth-field-error"><i class="fas fa-circle-exclamation"></i>{{ form.first_name.errors.0 }}</div>{% endif %}
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="auth-input-group mb-0">
+                <label class="auth-input-label" for="{{ form.last_name.id_for_label }}">Last Name <span class="req">*</span></label>
+                <div class="auth-input-wrap"><i class="far fa-user auth-input-icon"></i>{{ form.last_name }}</div>
+                {% if form.last_name.errors %}<div class="auth-field-error"><i class="fas fa-circle-exclamation"></i>{{ form.last_name.errors.0 }}</div>{% endif %}
+              </div>
+            </div>
+            <div class="col-12">
+              <div class="auth-input-group mb-0">
+                <label class="auth-input-label" for="{{ form.email.id_for_label }}">Email Address <span class="req">*</span></label>
+                <div class="auth-input-wrap"><i class="far fa-envelope auth-input-icon"></i>{{ form.email }}</div>
+                {% if form.email.errors %}<div class="auth-field-error"><i class="fas fa-circle-exclamation"></i>{{ form.email.errors.0 }}</div>{% endif %}
+                <div class="auth-field-hint" id="emailHint" style="display:none;"><i class="fas fa-circle-info"></i> We'll send a verification code here</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Passwords -->
+          <div class="row g-3 mt-3">
+            <div class="col-sm-6">
+              <div class="auth-input-group mb-0">
+                <label class="auth-input-label">Password <span class="req">*</span></label>
+                <div class="auth-input-wrap">
+                  <i class="fas fa-lock auth-input-icon"></i>
+                  {{ form.password1 }}
+                  <button type="button" class="auth-input-toggle" data-target="{{ form.password1.id_for_label }}" tabindex="-1" aria-label="Toggle password visibility">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+                <div class="pw-strength-bar"><div class="pw-strength-bar-fill" id="pwStrengthBar"></div></div>
+                <div class="pw-strength-label" id="pwStrengthLabel"></div>
+                {% if form.password1.errors %}<div class="auth-field-error"><i class="fas fa-circle-exclamation"></i>{{ form.password1.errors.0 }}</div>{% endif %}
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <div class="auth-input-group mb-0">
+                <label class="auth-input-label">Confirm Password <span class="req">*</span></label>
+                <div class="auth-input-wrap">
+                  <i class="fas fa-lock auth-input-icon"></i>
+                  {{ form.password2 }}
+                  <button type="button" class="auth-input-toggle" data-target="{{ form.password2.id_for_label }}" tabindex="-1" aria-label="Toggle password visibility">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+                <div class="auth-field-hint" id="confirmHint" style="display:none;color:#27ae60;"><i class="fas fa-check-circle"></i> Passwords match</div>
+                {% if form.password2.errors %}<div class="auth-field-error"><i class="fas fa-circle-exclamation"></i>{{ form.password2.errors.0 }}</div>{% endif %}
+              </div>
+            </div>
+          </div>
+
+          <!-- Terms -->
+          <div class="auth-check-row">
+            {{ form.agree_terms }}
+            <label for="{{ form.agree_terms.id_for_label }}">
+              I agree to the <a href="{% url 'store:terms' %}" rel="noopener">Terms of Service</a>
+            </label>
+          </div>
+          {% if form.agree_terms.errors %}<div class="auth-field-error mb-3" style="margin-top:-16px;"><i class="fas fa-circle-exclamation"></i>{{ form.agree_terms.errors.0 }}</div>{% endif %}
+
+          <button type="submit" class="btn-auth" id="registerSubmitBtn" disabled>
+            <i class="fas fa-user-plus" id="regBtnIcon"></i>
+            <span id="regBtnText">Create Account</span>
+          </button>
+        </form>
+
+        <div class="auth-footer-links">
+          <span class="auth-muted">Already have an account?</span>
+          <a href="{% url 'accounts:login' %}" class="auth-link">Sign In</a>
+        </div>
+        <a href="{% url 'store:home' %}" class="auth-back-link"><i class="fas fa-arrow-left"></i>Back to Store</a>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  'use strict';
+
+  /* ---- Helpers ---- */
+  function isValidEmail(v) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
+  }
+
+  /* ---- Password strength ---- */
+  function measureStrength(pw) {
+    let score = 0;
+    if (pw.length >= 8)  score++;
+    if (pw.length >= 12) score++;
+    if (/[A-Z]/.test(pw)) score++;
+    if (/[0-9]/.test(pw)) score++;
+    if (/[^A-Za-z0-9]/.test(pw)) score++;
+    return score; // 0-5
+  }
+  const strengthMap = [
+    { label: '',          color: '#eee',    width: '0%'   },
+    { label: 'Too short', color: '#e74c3c', width: '20%'  },
+    { label: 'Weak',      color: '#e67e22', width: '40%'  },
+    { label: 'Fair',      color: '#f1c40f', width: '60%'  },
+    { label: 'Good',      color: '#27ae60', width: '80%'  },
+    { label: 'Strong',    color: '#1a8f4e', width: '100%' },
+  ];
+
+  /* ---- DOM refs ---- */
+  const submitBtn = document.getElementById('registerSubmitBtn');
+  const form      = document.getElementById('registerForm');
+
+  const firstName = document.getElementById('id_first_name');
+  const email     = document.getElementById('id_email');
+  const emailHint = document.getElementById('emailHint');
+
+  const pw1   = document.getElementById('id_password1');
+  const pw2   = document.getElementById('id_password2');
+  const bar   = document.getElementById('pwStrengthBar');
+  const lbl   = document.getElementById('pwStrengthLabel');
+  const cHint = document.getElementById('confirmHint');
+
+  const terms = document.getElementById('id_agree_terms');
+
+  /* ---- Whole-form validation (single page, no steps) ---- */
+  function updateSubmitState() {
+    const hasName  = firstName && firstName.value.trim().length >= 2;
+    const hasEmail = email && isValidEmail(email.value);
+    const strength = pw1 ? measureStrength(pw1.value) : 0;
+    const pwMatch  = pw1 && pw2 && pw2.value.length > 0 && pw1.value === pw2.value;
+    const agreed   = terms && terms.checked;
+    submitBtn.disabled = !(hasName && hasEmail && strength >= 2 && pwMatch && agreed);
+  }
+
+  /* ---- Name ---- */
+  if (firstName) {
+    firstName.addEventListener('input', updateSubmitState);
+  }
+
+  /* ---- Email ---- */
+  if (email) {
+    email.addEventListener('input', function() {
+      updateSubmitState();
+      emailHint.style.display = isValidEmail(this.value) ? 'flex' : 'none';
+    });
+  }
+
+  /* ---- Password ---- */
+  if (pw1) {
+    pw1.addEventListener('input', function() {
+      const s = measureStrength(this.value);
+      const m = strengthMap[Math.min(s, 5)];
+      bar.style.width      = this.value.length === 0 ? '0%' : m.width;
+      bar.style.background = m.color;
+      lbl.textContent      = this.value.length === 0 ? '' : m.label;
+      lbl.style.color      = m.color;
+      updateSubmitState();
+    });
+  }
+  if (pw2) {
+    pw2.addEventListener('input', function() {
+      if (this.value.length === 0) { cHint.style.display = 'none'; updateSubmitState(); return; }
+      const match = pw1 && this.value === pw1.value;
+      cHint.style.display = match ? 'flex' : 'none';
+      updateSubmitState();
+    });
+  }
+
+  /* ---- Terms ---- */
+  if (terms) {
+    terms.addEventListener('click', function (e) {
+      if (this.checked) {
+        // Browsers update .checked to the new value *before* dispatching
+        // "click", so by here the box has already been ticked. Undo it
+        // and send them to read & accept the Terms first instead.
+        this.checked = false;
+        e.preventDefault();
+        window.location.href = "{% url 'store:terms' %}";
+      } else {
+        updateSubmitState();
+      }
+    });
+    terms.addEventListener('change', updateSubmitState);
+
+    // Returning from the Terms page after clicking "I Agree & Continue"
+    var params = new URLSearchParams(window.location.search);
+    if (params.get('terms_agreed') === '1') {
+      terms.checked = true;
+      updateSubmitState();
+      // Strip the flag from the URL so refreshing/revisiting this page
+      // later doesn't keep auto-checking the box.
+      params.delete('terms_agreed');
+      var cleanQuery = params.toString();
+      var cleanUrl = window.location.pathname + (cleanQuery ? '?' + cleanQuery : '');
+      window.history.replaceState({}, '', cleanUrl);
+    }
+  }
+
+  /* ---- Password visibility toggles ---- */
+  document.querySelectorAll('.auth-input-toggle').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      const input = document.getElementById(btn.dataset.target);
+      const icon  = btn.querySelector('i');
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+      } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+      }
+    });
+  });
+
+  /* ---- Anti-double-submit ---- */
+  form.addEventListener('submit', function() {
+    if (submitBtn.disabled) return false;
+    submitBtn.disabled = true;
+    document.getElementById('regBtnIcon').className = 'fas fa-spinner fa-spin';
+    document.getElementById('regBtnText').textContent = 'Creating Account…';
+  });
+
+  /* ---- Init ---- */
+  updateSubmitState();
+})();
+</script>
+{% endblock %}

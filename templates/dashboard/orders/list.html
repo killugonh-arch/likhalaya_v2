@@ -1,0 +1,261 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize %}
+{% block page_title %}Orders{% endblock %}
+{% block sb_orders %}active{% endblock %}
+{% block title %}Orders – Likhalaya Dashboard{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+/* =========================================================
+   Reuses the approved Likhalaya design-system tokens and
+   components (dash-panel, ds-table, ds-badge, ds-btn,
+   ds-input) — same component set as Dashboard Home and
+   Reports pages, kept local to this template only where the
+   shared design-system.css/dashboard.css files aren't yet
+   wired into this build. No new visual language introduced.
+   ========================================================= */
+:root {
+  --brand-green: #0F6B4F;
+  --brand-green-hover: #0C5940;
+  --brand-green-light: #E6F4EF;
+  --surface-white: #FFFFFF;
+  --surface-subtle: #F9FAF9;
+  --border: #E4E7E4;
+  --text-primary: #1A1D1B;
+  --text-secondary: #5B615D;
+  --text-muted: #9AA09C;
+  --success: #0F6B4F;
+  --warning: #B7791F;
+  --warning-bg: #FBF3E4;
+  --danger: #C0362C;
+  --danger-bg: #FBEAE8;
+  --radius-sm: 6px; --radius-md: 10px; --radius-lg: 16px;
+  --shadow-sm: 0 1px 2px rgba(16,24,20,0.06);
+  --shadow-md: 0 4px 12px rgba(16,24,20,0.08);
+  --shadow-lg: 0 12px 32px rgba(16,24,20,0.12);
+  --space-1: 4px; --space-2: 8px; --space-3: 16px; --space-4: 24px; --space-5: 32px; --space-6: 48px;
+  --transition: 150ms ease;
+}
+
+.ds-breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: var(--space-3); display: flex; align-items: center; gap: 6px; }
+.ds-breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color var(--transition); }
+.ds-breadcrumb a:hover { color: var(--brand-green); }
+.ds-breadcrumb .current { color: var(--text-primary); font-weight: 600; }
+.ds-breadcrumb .sep { color: var(--border); }
+
+.dash-greeting-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+.dash-greeting-sub { font-size: 13px; color: var(--text-muted); }
+
+.ds-btn { font-size: 14px; font-weight: 600; border-radius: var(--radius-sm); padding: 10px 16px; border: none; transition: background var(--transition), box-shadow var(--transition); cursor: pointer; display: inline-flex; align-items: center; text-decoration: none; }
+.ds-btn-primary { background: var(--brand-green); color: #fff; }
+.ds-btn-primary:hover { background: var(--brand-green-hover); box-shadow: var(--shadow-sm); color: #fff; }
+.ds-btn-secondary { background: var(--surface-white); color: var(--text-primary); border: 1px solid var(--border); }
+.ds-btn-secondary:hover { background: var(--surface-subtle); color: var(--text-primary); }
+.ds-btn-sm { padding: 8px 12px; font-size: 13px; }
+.ds-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.ds-input {
+  border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px;
+  font-size: 14px; color: var(--text-primary); background: var(--surface-white);
+  transition: border-color var(--transition), box-shadow var(--transition); width: 100%;
+}
+.ds-input:focus { outline: none; border-color: var(--brand-green); box-shadow: 0 0 0 3px var(--brand-green-light); }
+.ds-label { font-size: 13px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px; display: block; }
+
+.dash-panel { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.dash-panel-header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); gap: var(--space-2); flex-wrap: wrap; }
+.dash-panel-header h6 { font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0; }
+.dash-panel-body { padding: var(--space-3); }
+
+.ds-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.ds-badge-neutral { background: var(--surface-subtle); color: var(--text-secondary); }
+.ds-badge-success { background: var(--brand-green-light); color: var(--brand-green); }
+.ds-badge-warning { background: var(--warning-bg); color: var(--warning); }
+.ds-badge-danger { background: var(--danger-bg); color: var(--danger); }
+
+.ds-table { width: 100%; border-collapse: collapse; background: var(--surface-white); border-radius: var(--radius-md); overflow: hidden; }
+.ds-table thead th { background: var(--surface-subtle); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); padding: 12px var(--space-3); text-align: left; border-bottom: 1px solid var(--border); }
+.ds-table tbody td { padding: 14px var(--space-3); font-size: 13.5px; color: var(--text-primary); border-bottom: 1px solid var(--border); }
+.ds-table tbody tr { transition: background var(--transition); }
+.ds-table tbody tr:hover { background: var(--surface-subtle); }
+.ds-table tbody tr:last-child td { border-bottom: none; }
+.ds-table tbody tr.order-row { cursor: pointer; }
+.ds-table tbody tr.order-row:hover .order-number { color: var(--brand-green-hover); }
+
+.ds-empty-state { text-align: center; padding: var(--space-6) var(--space-4); color: var(--text-muted); }
+.ds-empty-state .icon { font-size: 36px; color: var(--border); margin-bottom: var(--space-3); }
+.ds-empty-state .title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+.ds-empty-state .desc { font-size: 13px; }
+
+.ds-pagination { display: flex; gap: 4px; align-items: center; }
+.ds-page-btn {
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; color: var(--text-secondary);
+  transition: background var(--transition), color var(--transition); text-decoration: none;
+}
+.ds-page-btn:hover { background: var(--surface-subtle); }
+.ds-page-btn.active { background: var(--brand-green); color: #fff; }
+
+/* Orders-page specifics */
+.orders-filter-bar { padding: var(--space-3) var(--space-4); }
+.orders-filter-bar .ds-input { font-size: 13px; padding: 8px 12px; }
+
+.order-meta-chip {
+  display: inline-flex; align-items: center; background: var(--surface-subtle);
+  color: var(--text-secondary); font-size: 11px; font-weight: 600;
+  padding: 3px 9px; border-radius: 20px; border: 1px solid var(--border);
+}
+
+.dash-table-footer {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--space-3) var(--space-4); border-top: 1px solid var(--border);
+  flex-wrap: wrap; gap: var(--space-2);
+}
+.dash-table-footer .result-count { font-size: 12px; color: var(--text-muted); }
+
+@media (max-width: 991px) {
+  .dash-greeting-title { font-size: 18px; }
+}
+@media (max-width: 576px) {
+  .orders-filter-bar .row > div { margin-bottom: var(--space-2); }
+}
+</style>
+{% endblock %}
+
+{% block dash_content %}
+<nav class="ds-breadcrumb" aria-label="Breadcrumb">
+  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+  <span class="sep">/</span><span class="current" aria-current="page">Orders</span>
+</nav>
+
+<!-- Header: title (identity) left, single primary action right -->
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+  <div>
+    <h1 class="dash-greeting-title">Orders Management</h1>
+    <p class="dash-greeting-sub mb-0">{{ page_obj.paginator.count }} total orders</p>
+  </div>
+  <a href="{% url 'dashboard:order_export_csv' %}" class="ds-btn ds-btn-primary ds-btn-sm">
+    <i class="fas fa-file-excel me-2"></i>Export Excel
+  </a>
+</div>
+
+<!-- Filters: reuses ds-input across all three fields, single search action per approved spec -->
+<div class="dash-panel mb-4">
+  <div class="orders-filter-bar">
+    <form method="get" class="row g-2 align-items-end">
+      <div class="col-sm-4">
+        <label class="ds-label visually-hidden" for="order-search">Search orders</label>
+        <input id="order-search" type="text" name="q" class="ds-input" placeholder="Search name, email, order #…" value="{{ search }}">
+      </div>
+      <div class="col-sm-3">
+        <label class="ds-label visually-hidden" for="order-status">Status</label>
+        <select id="order-status" name="status" class="ds-input">
+          <option value="">All Statuses</option>
+          {% for s, l in status_choices %}
+          <option value="{{ s }}" {% if s == status_filter %}selected{% endif %}>{{ l }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-sm-3">
+        <label class="ds-label visually-hidden" for="order-payment">Payment method</label>
+        <select id="order-payment" name="payment" class="ds-input">
+          <option value="">All Payments</option>
+          {% for s, l in payment_choices %}
+          <option value="{{ s }}" {% if s == payment_filter %}selected{% endif %}>{{ l }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-sm-2 d-flex gap-2">
+        <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm flex-fill">Search</button>
+        <a href="{% url 'dashboard:order_list' %}" class="ds-btn ds-btn-secondary ds-btn-sm flex-fill">Clear</a>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Orders table: same clickable-row JS behavior, ds-table styling (hover-highlight, no
+     zebra stripes, uppercase micro-label header) -->
+<div class="dash-panel">
+  <div class="table-responsive">
+    <table class="ds-table mb-0">
+      <thead><tr>
+        <th>Order #</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th>
+      </tr></thead>
+      <tbody>
+        {% for order in orders %}
+        {% url 'dashboard:order_detail' order.pk as order_detail_url %}
+        <tr class="order-row" data-href="{{ order_detail_url }}">
+          <td class="fw-semibold order-number" style="color:var(--brand-green);">{{ order.order_number }}</td>
+          <td>
+            <div class="fw-semibold" style="font-size:13px;">{{ order.full_name }}</div>
+            <div class="text-muted" style="font-size:11px;">{{ order.email }}</div>
+          </td>
+          <td><span class="order-meta-chip">{{ order.items.count }}</span></td>
+          <td class="fw-bold" style="color:var(--text-primary);">₱{{ order.total|floatformat:0|intcomma }}</td>
+          <td><span class="order-meta-chip">{{ order.get_payment_method_display }}</span></td>
+          <td>
+            <span class="ds-badge
+              {% if order.status == 'pending' %}ds-badge-warning
+              {% elif order.status == 'confirmed' %}ds-badge-success
+              {% elif order.status == 'processing' %}ds-badge-neutral
+              {% elif order.status == 'shipped' %}ds-badge-neutral
+              {% elif order.status == 'delivered' %}ds-badge-success
+              {% else %}ds-badge-danger{% endif %}">
+              {{ order.get_status_display }}
+            </span>
+          </td>
+          <td class="text-muted" style="font-size:12px;">{{ order.created_at|date:"M d, Y" }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="7">
+          <div class="ds-empty-state">
+            <i class="fas fa-shopping-bag icon"></i>
+            <div class="title">No orders found</div>
+            <div class="desc">Try adjusting your search or filters.</div>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if page_obj.has_other_pages %}
+  <div class="dash-table-footer">
+    <span class="result-count">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }}</span>
+    <nav aria-label="Orders pagination">
+      <div class="ds-pagination">
+        {% if page_obj.has_previous %}
+        <a class="ds-page-btn" href="?page={{ page_obj.previous_page_number }}&status={{ status_filter }}&q={{ search }}" aria-label="Previous page">‹</a>
+        {% endif %}
+        {% for n in page_obj.paginator.page_range %}
+        <a class="ds-page-btn {% if n == page_obj.number %}active{% endif %}"
+           href="?page={{ n }}&status={{ status_filter }}&q={{ search }}"
+           {% if n == page_obj.number %}aria-current="page"{% endif %}>{{ n }}</a>
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <a class="ds-page-btn" href="?page={{ page_obj.next_page_number }}&status={{ status_filter }}&q={{ search }}" aria-label="Next page">›</a>
+        {% endif %}
+      </div>
+    </nav>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+document.querySelectorAll('.order-row').forEach(function (row) {
+  row.addEventListener('click', function () {
+    window.location = row.dataset.href;
+  });
+  // Keyboard accessibility: rows are clickable via JS only, so make them keyboard-operable too
+  row.setAttribute('tabindex', '0');
+  row.setAttribute('role', 'link');
+  row.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      window.location = row.dataset.href;
+    }
+  });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,980 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block sb_products %}active{% endblock %}
+{% block title %}{{ title }} – Dashboard{% endblock %}
+
+{% block dash_content %}
+<style>
+/* ══════════════════════════════════════════════════════════
+   Layout shell — let this page use the full dash-page width
+   instead of the narrow default, and remove the extra outer
+   padding so the sticky action bar can sit flush at the bottom.
+   ══════════════════════════════════════════════════════════ */
+.pform-shell { max-width: 1480px; margin: 0 auto; }
+
+/* Pull in the default dash-page padding a touch and tighten the page
+   overall — this page needs to feel dense, not padded-out. */
+.pform-shell { --pform-gap: 16px; }
+
+/* ── Page header ── */
+.pform-header {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+  margin-bottom: var(--pform-gap); padding-bottom: 14px; border-bottom: 1px solid #e8e3db;
+}
+.pform-header h4 {
+  color: #1a1a1a; font-family: 'Playfair Display', serif; font-weight: 700;
+  font-size: 24px; margin: 0 0 3px; line-height: 1.2;
+}
+.pform-header p { color: #8a8578; font-size: 13px; margin: 0; }
+.pform-header-actions { display: flex; gap: 10px; flex-shrink: 0; }
+.pform-header-actions .btn { border-radius: 10px; font-weight: 600; font-size: 13.5px; padding: 9px 20px; }
+
+/* ── Section cards ── */
+.pform-card {
+  background: #fff; border-radius: 14px; border: 1px solid #ece6d8;
+  box-shadow: 0 1px 3px rgba(30,25,10,.04); margin-bottom: var(--pform-gap); overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.pform-card:last-child { margin-bottom: 0; }
+.pform-card-header {
+  display: flex; align-items: center; gap: 12px; padding: 14px 18px;
+  border-bottom: 1px solid #f2ede1;
+}
+.pform-card-header .icon-badge {
+  width: 32px; height: 32px; border-radius: 9px; display: flex; align-items: center;
+  justify-content: center; background: rgba(30,95,90,.09); color: var(--teal); font-size: 14px; flex-shrink: 0;
+}
+.pform-card-header h6 { margin: 0; font-weight: 700; font-size: 14.5px; color: #222; letter-spacing: .1px; }
+.pform-card-header .subtitle { font-size: 11.5px; color: #9a9484; margin-top: 1px; }
+.pform-card-body { padding: 18px; flex: 1; }
+
+/* ── Grid: Product Information + Product Image side by side, equal height ── */
+.pform-overview-grid {
+  display: grid; grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr); gap: var(--pform-gap); align-items: stretch;
+  margin-bottom: var(--pform-gap);
+}
+.pform-overview-grid .pform-card { margin-bottom: 0; height: 100%; }
+@media (max-width: 992px) { .pform-overview-grid { grid-template-columns: 1fr; } .pform-overview-grid .pform-card { height: auto; } }
+
+/* ── Main two-column body: Sizes & Designs (main) + sidebar ── */
+.pform-body-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--pform-gap); align-items: start; }
+@media (max-width: 992px) { .pform-body-grid { grid-template-columns: 1fr; } }
+.pform-sidebar-stack { display: flex; flex-direction: column; gap: var(--pform-gap); }
+.pform-sidebar-stack .pform-card { margin-bottom: 0; }
+
+/* ── Form fields ── */
+.pform-field { margin-bottom: 18px; }
+.pform-field:last-child { margin-bottom: 0; }
+.pform-card-body label.form-label {
+  font-size: 12px; font-weight: 700; color: #666; letter-spacing: .3px;
+  text-transform: uppercase; margin-bottom: 7px; display: block;
+}
+.pform-card-body .form-control,
+.pform-card-body .form-select {
+  border-radius: 10px; border: 1.5px solid #e4ddce; font-size: 14.5px;
+  padding: 10px 14px; height: auto; transition: border-color .15s, box-shadow .15s;
+}
+.pform-card-body .form-control:focus,
+.pform-card-body .form-select:focus {
+  border-color: var(--teal); box-shadow: 0 0 0 3px rgba(30,95,90,.12);
+}
+.pform-card-body textarea.form-control { resize: vertical; min-height: 130px; line-height: 1.55; }
+.price-input-group { position: relative; }
+.price-input-group .peso-prefix {
+  position: absolute; left: 14px; top: 50%; transform: translateY(-50%);
+  color: var(--gold); font-weight: 700; font-size: 14.5px; pointer-events: none;
+}
+.price-input-group input.form-control { padding-left: 30px; }
+.field-help { font-size: 11.5px; color: #a29c8c; margin-top: 6px; line-height: 1.5; }
+.field-help i { margin-right: 4px; }
+
+/* ── Toggle switches ── */
+.pform-toggle {
+  display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+  padding: 14px 16px; border: 1.5px solid #eee6d8; border-radius: 12px;
+  transition: border-color .15s, background .15s;
+}
+.pform-toggle:hover { border-color: #d8cdb4; background: #fbfaf6; }
+.pform-toggle .toggle-text .title { font-weight: 700; font-size: 13.5px; color: #333; }
+.pform-toggle .toggle-text .desc { font-size: 11.5px; color: #999; margin-top: 2px; }
+.pform-toggle .form-check-input { width: 42px; height: 24px; cursor: pointer; flex-shrink: 0; margin: 0; }
+.pform-toggle .form-check-input:checked { background-color: var(--teal); border-color: var(--teal); }
+
+/* ── Size price chips (Pricing & Inventory) ── */
+.size-price-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+@media (max-width: 640px) { .size-price-grid { grid-template-columns: 1fr; } }
+.size-price-chip {
+  border: 1.5px solid #eee6d8; border-radius: 12px; padding: 14px 16px; background: #fbfaf6;
+}
+.size-price-chip .chip-label {
+  font-size: 11px; font-weight: 800; color: #9a9484; text-transform: uppercase; letter-spacing: .5px;
+  margin-bottom: 8px; display: flex; align-items: center; gap: 6px;
+}
+.size-price-chip .chip-label .dot { width: 7px; height: 7px; border-radius: 50%; }
+.size-price-chip.chip-s .dot { background: #3498db; }
+.size-price-chip.chip-m .dot { background: var(--teal); }
+.size-price-chip.chip-l .dot { background: var(--gold); }
+.pricing-note {
+  display: flex; gap: 10px; align-items: flex-start; margin-top: 18px; padding: 12px 14px;
+  background: #f6f9f8; border: 1px solid #dfeae7; border-radius: 10px; font-size: 12px; color: #4c6e69;
+}
+.pricing-note i { color: var(--teal); margin-top: 1px; }
+
+/* ── Stock note ── */
+.stock-field-wrap { margin-top: 20px; padding-top: 18px; border-top: 1px dashed #e6e0d3; }
+.total-stock-readout {
+  display: inline-flex; align-items: baseline; gap: 8px; padding: 10px 18px;
+  background: linear-gradient(135deg, #f3f1ea, #ece7d8); border: 1px solid #e6e0d3;
+  border-radius: 10px; font-weight: 800; font-size: 22px; color: var(--teal, #1f5f5b);
+}
+.total-stock-readout i { font-size: 15px; color: var(--gold, #c9962f); margin-right: 2px; }
+.total-stock-readout .unit-label { font-size: 12.5px; font-weight: 700; color: #9a9484; text-transform: uppercase; }
+.size-unit-count { font-size: 12px; color: #9a9484; }
+
+/* ── Image dropzone ── */
+.image-dropzone {
+  display: block; position: relative; width: 100%; aspect-ratio: 4/3;
+  border: 2px dashed #d8d0c2; border-radius: 14px; background: #faf8f4;
+  cursor: pointer; overflow: hidden; transition: border-color .18s, background .18s;
+}
+.image-dropzone:hover { border-color: var(--teal); background: #f3f1ea; }
+.image-dropzone-preview { width: 100%; height: 100%; object-fit: cover; display: block; }
+.image-dropzone-placeholder {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; text-align: center; padding: 16px; color: #a89f8c;
+}
+.image-dropzone-placeholder i { font-size: 32px; color: var(--gold); margin-bottom: 8px; }
+.image-dropzone-placeholder .dz-title { font-size: 13px; font-weight: 600; color: #7a7364; }
+.image-dropzone-placeholder .dz-sub { font-size: 11px; color: #b0a996; margin-top: 3px; }
+.image-dropzone-overlay {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(30,95,90,.72); color: #fff; font-weight: 600; font-size: 13px;
+  opacity: 0; transition: opacity .18s;
+}
+.image-dropzone.has-image:hover .image-dropzone-overlay { opacity: 1; }
+
+/* ── Extra photos: thumbnail strip ── */
+.gallery-section-label {
+  font-weight: 700; font-size: 12.5px; color: #333; text-transform: uppercase; letter-spacing: .3px;
+  margin-bottom: 4px;
+}
+.gallery-thumb-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 14px 0; }
+.gallery-row {
+  border: 1.5px solid #eee6d8; border-radius: 12px; padding: 10px; background: #fbfaf6; position: relative;
+}
+.gallery-row.marked-delete { opacity: .35; background: #fdf3f2; border-color: #f2d5d2; pointer-events: none; }
+.gallery-thumb-wrap {
+  width: 100%; aspect-ratio: 1/1; border-radius: 8px; overflow: hidden; background: #f0ede6;
+  display: flex; align-items: center; justify-content: center; margin-bottom: 8px; color: #c9c0ad;
+}
+.gallery-thumb-wrap img { width: 100%; height: 100%; object-fit: cover; }
+.gallery-row-fields { display: flex; flex-direction: column; gap: 6px; }
+.gallery-row-fields .form-control { font-size: 12.5px; padding: 7px 10px; border-radius: 8px; }
+.gallery-remove-btn {
+  position: absolute; top: 8px; right: 8px; width: 26px; height: 26px; border-radius: 8px;
+  border: 1.5px solid #f2d5d2; background: #fff; color: #e74c3c; display: flex; align-items: center;
+  justify-content: center; cursor: pointer; font-size: 11px; z-index: 2;
+}
+.gallery-remove-btn:hover { background: #fdf3f2; }
+.gallery-remove-btn input[type="checkbox"] { display: none; }
+.gallery-add-btn {
+  border: 1.5px dashed #d8cdb4; border-radius: 12px; background: #fff; color: var(--teal);
+  font-weight: 600; font-size: 12.5px; padding: 10px; width: 100%; transition: all .15s;
+}
+.gallery-add-btn:hover { border-color: var(--teal); background: #f3f1ea; }
+.gallery-add-btn.disabled { opacity: .5; cursor: default; border-style: solid; }
+
+/* ══════════════════════════════════════════════════════════
+   Sizes & Designs — variant management system
+   ══════════════════════════════════════════════════════════ */
+.variant-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 22px; }
+@media (max-width: 640px) { .variant-stats { grid-template-columns: 1fr; } }
+.variant-stat-card {
+  border: 1.5px solid #eee6d8; border-radius: 12px; padding: 16px 18px; background: #fbfaf6;
+  display: flex; align-items: center; gap: 14px;
+}
+.variant-stat-card .stat-icon-sm {
+  width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+  font-size: 16px; flex-shrink: 0; background: rgba(30,95,90,.1); color: var(--teal);
+}
+.variant-stat-card .vs-num { font-size: 22px; font-weight: 800; color: #222; line-height: 1; }
+.variant-stat-card .vs-label { font-size: 11.5px; color: #9a9484; margin-top: 3px; }
+
+.size-block {
+  border: 1.5px solid #eee6d8; border-radius: 14px; margin-bottom: 16px; background: #fff; overflow: hidden;
+}
+.size-block.marked-delete { opacity: .35; pointer-events: none; }
+.size-block-summary {
+  list-style: none; cursor: pointer; display: flex; align-items: center; gap: 14px;
+  padding: 16px 18px; background: #fbfaf6;
+}
+.size-block-summary::-webkit-details-marker { display: none; }
+.size-block[open] .size-drag-icon i { transform: rotate(90deg); }
+.size-drag-icon { width: 22px; display: flex; justify-content: center; }
+.size-drag-icon i { transition: transform .15s; color: #999; }
+.size-name-label { font-size: 15px; font-weight: 800; letter-spacing: .2px; color: #222; }
+.size-price-tag {
+  font-size: 13.5px; font-weight: 700; color: var(--teal); background: rgba(30,95,90,.08);
+  padding: 3px 10px; border-radius: 20px;
+}
+.size-design-count { font-size: 12px; color: #9a9484; }
+.size-active-check {
+  margin-left: auto; display: flex; align-items: center; gap: 7px; font-size: 12px; color: #666; white-space: nowrap;
+}
+.size-block-body { padding: 18px; border-top: 1px solid #eee6d8; }
+.size-block-body-head {
+  display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+}
+.size-block-body-head .label { font-size: 12.5px; font-weight: 700; color: #555; text-transform: uppercase; letter-spacing: .3px; }
+
+.design-mini-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; margin-bottom: 14px; }
+.design-mini-card {
+  border: 1.5px solid #eee6d8; border-radius: 12px; padding: 14px; background: #fdfcfa;
+  position: relative; display: flex; gap: 12px;
+}
+.design-mini-card.marked-delete { opacity: .35; pointer-events: none; }
+.design-mini-thumb {
+  width: 72px; height: 72px; border-radius: 10px; background: #f3f1ea; display: flex;
+  align-items: center; justify-content: center; overflow: hidden; color: #bbb; flex-shrink: 0; font-size: 20px;
+}
+.design-mini-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.design-mini-fields { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 7px; }
+.design-mini-fields .form-control { font-size: 13px; padding: 7px 10px; border-radius: 8px; }
+.design-mini-fields .df-row { display: flex; gap: 7px; }
+.design-mini-fields .df-row .form-control { flex: 1; min-width: 0; }
+.design-mini-foot { display: flex; align-items: center; justify-content: space-between; margin-top: 2px; }
+.design-file-input { font-size: 11.5px; }
+.design-active-check { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: #777; white-space: nowrap; }
+.design-active-check .form-check-input { width: 32px; height: 18px; cursor: pointer; margin: 0; }
+.design-active-check .form-check-input:checked { background-color: var(--teal); border-color: var(--teal); }
+.design-mini-remove {
+  border: none; background: none; color: #c0392b; font-size: 13px; padding: 4px 8px;
+  border-radius: 7px; flex-shrink: 0;
+}
+.design-mini-remove:hover { background: rgba(192,57,43,.08); }
+
+.design-qty-row { align-items: center; gap: 8px; }
+.design-qty-label { font-size: 11.5px; font-weight: 700; color: #777; text-transform: uppercase; letter-spacing: .3px; white-space: nowrap; }
+.design-qty-input { max-width: 80px; flex: 0 0 80px; text-align: center; font-weight: 700; }
+.stock-status-badge {
+  font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 20px;
+  white-space: nowrap; letter-spacing: .1px;
+}
+.stock-status-badge.in-stock { background: rgba(39,174,96,.12); color: #1e8449; }
+.stock-status-badge.out-of-stock { background: rgba(192,57,43,.1); color: #c0392b; }
+
+.add-design-btn {
+  border: 1.5px dashed #d8cdb4; border-radius: 12px; background: #fff; color: var(--teal);
+  font-weight: 600; font-size: 13px; padding: 12px; width: 100%; transition: all .15s;
+}
+.add-design-btn:hover { border-color: var(--teal); background: #f3f1ea; }
+
+/* ── Sticky action bar ──
+   Sits in normal document flow (not fixed/floating), so it can never
+   overlap fields, images, or cards above it — it simply becomes the
+   next thing you scroll to, and sticks to the bottom of the viewport
+   only while the form content is still taller than the screen. */
+.pform-actions {
+  position: sticky; bottom: 0; background: #fff; border-top: 1px solid #eee6d8;
+  border-radius: 14px; box-shadow: 0 -4px 18px rgba(0,0,0,.06); padding: 12px 18px;
+  display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px;
+  z-index: 5;
+}
+.pform-actions .unsaved-hint {
+  font-size: 12.5px; color: #b3791e; display: none; align-items: center; gap: 6px;
+}
+.pform-actions .unsaved-hint.show { display: flex; }
+.pform-actions-btns { display: flex; gap: 10px; margin-left: auto; }
+.pform-actions .btn { border-radius: 10px; font-weight: 600; font-size: 13.5px; padding: 9px 22px; }
+.pform-actions .btn-gold { box-shadow: 0 4px 14px rgba(201,132,26,.3); }
+
+/* ── Support Local Artisans promo card ── */
+.pform-promo-card {
+  background: linear-gradient(135deg, var(--teal), #0f3d39);
+  border-radius: 14px; padding: 20px; color: #fff; text-align: center;
+}
+.pform-promo-card i { font-size: 22px; color: var(--gold); margin-bottom: 10px; display: block; }
+.pform-promo-card .promo-title { font-family: 'Playfair Display', serif; font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+.pform-promo-card .promo-desc { font-size: 12px; color: rgba(255,255,255,.8); line-height: 1.55; }
+
+/* ── Compact footer ── */
+.pform-footer {
+  margin-top: 20px; background: #0f3d39; border-radius: 14px; padding: 16px 22px;
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; color: rgba(255,255,255,.75);
+}
+.pform-footer .pf-brand { display: flex; align-items: center; gap: 10px; font-family: 'Playfair Display', serif; font-weight: 700; color: #fff; font-size: 14px; }
+.pform-footer .pf-brand i { color: var(--gold); }
+.pform-footer .pf-tag { font-size: 11.5px; color: rgba(255,255,255,.55); }
+
+.required-dot { color: var(--gold); font-size: 8px; vertical-align: middle; margin-left: 3px; }
+
+/* ── Locked GCash QR (staff view) ── */
+.qr-locked-wrap { text-align: center; }
+.qr-locked-image {
+  width: 100%; max-width: 220px; aspect-ratio: 1/1; object-fit: contain;
+  border: 1.5px solid #eee6d8; border-radius: 12px; background: #faf8f4; padding: 10px;
+}
+.qr-locked-empty {
+  width: 100%; max-width: 220px; aspect-ratio: 1/1; margin: 0 auto;
+  border: 2px dashed #d8d0c2; border-radius: 12px; background: #faf8f4;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; color: #b3ab98;
+}
+.qr-locked-empty i { font-size: 30px; margin-bottom: 6px; }
+.qr-locked-empty span { font-size: 12px; }
+.qr-locked-banner {
+  margin-top: 12px; background: #fdf3e3; color: #9a6a12; border: 1px solid #f2ddb0;
+  border-radius: 10px; padding: 8px 12px; font-size: 12px; font-weight: 600;
+}
+
+/* ── Dark mode touch-ups ── */
+body.dark-mode .pform-header { border-color: var(--dm-border); }
+body.dark-mode .pform-header h4 { color: var(--dm-text); }
+body.dark-mode .pform-card,
+body.dark-mode .size-block,
+body.dark-mode .size-price-chip,
+body.dark-mode .gallery-row,
+body.dark-mode .design-mini-card,
+body.dark-mode .variant-stat-card,
+body.dark-mode .pform-toggle,
+body.dark-mode .image-dropzone { background: var(--dm-surface); border-color: var(--dm-border); }
+body.dark-mode .size-block-summary,
+body.dark-mode .image-dropzone { background: var(--dm-surface-2); }
+body.dark-mode .pform-card-header { border-color: var(--dm-border); }
+body.dark-mode .pform-card-header h6, body.dark-mode .size-name-label { color: var(--dm-text); }
+body.dark-mode .pform-actions { background: var(--dm-surface); border-color: var(--dm-border); }
+body.dark-mode .pricing-note { background: var(--dm-surface-2); border-color: var(--dm-border); color: var(--dm-text-dim); }
+
+/* ── Mobile ── */
+@media (max-width: 576px) {
+  .pform-header h4 { font-size: 22px; }
+  .pform-header-actions { width: 100%; }
+  .pform-header-actions .btn { flex: 1; }
+  .pform-card-body { padding: 18px; }
+  .design-mini-card { flex-direction: column; }
+  .design-mini-thumb { width: 100%; height: 140px; }
+  .pform-actions { flex-direction: column; align-items: stretch; }
+  .pform-actions-btns { margin-left: 0; }
+  .pform-actions-btns .btn { flex: 1; }
+}
+</style>
+
+<div class="pform-shell">
+
+<div class="dash-breadcrumb">
+  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+  <span class="sep">/</span><a href="{% url 'dashboard:product_list' %}">Products</a>
+  <span class="sep">/</span><span class="current">{{ title }}</span>
+</div>
+
+<div class="pform-header">
+  <div>
+    <h4>{{ title }}</h4>
+    <p>Update product information, pricing, images, and product variants.</p>
+  </div>
+  <div class="pform-header-actions">
+    <a href="{% url 'dashboard:product_list' %}" class="btn btn-outline-secondary">Cancel</a>
+    <button type="submit" form="productForm" class="btn btn-gold">
+      <i class="fas fa-check me-1"></i>Save Product
+    </button>
+  </div>
+</div>
+
+<form method="post" enctype="multipart/form-data" id="productForm">
+  {% csrf_token %}
+
+  <!-- PRODUCT OVERVIEW: info + image -->
+  <div class="pform-overview-grid">
+
+    <div class="pform-card mb-0">
+      <div class="pform-card-header">
+        <div class="icon-badge"><i class="fas fa-box-open"></i></div>
+        <div>
+          <h6>Product Information</h6>
+          <div class="subtitle">The basics buyers will see first</div>
+        </div>
+      </div>
+      <div class="pform-card-body">
+        <div class="pform-field">
+          <label class="form-label">Product Name <span class="required-dot">●</span></label>
+          {{ form.name }}
+          {% if form.name.errors %}<div class="invalid-feedback d-block">{{ form.name.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="pform-field">
+          <label class="form-label">Category</label>
+          {{ form.category }}
+        </div>
+        <div class="pform-field">
+          <label class="form-label">Description</label>
+          {{ form.description }}
+        </div>
+      </div>
+    </div>
+
+    <div class="pform-card mb-0">
+      <div class="pform-card-header">
+        <div class="icon-badge"><i class="fas fa-image"></i></div>
+        <div>
+          <h6>Product Images</h6>
+          <div class="subtitle">Clear photos sell faster</div>
+        </div>
+      </div>
+      <div class="pform-card-body">
+        <div class="gallery-section-label">Main Image</div>
+        {{ form.image }}
+        {% if form.image.errors %}<div class="invalid-feedback d-block">{{ form.image.errors.0 }}</div>{% endif %}
+
+        <div class="mt-4">
+          <div class="gallery-section-label">Additional Photos</div>
+          <div class="field-help mb-2"><i class="fas fa-circle-info"></i>Up to 3 more photos — these plus the main photo above show in the product's gallery on the shop page.</div>
+          {{ image_formset.management_form }}
+          {% if image_formset.non_form_errors %}
+          <div class="invalid-feedback d-block mb-2">{{ image_formset.non_form_errors.0 }}</div>
+          {% endif %}
+          <div id="galleryRows" class="gallery-thumb-grid">
+            {% for img_form in image_formset %}
+            <div class="gallery-row {% if img_form.instance.pk %}existing-row{% endif %}" data-form-index="{{ forloop.counter0 }}">
+              {% if img_form.non_field_errors %}<div class="invalid-feedback d-block mb-2">{{ img_form.non_field_errors.0 }}</div>{% endif %}
+              {{ img_form.id }}
+              {% if img_form.DELETE %}
+              <label class="gallery-remove-btn" title="Remove this photo">
+                <i class="fas fa-trash"></i>
+                {{ img_form.DELETE }}
+              </label>
+              {% endif %}
+              <div class="gallery-thumb-wrap" id="galThumb{{ forloop.counter0 }}">
+                {% if img_form.instance.image %}
+                  <img src="{{ img_form.instance.image.url }}" alt="">
+                {% else %}
+                  <i class="fas fa-image"></i>
+                {% endif %}
+              </div>
+              <div class="gallery-row-fields">
+                {{ img_form.caption }}
+                <div onchange="likhalayaGalleryPreview(this, {{ forloop.counter0 }})">
+                  {{ img_form.image }}
+                </div>
+                {{ img_form.order.as_hidden }}
+                {% if img_form.image.errors %}<div class="invalid-feedback d-block">{{ img_form.image.errors.0 }}</div>{% endif %}
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          <button type="button" class="gallery-add-btn" id="galleryAddBtn">
+            <i class="fas fa-plus me-1"></i>Add another photo
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PRICING & INVENTORY -->
+  <div class="pform-card">
+    <div class="pform-card-header">
+      <div class="icon-badge"><i class="fas fa-coins"></i></div>
+      <div>
+        <h6>Pricing &amp; Inventory</h6>
+        <div class="subtitle">Set what buyers pay and what's in stock</div>
+      </div>
+    </div>
+    <div class="pform-card-body">
+      <div class="size-price-grid">
+        <div class="size-price-chip chip-s">
+          <div class="chip-label"><span class="dot"></span>Small Price <span class="required-dot">●</span></div>
+          <div class="price-input-group">
+            <span class="peso-prefix">₱</span>
+            {{ form.price_min }}
+          </div>
+          {% if form.price_min.errors %}<div class="invalid-feedback d-block">{{ form.price_min.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="size-price-chip chip-m">
+          <div class="chip-label"><span class="dot"></span>Medium Price</div>
+          <div class="price-input-group">
+            <span class="peso-prefix">₱</span>
+            {{ form.price_medium }}
+          </div>
+          {% if form.price_medium.errors %}<div class="invalid-feedback d-block">{{ form.price_medium.errors.0 }}</div>{% endif %}
+        </div>
+        <div class="size-price-chip chip-l">
+          <div class="chip-label"><span class="dot"></span>Large Price</div>
+          <div class="price-input-group">
+            <span class="peso-prefix">₱</span>
+            {{ form.price_max }}
+          </div>
+          {% if form.price_max.errors %}<div class="invalid-feedback d-block">{{ form.price_max.errors.0 }}</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="pricing-note">
+        <i class="fas fa-circle-info"></i>
+        <div>Set the selling price for each size. Designs and colors under the same size use the same price.
+        {{ form.price_max.help_text }} {{ form.price_medium.help_text }}</div>
+      </div>
+
+      <div class="stock-field-wrap">
+        <label class="form-label">Total Stock Quantity</label>
+        <div class="total-stock-readout" id="totalStockReadout">
+          <i class="fas fa-boxes-stacked"></i>
+          <span id="totalStockNumber">{{ form.instance.total_stock|default:0 }}</span>
+          <span class="unit-label">units</span>
+        </div>
+        <div class="field-help"><i class="fas fa-circle-info"></i>Calculated automatically from every design's quantity below — not editable here.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pform-body-grid">
+    <div>
+      <!-- SIZES & DESIGNS -->
+      <div class="pform-card" style="margin-bottom:0;">
+        <div class="pform-card-header">
+          <div class="icon-badge"><i class="fas fa-layer-group"></i></div>
+          <div>
+            <h6>Sizes &amp; Designs</h6>
+            <div class="subtitle">Prices come from Pricing &amp; Inventory above — a design's photo is also what buyers see in the product's photo gallery.</div>
+          </div>
+        </div>
+        <div class="pform-card-body">
+
+          <div class="variant-stats" id="variantStats">
+            <div class="variant-stat-card">
+              <div class="stat-icon-sm"><i class="fas fa-ruler"></i></div>
+              <div><div class="vs-num" id="statSizes">0</div><div class="vs-label">Active sizes</div></div>
+            </div>
+            <div class="variant-stat-card">
+              <div class="stat-icon-sm"><i class="fas fa-palette"></i></div>
+              <div><div class="vs-num" id="statDesigns">0</div><div class="vs-label">Designs</div></div>
+            </div>
+            <div class="variant-stat-card">
+              <div class="stat-icon-sm"><i class="fas fa-boxes-stacked"></i></div>
+              <div><div class="vs-num" id="statTotalStock">{{ form.instance.total_stock|default:0 }}</div><div class="vs-label">Total stock</div></div>
+            </div>
+          </div>
+
+          <div id="sizeBlocks">
+            {% for panel in size_panels %}
+            <details class="size-block" {% if panel.size %}open{% endif %} data-size-index="{{ forloop.counter0 }}">
+              <summary class="size-block-summary">
+                <span class="size-drag-icon"><i class="fas fa-chevron-right"></i></span>
+                {% if panel.size %}<input type="hidden" name="size-{{ forloop.counter0 }}-id" value="{{ panel.size.pk }}">{% endif %}
+                <input type="hidden" name="size-{{ forloop.counter0 }}-name" value="{{ panel.code }}">
+                <span class="size-name-label">{{ panel.label }}</span>
+                <span class="size-price-tag" data-size-price="{{ panel.code }}">
+                  {% if panel.code == 'S' %}₱{{ form.instance.price_min|default:"0" }}
+                  {% elif panel.code == 'M' %}₱{{ form.instance.price_medium|default:"0" }}
+                  {% else %}₱{{ form.instance.price_max|default:"0" }}{% endif %}
+                </span>
+                <span class="size-design-count" data-design-count-label>
+                  {% if panel.size %}{{ panel.size.designs.count }}{% else %}0{% endif %} design{{ panel.size.designs.count|pluralize }}
+                </span>
+                <span class="size-unit-count" data-size-unit-label>
+                  {% if panel.size %}{{ panel.size.total_stock }}{% else %}0{% endif %} unit{{ panel.size.total_stock|pluralize }} total
+                </span>
+                <label class="size-active-check">
+                  <input type="checkbox" name="size-{{ forloop.counter0 }}-is_active" class="form-check-input size-active-input" {% if not panel.size or panel.size.is_active %}checked{% endif %}>
+                  Active
+                </label>
+              </summary>
+              <div class="size-block-body">
+                <div class="size-block-body-head">
+                  <span class="label">Designs</span>
+                </div>
+                <div class="design-mini-grid" id="designGrid{{ forloop.counter0 }}">
+                  {% if panel.size %}
+                  {% for design in panel.size.designs.all %}
+                  <div class="design-mini-card" data-design-index="{{ forloop.counter0 }}">
+                    <input type="hidden" name="design-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}-id" value="{{ design.pk }}">
+                    <div class="design-mini-thumb" id="designThumb_{{ forloop.parentloop.counter0 }}_{{ forloop.counter0 }}">
+                      {% if design.image %}<img src="{{ design.image.url }}" alt="">{% else %}<i class="fas fa-image"></i>{% endif %}
+                    </div>
+                    <div class="design-mini-fields">
+                      <div class="df-row">
+                        <input type="text" class="form-control" placeholder="Title (e.g. Ocean Blue)"
+                               name="design-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}-title" value="{{ design.title }}" required>
+                      </div>
+                      <div class="df-row">
+                        <input type="text" class="form-control" placeholder="Color (e.g. Blue)"
+                               name="design-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}-color" value="{{ design.color }}">
+                      </div>
+                      <input type="file" accept="image/*" class="form-control design-file-input"
+                             name="design-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}-image"
+                             onchange="likhalayaVariantPreview(this, {{ forloop.parentloop.counter0 }}, {{ forloop.counter0 }})">
+                      <div class="df-row design-qty-row">
+                        <label class="design-qty-label">Quantity</label>
+                        <input type="number" min="0" step="1" class="form-control design-qty-input"
+                               name="design-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}-stock"
+                               value="{{ design.stock|default:0 }}">
+                        <span class="stock-status-badge {% if design.stock > 0 %}in-stock{% else %}out-of-stock{% endif %}" data-stock-badge>
+                          {% if design.stock > 0 %}🟢 In Stock{% else %}🔴 Out of Stock{% endif %}
+                        </span>
+                      </div>
+                      <div class="design-mini-foot">
+                        <label class="design-active-check">
+                          <input type="checkbox" class="form-check-input" name="design-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}-is_active" {% if design.is_active %}checked{% endif %}>
+                          Active
+                        </label>
+                        <button type="button" class="design-mini-remove" title="Remove this design">
+                          <i class="fas fa-trash"></i>
+                          <input type="checkbox" name="design-{{ forloop.parentloop.counter0 }}-{{ forloop.counter0 }}-DELETE" class="d-none design-delete-cb">
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  {% endfor %}
+                  {% endif %}
+                </div>
+                <button type="button" class="add-design-btn" data-size-index="{{ forloop.counter0 }}">
+                  <i class="fas fa-plus me-1"></i>Add design
+                </button>
+              </div>
+            </details>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="pform-sidebar-stack">
+      <div class="pform-card">
+        <div class="pform-card-header">
+          <div class="icon-badge"><i class="fas fa-qrcode"></i></div>
+          <div>
+            <h6>GCash QR Code</h6>
+            <div class="subtitle">
+              {% if not product or request.user.is_admin_user %}Buyers scan this to pay for this product{% else %}Only an Admin can change this{% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="pform-card-body">
+          {% if not product or request.user.is_admin_user %}
+            {{ form.gcash_qr_code }}
+            {% if form.gcash_qr_code.errors %}<div class="invalid-feedback d-block">{{ form.gcash_qr_code.errors.0 }}</div>{% endif %}
+          {% else %}
+            <div class="qr-locked-wrap">
+              {% if product.gcash_qr_code %}
+                <img src="{{ product.gcash_qr_code.url }}" alt="GCash QR Code" class="qr-locked-image">
+              {% else %}
+                <div class="qr-locked-empty"><i class="fas fa-qrcode"></i><span>No QR code set</span></div>
+              {% endif %}
+              <div class="qr-locked-banner"><i class="fas fa-lock me-1"></i>Locked — Only Admin can change this QR code.</div>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="pform-card">
+        <div class="pform-card-header">
+          <div class="icon-badge"><i class="fas fa-eye"></i></div>
+          <div>
+            <h6>Status &amp; Visibility</h6>
+            <div class="subtitle">Control where this product appears</div>
+          </div>
+        </div>
+        <div class="pform-card-body">
+          <label class="pform-toggle" for="{{ form.is_active.id_for_label }}">
+            <span class="toggle-text">
+              <span class="title d-block">Active</span>
+              <span class="desc d-block">Visible in the storefront</span>
+            </span>
+            {{ form.is_active }}
+          </label>
+        </div>
+      </div>
+
+      <div class="pform-promo-card">
+        <i class="fas fa-hand-holding-heart"></i>
+        <div class="promo-title">Support Local Artisans</div>
+        <div class="promo-desc">Every product listed here represents real livelihood work from the Carigara District Jail program. Accurate photos, prices, and stock help buyers trust — and keep supporting — this craft.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pform-actions">
+    <span class="unsaved-hint" id="unsavedHint"><i class="fas fa-circle-exclamation me-1"></i>Unsaved changes</span>
+    <div class="pform-actions-btns">
+      <a href="{% url 'dashboard:product_list' %}" class="btn btn-outline-secondary">Cancel</a>
+      <button type="submit" class="btn btn-gold">Save Product</button>
+    </div>
+  </div>
+
+</form>
+
+<div class="pform-footer">
+  <div class="pf-brand"><i class="fas fa-seedling"></i>Likhalaya</div>
+  <div class="pf-tag">Handcrafted by residents of the Carigara District Jail livelihood program · Support Local Artisans</div>
+</div>
+
+</div>
+
+<script>
+(function() {
+  function likhalayaGalleryPreview(input, idx) {
+    var wrap = document.getElementById('galThumb' + idx);
+    if (!wrap || !input.files || !input.files[0]) return;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+      wrap.innerHTML = '<img src="' + e.target.result + '" alt="">';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+  window.likhalayaGalleryPreview = likhalayaGalleryPreview;
+
+  var MAX_IMAGES = 3;
+  var addBtn = document.getElementById('galleryAddBtn');
+  var rowsWrap = document.getElementById('galleryRows');
+  var totalFormsInput = document.querySelector('#id_images-TOTAL_FORMS');
+  if (addBtn && rowsWrap && totalFormsInput) {
+    function activeRowCount() {
+      return Array.from(rowsWrap.querySelectorAll('.gallery-row')).filter(function(row) {
+        return !row.classList.contains('marked-delete');
+      }).length;
+    }
+
+    function refreshCap() {
+      var full = activeRowCount() >= MAX_IMAGES;
+      addBtn.disabled = full;
+      addBtn.classList.toggle('disabled', full);
+      addBtn.innerHTML = full
+        ? '<i class="fas fa-check me-1"></i>Max 3 photos reached'
+        : '<i class="fas fa-plus me-1"></i>Add another photo';
+    }
+
+    Array.from(rowsWrap.querySelectorAll('.gallery-row')).forEach(function(row) {
+      var delCb = row.querySelector('input[type="checkbox"][name$="-DELETE"]');
+      if (delCb) {
+        delCb.addEventListener('change', function() {
+          row.classList.toggle('marked-delete', delCb.checked);
+          refreshCap();
+        });
+      }
+    });
+
+    addBtn.addEventListener('click', function() {
+      if (activeRowCount() >= MAX_IMAGES) return;
+      var idx = parseInt(totalFormsInput.value, 10);
+      var row = document.createElement('div');
+      row.className = 'gallery-row';
+      row.dataset.formIndex = idx;
+      row.innerHTML =
+        '<div class="gallery-thumb-wrap" id="galThumb' + idx + '"><i class="fas fa-image"></i></div>' +
+        '<div class="gallery-row-fields">' +
+          '<input type="text" name="images-' + idx + '-caption" class="form-control" placeholder="Caption (optional)">' +
+          '<div onchange="likhalayaGalleryPreview(this, ' + idx + ')">' +
+            '<input type="file" name="images-' + idx + '-image" class="form-control" accept="image/*">' +
+          '</div>' +
+          '<input type="hidden" name="images-' + idx + '-order" value="' + idx + '">' +
+        '</div>';
+      rowsWrap.appendChild(row);
+      totalFormsInput.value = idx + 1;
+      refreshCap();
+    });
+
+    refreshCap();
+  }
+})();
+
+(function() {
+  // Sizes are fixed Small/Medium/Large panels (they already exist
+  // conceptually via Pricing & Inventory) — this script only manages
+  // adding/removing designs within whichever panel the merchant opens.
+  var sizeBlocks = document.getElementById('sizeBlocks');
+  if (!sizeBlocks) return;
+
+  function likhalayaVariantPreview(input, si, di) {
+    var wrap = document.getElementById('designThumb_' + si + '_' + di);
+    if (!wrap || !input.files || !input.files[0]) return;
+    var reader = new FileReader();
+    reader.onload = function(e) { wrap.innerHTML = '<img src="' + e.target.result + '" alt="">'; };
+    reader.readAsDataURL(input.files[0]);
+  }
+  window.likhalayaVariantPreview = likhalayaVariantPreview;
+
+  function designQty(card) {
+    var input = card.querySelector('.design-qty-input');
+    var v = input ? parseInt(input.value, 10) : 0;
+    return isNaN(v) || v < 0 ? 0 : v;
+  }
+
+  function updateVariantStats() {
+    var sizeCount = 0, designCount = 0, grandTotal = 0;
+    sizeBlocks.querySelectorAll('.size-block').forEach(function(block) {
+      if (block.classList.contains('marked-delete')) return;
+      var grid = block.querySelector('.design-mini-grid');
+      var activeDesigns = grid ? Array.from(grid.querySelectorAll('.design-mini-card')).filter(function(c) {
+        return !c.classList.contains('marked-delete');
+      }) : [];
+      var isActive = block.querySelector('.size-active-input');
+      var counted = (isActive && isActive.checked) || activeDesigns.length > 0;
+      if (counted) sizeCount++;
+      designCount += activeDesigns.length;
+
+      var sizeTotal = 0;
+      activeDesigns.forEach(function(c) { sizeTotal += designQty(c); });
+      grandTotal += sizeTotal;
+
+      var countLabel = block.querySelector('[data-design-count-label]');
+      if (countLabel) {
+        countLabel.textContent = activeDesigns.length + ' design' + (activeDesigns.length === 1 ? '' : 's');
+      }
+      var unitLabel = block.querySelector('[data-size-unit-label]');
+      if (unitLabel) {
+        unitLabel.textContent = sizeTotal + ' unit' + (sizeTotal === 1 ? '' : 's') + ' total';
+      }
+    });
+    var statSizes = document.getElementById('statSizes');
+    var statDesigns = document.getElementById('statDesigns');
+    var statTotalStock = document.getElementById('statTotalStock');
+    var totalStockNumber = document.getElementById('totalStockNumber');
+    if (statSizes) statSizes.textContent = sizeCount;
+    if (statDesigns) statDesigns.textContent = designCount;
+    if (statTotalStock) statTotalStock.textContent = grandTotal;
+    if (totalStockNumber) totalStockNumber.textContent = grandTotal;
+  }
+  window.likhalayaUpdateVariantStats = updateVariantStats;
+
+  function updateStockBadge(card) {
+    var badge = card.querySelector('[data-stock-badge]');
+    if (!badge) return;
+    var qty = designQty(card);
+    if (qty > 0) {
+      badge.textContent = '🟢 In Stock';
+      badge.classList.remove('out-of-stock');
+      badge.classList.add('in-stock');
+    } else {
+      badge.textContent = '🔴 Out of Stock';
+      badge.classList.remove('in-stock');
+      badge.classList.add('out-of-stock');
+    }
+  }
+
+  function bindQtyInput(card) {
+    var input = card.querySelector('.design-qty-input');
+    if (!input) return;
+    updateStockBadge(card);
+    input.addEventListener('input', function() {
+      if (input.value !== '' && parseInt(input.value, 10) < 0) input.value = 0;
+      updateStockBadge(card);
+      updateVariantStats();
+    });
+  }
+
+  function bindDesignRemove(card) {
+    var btn = card.querySelector('.design-mini-remove');
+    var cb = card.querySelector('.design-delete-cb');
+    if (!btn || !cb) return;
+    btn.addEventListener('click', function() {
+      cb.checked = true;
+      card.classList.add('marked-delete');
+      card.style.display = 'none';
+      updateVariantStats();
+    });
+  }
+
+  function nextDesignIndex(grid) {
+    var max = -1;
+    Array.from(grid.querySelectorAll('.design-mini-card')).forEach(function(c) {
+      max = Math.max(max, parseInt(c.dataset.designIndex, 10));
+    });
+    return max + 1;
+  }
+
+  function addDesignCard(si, grid) {
+    var di = nextDesignIndex(grid);
+    var card = document.createElement('div');
+    card.className = 'design-mini-card';
+    card.dataset.designIndex = di;
+    card.innerHTML =
+      '<div class="design-mini-thumb" id="designThumb_' + si + '_' + di + '"><i class="fas fa-image"></i></div>' +
+      '<div class="design-mini-fields">' +
+        '<div class="df-row"><input type="text" class="form-control" placeholder="Title (e.g. Ocean Blue)" name="design-' + si + '-' + di + '-title" required></div>' +
+        '<div class="df-row">' +
+          '<input type="text" class="form-control" placeholder="Color (e.g. Blue)" name="design-' + si + '-' + di + '-color">' +
+        '</div>' +
+        '<input type="file" accept="image/*" class="form-control design-file-input" name="design-' + si + '-' + di + '-image" onchange="likhalayaVariantPreview(this, ' + si + ', ' + di + ')">' +
+        '<div class="df-row design-qty-row">' +
+          '<label class="design-qty-label">Quantity</label>' +
+          '<input type="number" min="0" step="1" class="form-control design-qty-input" name="design-' + si + '-' + di + '-stock" value="0">' +
+          '<span class="stock-status-badge out-of-stock" data-stock-badge>🔴 Out of Stock</span>' +
+        '</div>' +
+        '<div class="design-mini-foot">' +
+          '<label class="design-active-check"><input type="checkbox" class="form-check-input" name="design-' + si + '-' + di + '-is_active" checked>Active</label>' +
+          '<button type="button" class="design-mini-remove" title="Remove this design"><i class="fas fa-trash"></i><input type="checkbox" name="design-' + si + '-' + di + '-DELETE" class="d-none design-delete-cb"></button>' +
+        '</div>' +
+      '</div>';
+    grid.appendChild(card);
+    bindDesignRemove(card);
+    bindQtyInput(card);
+
+    // Adding a design to a panel that was untouched implies the merchant
+    // wants this size to actually be offered — open it and flip it active.
+    var block = grid.closest('.size-block');
+    if (block) {
+      block.open = true;
+      var activeCb = block.querySelector('.size-active-input');
+      if (activeCb) activeCb.checked = true;
+    }
+    updateVariantStats();
+  }
+
+  function bindAddDesignBtn(btn) {
+    btn.addEventListener('click', function() {
+      var si = btn.dataset.sizeIndex;
+      var grid = document.getElementById('designGrid' + si);
+      if (grid) addDesignCard(si, grid);
+    });
+  }
+
+  Array.from(sizeBlocks.querySelectorAll('.design-mini-card')).forEach(bindDesignRemove);
+  Array.from(sizeBlocks.querySelectorAll('.design-mini-card')).forEach(bindQtyInput);
+  Array.from(sizeBlocks.querySelectorAll('.add-design-btn')).forEach(bindAddDesignBtn);
+  Array.from(sizeBlocks.querySelectorAll('.size-active-input')).forEach(function(cb) {
+    cb.addEventListener('change', updateVariantStats);
+  });
+
+  updateVariantStats();
+})();
+
+(function() {
+  // Live-sync the size price tags with the Pricing & Inventory inputs.
+  var map = { S: 'id_price_min', M: 'id_price_medium', L: 'id_price_max' };
+  Object.keys(map).forEach(function(code) {
+    var input = document.getElementById(map[code]);
+    var tag = document.querySelector('[data-size-price="' + code + '"]');
+    if (!input || !tag) return;
+    input.addEventListener('input', function() {
+      var val = parseFloat(input.value);
+      tag.textContent = '₱' + (isNaN(val) ? '0' : val);
+    });
+  });
+})();
+
+(function() {
+  // Lightweight unsaved-changes indicator + confirm-on-leave.
+  var form = document.getElementById('productForm');
+  var hint = document.getElementById('unsavedHint');
+  if (!form || !hint) return;
+  var dirty = false;
+
+  form.addEventListener('input', function() { dirty = true; hint.classList.add('show'); });
+  form.addEventListener('change', function() { dirty = true; hint.classList.add('show'); });
+  form.addEventListener('submit', function() { dirty = false; });
+
+  // Fix: a required design-title input can end up inside a *collapsed*
+  // <details> size panel (e.g. an empty design left in a closed panel).
+  // Chrome's native validation then blocks submit with zero visible
+  // feedback — the button just "does nothing". Force the panel open
+  // whenever it holds the invalid field so the browser can show its
+  // validation tooltip and the merchant can actually see what's wrong.
+  form.addEventListener('invalid', function(e) {
+    var details = e.target.closest('details');
+    if (details) details.open = true;
+  }, true);
+
+  window.addEventListener('beforeunload', function(e) {
+    if (!dirty) return;
+    e.preventDefault();
+    e.returnValue = '';
+  });
+})();
+</script>
+{% endblock %}
