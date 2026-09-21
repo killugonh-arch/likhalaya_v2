@@ -377,11 +377,18 @@ def password_reset_request_view(request):
 
         if form.is_valid():
             email = form.cleaned_data['email'].strip().lower()
+
+            # Only proceed if the email belongs to an active account.
+            if not any(True for _ in form.get_users(email)):
+                form.add_error('email', 'This email is not registered. Please enter a valid email.')
+                return render(request, 'accounts/password_reset.html', {'form': form})
+
             if not check_hourly_limit(f'pwreset_email:{email}', PASSWORD_RESET_MAX_PER_EMAIL_PER_HOUR):
-                # Still redirect to "done" like a normal submission — telling
-                # the requester the email is rate-limited would confirm that
-                # email exists in the system.
-                return redirect('accounts:password_reset_done')
+                messages.error(
+                    request,
+                    'Too many reset requests for this email. Please try again in an hour.'
+                )
+                return render(request, 'accounts/password_reset.html', {'form': form})
 
             form.save(
                 request=request,
@@ -391,8 +398,6 @@ def password_reset_request_view(request):
                 html_email_template_name='accounts/emails/password_reset_email.html',
                 from_email=settings.DEFAULT_FROM_EMAIL,
             )
-            # Always redirect to "done" regardless of whether the email
-            # exists — avoids leaking which emails are registered.
             return redirect('accounts:password_reset_done')
     else:
         form = PasswordResetForm()

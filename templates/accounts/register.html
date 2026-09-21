@@ -371,8 +371,6 @@
                     <i class="fas fa-eye"></i>
                   </button>
                 </div>
-                <div class="pw-strength-bar"><div class="pw-strength-bar-fill" id="pwStrengthBar"></div></div>
-                <div class="pw-strength-label" id="pwStrengthLabel"></div>
                 {% if form.password1.errors %}<div class="auth-field-error"><i class="fas fa-circle-exclamation"></i>{{ form.password1.errors.0 }}</div>{% endif %}
               </div>
             </div>
@@ -386,7 +384,6 @@
                     <i class="fas fa-eye"></i>
                   </button>
                 </div>
-                <div class="auth-field-hint" id="confirmHint" style="display:none;color:#27ae60;"><i class="fas fa-check-circle"></i> Passwords match</div>
                 {% if form.password2.errors %}<div class="auth-field-error"><i class="fas fa-circle-exclamation"></i>{{ form.password2.errors.0 }}</div>{% endif %}
               </div>
             </div>
@@ -458,9 +455,6 @@
 
   const pw1   = document.getElementById('id_password1');
   const pw2   = document.getElementById('id_password2');
-  const bar   = document.getElementById('pwStrengthBar');
-  const lbl   = document.getElementById('pwStrengthLabel');
-  const cHint = document.getElementById('confirmHint');
 
   const terms = document.getElementById('id_agree_terms');
 
@@ -490,23 +484,59 @@
   /* ---- Password ---- */
   if (pw1) {
     pw1.addEventListener('input', function() {
-      const s = measureStrength(this.value);
-      const m = strengthMap[Math.min(s, 5)];
-      bar.style.width      = this.value.length === 0 ? '0%' : m.width;
-      bar.style.background = m.color;
-      lbl.textContent      = this.value.length === 0 ? '' : m.label;
-      lbl.style.color      = m.color;
       updateSubmitState();
     });
   }
   if (pw2) {
     pw2.addEventListener('input', function() {
-      if (this.value.length === 0) { cHint.style.display = 'none'; updateSubmitState(); return; }
-      const match = pw1 && this.value === pw1.value;
-      cHint.style.display = match ? 'flex' : 'none';
       updateSubmitState();
     });
   }
+
+  /* ---- Keep typed data while visiting the Terms page ---- */
+  var DRAFT_KEY = 'likhalaya_register_draft';
+  var DRAFT_MAX_AGE_MS = 30 * 60 * 1000; // 30 minutes
+
+  function saveFormDraft() {
+    try {
+      var data = {};
+      Array.prototype.forEach.call(form.elements, function (el) {
+        if (!el.name || el.name === 'csrfmiddlewaretoken' || el.name === 'website' ||
+            el.name === 'agree_terms' || el.type === 'submit' || el.type === 'button') return;
+        if (el.type === 'checkbox' || el.type === 'radio') {
+          if (el.checked) data[el.name] = el.value;
+        } else {
+          data[el.name] = el.value;
+        }
+      });
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ t: Date.now(), data: data }));
+    } catch (err) { /* storage unavailable - nothing to do */ }
+  }
+
+  function restoreFormDraft() {
+    try {
+      var raw = sessionStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      sessionStorage.removeItem(DRAFT_KEY); // one-time use (also clears saved passwords)
+      var draft = JSON.parse(raw);
+      if (!draft || Date.now() - draft.t > DRAFT_MAX_AGE_MS) return;
+      Object.keys(draft.data).forEach(function (name) {
+        var el = form.elements[name];
+        if (!el || el.length !== undefined && el.tagName !== 'SELECT') return;
+        if (el.type === 'checkbox' || el.type === 'radio') {
+          el.checked = true;
+        } else {
+          el.value = draft.data[name];
+        }
+        // fire listeners so strength bar, hints and submit button update
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+        el.dispatchEvent(new Event('change', { bubbles: true }));
+      });
+      updateSubmitState();
+    } catch (err) { /* ignore corrupt draft */ }
+  }
+
+  restoreFormDraft();
 
   /* ---- Terms ---- */
   if (terms) {
@@ -517,6 +547,7 @@
         // and send them to read & accept the Terms first instead.
         this.checked = false;
         e.preventDefault();
+        saveFormDraft();
         window.location.href = "{% url 'store:terms' %}";
       } else {
         updateSubmitState();

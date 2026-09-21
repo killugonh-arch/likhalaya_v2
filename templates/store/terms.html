@@ -384,6 +384,7 @@
   'use strict';
 
   var TOTAL_SECTIONS = 8;
+  var SHOW_BAR_AT    = 3; // bar appears after this many sections are read
   var readSections   = new Set();
   var sections       = Array.from(document.querySelectorAll('.terms-section[data-section]'));
   var fill           = document.getElementById('termsBarFill');
@@ -399,6 +400,9 @@
     var pct   = Math.round((count / TOTAL_SECTIONS) * 100);
     fill.style.width = pct + '%';
     pctEl.textContent = count + ' of ' + TOTAL_SECTIONS + ' sections';
+
+    /* Show the Agree / Decline bar once section 3 has been read */
+    if (count >= SHOW_BAR_AT) acceptBar.classList.add('visible');
 
     if (count === TOTAL_SECTIONS) {
       acceptBtn.style.pointerEvents = '';
@@ -442,13 +446,6 @@
     });
     updateProgress();
   }
-
-  /* Show the sticky bar after a tiny scroll */
-  window.addEventListener('scroll', function() {
-    if (window.scrollY > 120) {
-      acceptBar.classList.add('visible');
-    }
-  }, { passive: true });
 
   updateProgress();
 })();
