@@ -275,3 +275,8 @@ MESSAGE_ENCRYPTION_KEY = os.environ.get(
     'MESSAGE_ENCRYPTION_KEY',
     'Yj9y5oNQ5o3cQb1t9zW1nQwqz6XwK1r9Cq8y2s5aB0o='  # dev only
 )
+
+
+# Google sign-in (mobile app): the OAuth *Web application* client ID from
+# Google Cloud Console (same value as googleWebClientId in the Flutter config.dart).
+GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '337900067754-ksbit1gj5dpecgfrkq0c4l97us4b6rj2.apps.googleusercontent.com')
