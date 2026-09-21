@@ -130,8 +130,12 @@ def about(request):
     return render(request, 'store/about.html', {'personnel': personnel, 'videos': videos})
 
 
-@login_required
 def contact(request):
+    # Visitors who aren't logged in can still see the contact details;
+    # only sending a message requires an account.
+    if not request.user.is_authenticated:
+        return render(request, 'store/contact_guest.html', {'next': request.get_full_path()})
+
     is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
     context_product = None
 

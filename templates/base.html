@@ -1491,7 +1491,7 @@
                     <!-- CART -->
                     <a
                         href="{% url 'orders:cart_detail' %}"
-                        class="position-relative text-decoration-none utility-icon"
+                        class="position-relative text-decoration-none utility-icon{% if not user.is_authenticated %} d-none d-md-inline-block{% endif %}"
                         title="Cart"
                     >
 
@@ -1528,7 +1528,7 @@
                          NOTIFICATIONS
                          ================================================= -->
 
-                    <div class="dropdown">
+                    <div class="dropdown{% if not user.is_authenticated %} d-none d-md-block{% endif %}">
 
                         <button
                             class="btn btn-sm border-0 position-relative utility-icon utility-icon-btn"
