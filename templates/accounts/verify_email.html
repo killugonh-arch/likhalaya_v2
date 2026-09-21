@@ -271,8 +271,9 @@
 
         <form method="post" class="resend-row" id="resendForm">
           {% csrf_token %}
+          <input type="hidden" name="resend" value="1">
           Didn't get the code? Check your spam folder or
-          <button type="submit" name="resend" value="1" class="btn-resend" id="resendSubmitBtn">Resend Code</button>
+          <button type="submit" class="btn-resend" id="resendSubmitBtn">Resend Code</button>
         </form>
 
         <form method="post">

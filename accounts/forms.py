@@ -95,6 +95,25 @@ class RegisterForm(UserCreationForm):
             raise forms.ValidationError('A user with that username already exists.')
         return username
 
+    def clean_password1(self):
+        # Server-side twin of the strength check on the register page, so a
+        # weak password is rejected even if the browser check is bypassed.
+        pw = self.cleaned_data.get('password1') or ''
+        score = 0
+        if len(pw) >= 8:
+            score += 1
+        if len(pw) >= 12:
+            score += 1
+        if any(c.isupper() for c in pw):
+            score += 1
+        if any(c.isdigit() for c in pw):
+            score += 1
+        if any(not c.isalnum() for c in pw):
+            score += 1
+        if score < 2:
+            raise forms.ValidationError('Password is weak. Please choose another one.')
+        return pw
+
     def clean_email(self):
         email = self.cleaned_data.get('email')
         # Clear out any abandoned, never-verified signup that used this email

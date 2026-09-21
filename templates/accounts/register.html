@@ -372,6 +372,7 @@
                   </button>
                 </div>
                 {% if form.password1.errors %}<div class="auth-field-error"><i class="fas fa-circle-exclamation"></i>{{ form.password1.errors.0 }}</div>{% endif %}
+                <div class="auth-field-error" id="pwWeakMsg" style="display:none;"><i class="fas fa-circle-exclamation"></i>Password is weak. Please choose another one.</div>
               </div>
             </div>
             <div class="col-sm-6">
@@ -455,6 +456,7 @@
 
   const pw1   = document.getElementById('id_password1');
   const pw2   = document.getElementById('id_password2');
+  const pwWeakMsg = document.getElementById('pwWeakMsg');
 
   const terms = document.getElementById('id_agree_terms');
 
@@ -484,6 +486,9 @@
   /* ---- Password ---- */
   if (pw1) {
     pw1.addEventListener('input', function() {
+      // Same rule that enables/disables the Create Account button
+      const weak = this.value.length > 0 && measureStrength(this.value) < 2;
+      if (pwWeakMsg) pwWeakMsg.style.display = weak ? 'flex' : 'none';
       updateSubmitState();
     });
   }
