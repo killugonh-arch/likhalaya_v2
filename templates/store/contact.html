@@ -289,7 +289,7 @@
         <div class="info-icon"><i class="fas fa-phone" style="color:var(--teal);"></i></div>
         <div>
           <div class="fw-bold mb-1">Phone</div>
-          <div class="text-muted small">(053) XXX-XXXX</div>
+          <div class="text-muted small">0969-611-3509</div>
         </div>
       </div>
       <div class="info-item">
@@ -355,12 +355,12 @@
               {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
             </div>
             <div class="col-sm-6">
-              <label class="form-label fw-semibold small">Contact Number</label>
+              <label class="form-label fw-semibold small">Contact Number{% if not form.phone_locked %} <span class="text-muted fw-normal">(optional)</span>{% endif %}</label>
               {{ form.phone }}
               {% if form.phone.errors %}<div class="text-danger small mt-1">{{ form.phone.errors.0 }}</div>{% endif %}
             </div>
             <div class="col-sm-6">
-              <label class="form-label fw-semibold small">Location</label>
+              <label class="form-label fw-semibold small">Location{% if not form.location_locked %} <span class="text-muted fw-normal">(optional)</span>{% endif %}</label>
               {{ form.location }}
               {% if form.location.errors %}<div class="text-danger small mt-1">{{ form.location.errors.0 }}</div>{% endif %}
             </div>
@@ -797,8 +797,13 @@
             placeholder.classList.remove('d-none');
           }
         } else {
-          // Stage 2: Error
-          openToast('error', 'Something went wrong', "We couldn't send your request. Please try again.");
+          // Stage 2: Error — show the real reason when the server gave one
+          let reason = "We couldn't send your request. Please try again.";
+          if (data.errors) {
+            const first = Object.values(data.errors)[0];
+            if (first && first[0]) reason = typeof first[0] === 'string' ? first[0] : (first[0].message || reason);
+          }
+          openToast('error', 'Something went wrong', reason);
           autoHideTimer = window.setTimeout(closeToast, 8000);
           if (data.errors) {
             Object.entries(data.errors).forEach(([field, errs]) => {

@@ -98,8 +98,11 @@ class ContactForm(forms.ModelForm):
             'inquiry_type': forms.Select(attrs={'class': 'form-select', 'id': 'id_inquiry_type'}),
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '', 'readonly': True}),
             'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': '', 'readonly': True}),
-            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '', 'readonly': True}),
-            'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'City / Barangay / Province', 'readonly': True}),
+            # phone / location are optional and editable by default. They only
+            # become read-only when the customer already has them saved in
+            # their profile (see __init__ below).
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Optional'}),
+            'location': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'City / Barangay / Province'}),
             # Subject is still auto-filled from the selected category (see
             # contact.html JS) but is no longer shown as a field the customer
             # has to look at/edit — it's a hidden input now.
@@ -169,15 +172,51 @@ class ContactForm(forms.ModelForm):
         ContactMessage.INQUIRY_OTHER: ['concern_type'],
     }
 
-    def __init__(self, *args, **kwargs):
+    @staticmethod
+    def profile_location(user):
+        """Location string built from the customer's saved profile address."""
+        parts = [
+            getattr(user, 'address', ''),
+            getattr(user, 'barangay', ''),
+            getattr(user, 'city', ''),
+            getattr(user, 'province', ''),
+            getattr(user, 'zip_code', ''),
+        ]
+        return ', '.join(p.strip() for p in parts if p and p.strip())
+
+    def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
         for name in self.OPTIONAL_FIELDS:
             self.fields[name].required = False
+
+        # Contact number / location: if the profile already has them, show
+        # them locked (read-only). If not, the customer can leave them blank
+        # or type them in for this message.
+        self._profile_phone = (getattr(user, 'phone', '') or '').strip() if user else ''
+        self._profile_location = self.profile_location(user) if user else ''
+        self.phone_locked = bool(self._profile_phone)
+        self.location_locked = bool(self._profile_location)
+        if self.phone_locked:
+            self.fields['phone'].widget.attrs['readonly'] = True
+            self.fields['phone'].widget.attrs['placeholder'] = ''
+        if self.location_locked:
+            self.fields['location'].widget.attrs['readonly'] = True
         self.fields['inquiry_type'].required = True
         self.fields['materials_condition'].choices = [('', 'Select condition')] + list(ContactMessage.MATERIALS_CONDITION_CHOICES)
         self.fields['partnership_type'].choices = [('', 'Select type')] + list(ContactMessage.PARTNERSHIP_TYPE_CHOICES)
         self.fields['feedback_type'].choices = [('', 'Select feedback type')] + list(ContactMessage.FEEDBACK_TYPE_CHOICES)
         self.fields['concern_type'].choices = [('', 'Select concern type')] + list(ContactMessage.CONCERN_TYPE_CHOICES)
+
+    def clean_phone(self):
+        # Locked -> always the profile value, whatever the POST body says.
+        if self.phone_locked:
+            return self._profile_phone
+        return (self.cleaned_data.get('phone') or '').strip()
+
+    def clean_location(self):
+        if self.location_locked:
+            return self._profile_location
+        return (self.cleaned_data.get('location') or '').strip()
 
     def clean_quantity(self):
         raw = (self.data.get('quantity') or '').strip()

@@ -310,7 +310,12 @@ def profile_view(request):
         form = ProfileUpdateForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             form.save()
-            messages.success(request, 'Profile updated successfully!')
+            # Skip the success toast while the "phone / address required"
+            # warning is still showing, so the two don't contradict.
+            u = request.user
+            still_incomplete = not (u.phone and u.address and u.city and u.province)
+            if not still_incomplete:
+                messages.success(request, 'Profile updated successfully!')
             if next_url:
                 return redirect(next_url)
             return redirect('accounts:profile')

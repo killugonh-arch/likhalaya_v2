@@ -151,7 +151,7 @@ def contact(request):
                 return JsonResponse({'ok': True, 'message': fake_message})
             messages.success(request, fake_message)
             return redirect('store:contact')
-        form = ContactForm(request.POST, request.FILES)
+        form = ContactForm(request.POST, request.FILES, user=request.user)
         if form.is_valid():
             msg = form.save(commit=False)
             msg.customer = request.user
@@ -177,14 +177,8 @@ def contact(request):
         }
         if request.user.phone:
             initial['phone'] = request.user.phone
-        # Build location from profile address fields
-        loc_parts = [
-            getattr(request.user, 'address', ''),
-            getattr(request.user, 'city', ''),
-            getattr(request.user, 'province', ''),
-            getattr(request.user, 'zip_code', ''),
-        ]
-        location_str = ', '.join(p for p in loc_parts if p)
+        # Location from the profile address fields (blank if none saved)
+        location_str = ContactForm.profile_location(request.user)
         if location_str:
             initial['location'] = location_str
 
@@ -201,7 +195,7 @@ def contact(request):
                 initial['inquiry_type'] = ContactMessage.INQUIRY_CUSTOM_ORDER
                 initial['subject'] = f'Product & Custom Order Inquiry — {context_product.name}'
 
-        form = ContactForm(initial=initial)
+        form = ContactForm(initial=initial, user=request.user)
     return render(request, 'store/contact.html', {'form': form, 'context_product': context_product})
 
 
