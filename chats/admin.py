@@ -31,7 +31,7 @@ class ConversationAdmin(admin.ModelAdmin):
 class ChatMessageAdmin(admin.ModelAdmin):
     list_display = ('id', 'conversation', 'from_customer', 'sender', 'short_body', 'read', 'created_at')
     list_filter = ('from_customer', 'read', 'created_at')
-    search_fields = ('body', 'conversation__customer__username', 'conversation__customer__email')
+    search_fields = ('body', 'conversation__customer__username')
     raw_id_fields = ('conversation', 'sender')
 
     @admin.display(description='Body')

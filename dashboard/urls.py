@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, chat_views
 
 app_name = 'dashboard'
 
@@ -33,6 +33,8 @@ urlpatterns = [
     path('categories/<int:pk>/delete-permanent/', views.category_delete_permanent, name='category_delete_permanent'),
     # Messages
     path('messages/', views.message_list, name='message_list'),
+    path('messages/chats/', chat_views.chat_list, name='chat_list'),
+    path('messages/chats/<int:pk>/', chat_views.chat_detail, name='chat_detail'),
     path('messages/mark-all-read/', views.message_mark_all_read, name='message_mark_all_read'),
     path('messages/<int:pk>/', views.message_detail, name='message_detail'),
     path('messages/<int:pk>/delete/', views.message_delete, name='message_delete'),
