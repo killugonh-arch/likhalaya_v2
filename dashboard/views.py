@@ -18,6 +18,7 @@ from django.conf import settings
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction
+from .chat_helpers import chat_inbox
 from django.db.models import Sum, Count, Q, Avg, Case, When, Value, IntegerField
 from django.db.models.functions import TruncMonth, TruncDate, Coalesce, ExtractYear
 from django.utils import timezone
@@ -363,6 +364,7 @@ def message_list(request):
         'page_obj': page_obj,
         'read_filter': read_filter,
         'search': search,
+        'chat_rows': chat_inbox(search, read_filter) if page_obj.number == 1 else [],
     })
 
 
@@ -478,6 +480,7 @@ def message_detail(request, pk):
         'last_activity_at': last_activity_at,
         'read_filter': read_filter,
         'search': search,
+        'chat_rows': chat_inbox(search, read_filter),
     })
 
 

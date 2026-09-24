@@ -100,10 +100,6 @@ body.dark-mode .msg-search-wrap input, body.dark-mode .msg-select-wrap select { 
   <span class="sep">/</span><span class="current">Messages</span>
 </nav>
 
-<div class="ac-tabs" style="display:flex;gap:4px;border-bottom:1px solid #E4E7E4;margin-bottom:20px">
-  <a href="{% url 'dashboard:message_list' %}" style="padding:10px 18px;font-size:14px;font-weight:600;text-decoration:none;border-bottom:3px solid #0F6B4F;color:#0F6B4F">Inquiries</a>
-  <a href="{% url 'dashboard:chat_list' %}" style="padding:10px 18px;font-size:14px;font-weight:600;text-decoration:none;border-bottom:3px solid transparent;color:#5B615D">App Chats</a>
-</div>
 <div class="ds-page-header">
   <div>
     <h1>Messages</h1>
@@ -142,6 +138,29 @@ body.dark-mode .msg-search-wrap input, body.dark-mode .msg-select-wrap select { 
   <div class="msg-list-header">
     <span class="count ms-auto">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} messages</span>
   </div>
+
+  {% for c in chat_rows %}
+  <div class="msg-row {% if c.unread %}is-unread{% endif %}" data-href="{% url 'dashboard:chat_detail' c.pk %}">
+    <div class="msg-avatar" style="background:#0F6B4F;">{{ c.display_name|first|upper }}</div>
+    <div class="msg-body">
+      <div class="msg-top-line">
+        <div>
+          <div class="msg-name-line">
+            <span class="msg-name">{{ c.display_name }}</span>
+            <span class="msg-badge" style="background:var(--brand-green-light);color:var(--brand-green);">App Chat</span>
+          </div>
+          <div class="msg-email">{{ c.customer.email }}</div>
+          <div class="msg-subject">Chat from the mobile app</div>
+          <div class="msg-snippet">{% if c.last_msg and not c.last_msg.from_customer %}You: {% endif %}{{ c.last_msg.body|truncatechars:80 }}</div>
+        </div>
+        <div class="msg-meta">
+          {% if c.unread %}<span class="msg-status is-unread"><span class="dot"></span>{{ c.unread }} unread</span>{% else %}<span class="msg-status is-read"><span class="dot"></span>Read</span>{% endif %}
+          <div class="msg-date">{{ c.last_at|date:"M d, Y H:i" }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
 
   {% for msg in messages_list %}
   {% url 'dashboard:message_detail' msg.pk as msg_detail_url %}

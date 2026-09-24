@@ -186,6 +186,23 @@ body.dark-mode .chat-input-bar { background: var(--dm-surface); }
       </div>
     </form>
     <div class="inbox-list">
+      {% for c in chat_rows %}
+      <a href="{% url 'dashboard:chat_detail' c.pk %}" class="inbox-row">
+        <div class="inbox-avatar" style="background:var(--brand-green);">{{ c.display_name|first|upper }}</div>
+        <div class="inbox-row-body">
+          <div class="inbox-row-top">
+            <span class="inbox-name">{{ c.display_name }}</span>
+            <span class="inbox-badge" style="background:var(--brand-green-light);color:var(--brand-green);">App Chat</span>
+          </div>
+          <div class="inbox-snippet">{{ c.last_msg.body|truncatechars:60 }}</div>
+          <div class="inbox-date">{{ c.last_at|date:"M d, H:i" }}</div>
+        </div>
+        <div class="inbox-row-end">
+          {% if c.unread %}<span class="inbox-count" style="background:var(--brand-green);color:#fff;">{{ c.unread }}</span>{% endif %}
+          <i class="fas fa-chevron-right chevron"></i>
+        </div>
+      </a>
+      {% endfor %}
       {% for row in inbox_messages %}
       <a href="{% url 'dashboard:message_detail' row.pk %}?{% if search %}q={{ search }}&{% endif %}{% if read_filter %}read={{ read_filter }}{% endif %}"
          class="inbox-row {% if row.pk == message.pk %}is-active{% endif %}">
@@ -219,6 +236,45 @@ body.dark-mode .chat-input-bar { background: var(--dm-surface); }
     </div>
   </div>
 
+  {% if convo %}
+  <div class="dash-panel msgs-thread">
+    <div class="thread-header">
+      <div class="inbox-avatar" style="background:var(--brand-green);">{{ convo.customer.get_full_name|default:convo.customer.username|first|upper }}</div>
+      <div>
+        <div class="name">
+          {{ convo.customer.get_full_name|default:convo.customer.username }}
+          <span class="inbox-badge" style="background:var(--brand-green-light);color:var(--brand-green);">App Chat</span>
+        </div>
+        <div class="email">{{ convo.customer.email }}</div>
+      </div>
+    </div>
+
+    <div class="chat-messages" id="chatMessages">
+      {% for m in thread %}
+      <div class="chat-row {% if m.from_customer %}from-customer{% else %}from-staff{% endif %}">
+        <div class="chat-avatar">{% if m.from_customer %}{{ convo.customer.get_full_name|default:convo.customer.username|first|upper }}{% else %}{{ m.sender.get_full_name|default:m.sender.username|default:"L"|first|upper }}{% endif %}</div>
+        <div class="chat-bubble-wrap">
+          <div class="chat-sender-label">{% if m.from_customer %}{{ convo.customer.get_full_name|default:convo.customer.username }}{% else %}{{ m.sender.get_full_name|default:m.sender.username|default:"Likhalaya Team" }}{% endif %}</div>
+          <div class="chat-bubble">{{ m.body }}</div>
+          <div class="chat-meta">
+            <span>{{ m.created_at|date:"M d, H:i" }}</span>
+            {% if not m.from_customer %}{% if m.read %}<i class="fas fa-check-double" style="color:#4fa9e8;"></i>{% else %}<i class="fas fa-check"></i>{% endif %}{% endif %}
+          </div>
+        </div>
+      </div>
+      {% empty %}
+      <div class="chat-empty">No messages yet — start the conversation below.</div>
+      {% endfor %}
+    </div>
+
+    <form method="post" class="chat-input-bar">
+      {% csrf_token %}
+      <textarea name="body" rows="1" maxlength="2000" placeholder="Type your reply…" required
+                oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px';"></textarea>
+      <button type="submit" class="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
+    </form>
+  </div>
+  {% else %}
   <!-- Conversation -->
   <div class="dash-panel msgs-thread">
     <div class="thread-header">
@@ -354,8 +410,20 @@ body.dark-mode .chat-input-bar { background: var(--dm-surface); }
       </div>
     </div>
   </div>
+  {% endif %}
 </div>
 
+{% if convo %}
+<div class="conv-details">
+  <div class="conv-details-title"><i class="fas fa-circle-info"></i>Conversation Details</div>
+  <div class="conv-details-grid">
+    <div class="conv-details-item"><div class="label">Type</div><div class="value">App Chat</div></div>
+    <div class="conv-details-item"><div class="label">Customer</div><div class="value">{{ convo.customer.get_full_name|default:convo.customer.username }}</div></div>
+    <div class="conv-details-item"><div class="label">Last Message</div><div class="value">{{ last_activity_at|date:"M d, Y · H:i" }}</div></div>
+    <div class="conv-details-item"><div class="label">Chat #</div><div class="value">{{ convo.pk }}</div></div>
+  </div>
+</div>
+{% else %}
 <!-- Conversation details summary -->
 <div class="conv-details">
   <div class="conv-details-title"><i class="fas fa-circle-info"></i>Conversation Details</div>
@@ -394,6 +462,8 @@ body.dark-mode .chat-input-bar { background: var(--dm-surface); }
   </form>
   {% endif %}
 </div>
+
+{% endif %}
 
 <script>
 var chatBox = document.getElementById('chatMessages');
