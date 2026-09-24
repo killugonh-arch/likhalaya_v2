@@ -887,6 +887,22 @@ def order_cancel(request, pk):
     return redirect('dashboard:order_detail', pk=pk)
 
 
+@staff_required
+@require_POST
+def order_undo_cancel(request, pk):
+    """Undo an accidental cancel: back to the previous status, stock re-deducted."""
+    order = get_object_or_404(Order, pk=pk)
+    old_status = order.status
+    try:
+        order.undo_cancel()
+    except OrderStatusError as e:
+        messages.error(request, str(e))
+    else:
+        _log_and_notify(request, order, old_status, order.status)
+        messages.success(request, f'Order {order.order_number} has been restored to {order.get_status_display()}.')
+    return redirect('dashboard:order_detail', pk=pk)
+
+
 # ─── Courier delivery workflow ──────────────────────────────────────────────
 @courier_required
 def courier_order_list(request):

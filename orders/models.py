@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from accounts.models import CustomUser
 from store.models import Product
@@ -167,6 +167,39 @@ class Order(models.Model):
         self.status = 'cancelled'
         self.save(update_fields=['previous_status', 'status', 'updated_at'])
         self.restock_items()
+
+    def undo_cancel(self):
+        """Reverse an accidental cancel: put the order back to the status it
+        had before, and take its items out of stock again (the exact opposite
+        of restock_items). Refused if live stock can no longer cover the items."""
+        if self.status != 'cancelled':
+            raise OrderStatusError("Only a cancelled order can be restored.")
+        items = list(self.items.select_related('product', 'design').all())
+        short = []
+        for item in items:
+            if item.design:
+                available, name = item.design.stock, (item.design.title or item.product_name)
+            elif item.product:
+                available, name = item.product.stock, item.product_name
+            else:
+                continue
+            if item.quantity > available:
+                short.append(name)
+        if short:
+            raise OrderStatusError(
+                "Can't restore this order - not enough stock left for: " + ", ".join(short) + "."
+            )
+        restored = self.previous_status if self.previous_status in ('pending', 'processing', 'confirmed') else 'pending'
+        with transaction.atomic():
+            for item in items:
+                if item.design:
+                    item.design.deduct_stock(item.quantity)
+                elif item.product:
+                    item.product.stock = max(0, item.product.stock - item.quantity)
+                    item.product.save(update_fields=['stock'])
+            self.status = restored
+            self.previous_status = ''
+            self.save(update_fields=['status', 'previous_status', 'updated_at'])
 
 
 class OrderItem(models.Model):

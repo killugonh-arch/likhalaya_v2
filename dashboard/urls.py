@@ -12,6 +12,7 @@ urlpatterns = [
     path('orders/<int:pk>/mark-ready/', views.order_mark_ready, name='order_mark_ready'),
     path('orders/<int:pk>/assign-courier/', views.order_assign_courier, name='order_assign_courier'),
     path('orders/<int:pk>/cancel/', views.order_cancel, name='order_cancel'),
+    path('orders/<int:pk>/undo-cancel/', views.order_undo_cancel, name='order_undo_cancel'),
     path('orders/export/csv/', views.order_export_csv, name='order_export_csv'),
     # Courier deliveries
     path('deliveries/', views.courier_order_list, name='courier_order_list'),

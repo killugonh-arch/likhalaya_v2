@@ -573,10 +573,12 @@
             {% endif %}
 
             {% if order.status not in 'shipped,delivered,cancelled' %}
-            <form method="post" action="{% url 'dashboard:order_cancel' order.pk %}" onsubmit="return confirm('Cancel order {{ order.order_number }}? Stock will be restored.');">
-              {% csrf_token %}
-              <button type="submit" class="od-cancel-btn"><i class="fas fa-ban"></i>&nbsp;Cancel Order</button>
-            </form>
+            <button type="button" class="od-cancel-btn" data-bs-toggle="modal" data-bs-target="#cancelOrderModal"><i class="fas fa-ban"></i>&nbsp;Cancel Order</button>
+            {% endif %}
+
+            {% if order.status == 'cancelled' %}
+            <div class="od-task-hint">Cancelled by mistake? Restoring puts this order back to <strong>{{ order.get_previous_status_display|default:"Pending" }}</strong> and takes its items out of stock again.</div>
+            <button type="button" class="od-btn od-btn-primary w-100" data-bs-toggle="modal" data-bs-target="#undoCancelModal"><i class="fas fa-rotate-left"></i>&nbsp;Undo Cancel</button>
             {% endif %}
           </div>
         </div>
@@ -691,4 +693,49 @@
   });
 })();
 </script>
+
+<!-- Cancel Order Modal -->
+<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" style="color:#0F6B4F;">Cancel Order</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Cancel order <strong>{{ order.order_number }}</strong>? Its items will be returned to stock. If this was a mistake, you can undo it afterwards from this page.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Keep Order</button>
+        <form method="post" action="{% url 'dashboard:order_cancel' order.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-danger">Cancel Order</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Undo Cancel Modal -->
+<div class="modal fade" id="undoCancelModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold" style="color:#0F6B4F;">Restore Order</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Restore order <strong>{{ order.order_number }}</strong>? It goes back to <strong>{{ order.get_previous_status_display|default:"Pending" }}</strong> and its items are taken out of stock again.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Not now</button>
+        <form method="post" action="{% url 'dashboard:order_undo_cancel' order.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-success" style="background:#0F6B4F;border-color:#0F6B4F;">Restore Order</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
