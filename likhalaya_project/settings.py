@@ -33,7 +33,6 @@ if not DEBUG:
     X_FRAME_OPTIONS = 'DENY'
     SESSION_COOKIE_HTTPONLY = True
     CSRF_COOKIE_HTTPONLY = True
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -47,6 +46,7 @@ INSTALLED_APPS = [
     'accounts',
     'orders',
     'dashboard',
+    'chats',
     # api
     'rest_framework',
     'rest_framework_simplejwt',

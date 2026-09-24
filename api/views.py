@@ -8,7 +8,8 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from accounts.models import CustomUser, EmailOTP
 from accounts.views import _send_otp_email
-from store.models import Category, Product
+from store.models import Category, Product, ContactMessage, MessageReply
+from store.views import _customer_reply_cooldown_remaining
 from orders.models import Order, OrderItem, Notification
 from orders.validators import validate_payment_proof
 
@@ -16,6 +17,8 @@ from .serializers import (
     CustomTokenObtainPairSerializer, UserSerializer, RegisterSerializer,
     CategorySerializer, ProductSerializer, OrderSerializer,
     OrderStatusUpdateSerializer, NotificationSerializer,
+    ContactMessageListSerializer, ContactMessageDetailSerializer,
+    MessageReplySerializer, MessageReplyCreateSerializer,
 )
 from .permissions import IsStaffRole, IsAdminRole
 
@@ -265,3 +268,67 @@ class UserManagementViewSet(viewsets.ModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [IsAdminRole]
     http_method_names = ['get', 'patch', 'head', 'options']
+
+
+# ── Messages (in-app chat) ──────────────────────────────────────────
+# Same ContactMessage/MessageReply data the website's "My Messages" pages
+# use — the app and the site read/write the exact same threads, so a reply
+# sent on one shows up on the other.
+
+class ContactMessageViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    GET /api/messages/          -> list the current user's threads
+    GET /api/messages/{id}/     -> one thread with its full reply history
+    POST /api/messages/{id}/reply/  -> send a reply on that thread
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_queryset(self):
+        user = self.request.user
+        qs = ContactMessage.objects.all() if user.is_staff_user() else ContactMessage.objects.filter(customer=user)
+        return qs.prefetch_related('replies').order_by('-created_at')
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return ContactMessageDetailSerializer
+        return ContactMessageListSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        thread = self.get_object()
+        # Mark the other side's replies as read now that this user is viewing.
+        if request.user.is_staff_user():
+            thread.replies.filter(is_staff_reply=False, is_read_by_staff=False).update(is_read_by_staff=True)
+        else:
+            thread.replies.filter(is_staff_reply=True, is_read_by_customer=False).update(is_read_by_customer=True)
+        return Response(ContactMessageDetailSerializer(thread).data)
+
+    @action(detail=True, methods=['post'])
+    def reply(self, request, pk=None):
+        thread = self.get_object()
+        is_staff = request.user.is_staff_user()
+
+        if not is_staff:
+            cooldown = _customer_reply_cooldown_remaining(thread, request.user)
+            if cooldown > 0:
+                return Response(
+                    {'detail': f'Please wait {cooldown}s before sending another message.'},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS,
+                )
+
+        serializer = MessageReplyCreateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        new_reply = MessageReply.objects.create(
+            thread=thread,
+            staff=request.user if is_staff else None,
+            is_staff_reply=is_staff,
+            body=serializer.validated_data['body'],
+            is_read_by_customer=not is_staff,
+            is_read_by_staff=is_staff,
+        )
+
+        if not is_staff and thread.status in (ContactMessage.STATUS_RESOLVED, ContactMessage.STATUS_CLOSED):
+            thread.status = ContactMessage.STATUS_UNDER_REVIEW
+            thread.save(update_fields=['status'])
+
+        return Response(MessageReplySerializer(new_reply).data, status=status.HTTP_201_CREATED)

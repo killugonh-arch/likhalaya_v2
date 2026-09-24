@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from accounts.models import CustomUser
-from store.models import Category, Product, ProductImage
+from store.models import Category, Product, ProductImage, ContactMessage, MessageReply
 from orders.models import Order, OrderItem, Notification
 
 
@@ -162,3 +162,73 @@ class NotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = ['id', 'order', 'message', 'is_read', 'created_at']
         read_only_fields = ['id', 'order', 'message', 'created_at']
+
+
+# ── Messages (in-app chat: same ContactMessage/MessageReply threads used
+#    by the website's "My Messages" pages) ─────────────────────────────
+
+class MessageReplySerializer(serializers.ModelSerializer):
+    sender_label = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MessageReply
+        fields = [
+            'id', 'thread', 'is_staff_reply', 'sender_label', 'body',
+            'is_read_by_customer', 'is_read_by_staff', 'created_at',
+        ]
+        read_only_fields = [
+            'id', 'thread', 'is_staff_reply', 'sender_label',
+            'is_read_by_customer', 'is_read_by_staff', 'created_at',
+        ]
+
+    def get_sender_label(self, obj):
+        return 'Likhalaya Team' if obj.is_staff_reply else 'You'
+
+
+class MessageReplyCreateSerializer(serializers.ModelSerializer):
+    """Used only for POSTing a new reply onto an existing thread."""
+    class Meta:
+        model = MessageReply
+        fields = ['body']
+
+    def validate_body(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError('Message cannot be empty.')
+        return value
+
+
+class ContactMessageListSerializer(serializers.ModelSerializer):
+    """Lightweight — for the inbox list (no full reply history)."""
+    has_unread = serializers.SerializerMethodField()
+    last_reply_at = serializers.SerializerMethodField()
+
+    class Meta:
+        model = ContactMessage
+        fields = [
+            'id', 'inquiry_type', 'subject', 'message', 'status',
+            'has_unread', 'last_reply_at', 'created_at',
+        ]
+
+    def get_has_unread(self, obj):
+        request = self.context.get('request')
+        if request and request.user.is_staff_user():
+            return obj.has_unread_for_staff
+        return obj.has_unread_for_customer
+
+    def get_last_reply_at(self, obj):
+        last = obj.replies.order_by('-created_at').first()
+        return last.created_at if last else obj.created_at
+
+
+class ContactMessageDetailSerializer(serializers.ModelSerializer):
+    """Full thread with its replies, for the conversation screen."""
+    replies = MessageReplySerializer(many=True, read_only=True)
+
+    class Meta:
+        model = ContactMessage
+        fields = [
+            'id', 'inquiry_type', 'subject', 'message', 'status',
+            'replies', 'created_at',
+        ]
+        read_only_fields = fields
