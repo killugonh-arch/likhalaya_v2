@@ -136,7 +136,7 @@ body.dark-mode .msg-search-wrap input, body.dark-mode .msg-select-wrap select { 
 
 <div class="dash-panel">
   <div class="msg-list-header">
-    <span class="count ms-auto">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} messages</span>
+    <span class="count ms-auto">{% if chat_rows %}{{ chat_rows|length }} chat{{ chat_rows|length|pluralize }}{% if page_obj.paginator.count %} · {% endif %}{% endif %}{% if page_obj.paginator.count or not chat_rows %}Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} messages{% endif %}</span>
   </div>
 
   {% for c in chat_rows %}
@@ -147,7 +147,7 @@ body.dark-mode .msg-search-wrap input, body.dark-mode .msg-select-wrap select { 
         <div>
           <div class="msg-name-line">
             <span class="msg-name">{{ c.display_name }}</span>
-            <span class="msg-badge" style="background:var(--brand-green-light);color:var(--brand-green);">App Chat</span>
+            <span class="msg-badge" style="background:var(--brand-green-light);color:var(--brand-green);">Chat</span>
           </div>
           <div class="msg-email">{{ c.customer.email }}</div>
           <div class="msg-subject">Chat from the mobile app</div>
@@ -209,9 +209,11 @@ body.dark-mode .msg-search-wrap input, body.dark-mode .msg-select-wrap select { 
     </div>
   </div>
   {% empty %}
+  {% if not chat_rows %}
   <div class="text-center py-5 text-muted">
     <i class="fas fa-envelope-open fa-2x mb-3 d-block opacity-25"></i>No messages found.
   </div>
+  {% endif %}
   {% endfor %}
 
   {% if page_obj.has_other_pages %}

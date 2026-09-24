@@ -3,6 +3,7 @@
 {% block title %}Order Confirmed – Likhalaya{% endblock %}
 
 {% block extra_css %}
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700;9..144,800&display=swap" rel="stylesheet">
 <style>
 @media (min-width: 576px) { .btn-sm-normal { font-size:1rem; padding-top:.375rem; padding-bottom:.375rem; } }
 @media (max-width: 575.98px) { .btn-sm-normal { font-size:1rem; } }
@@ -57,7 +58,7 @@
             <div class="d-flex align-items-center gap-3 text-center text-lg-start flex-column flex-lg-row">
               <div style="width:72px;height:72px;flex-shrink:0;border-radius:50%;background:#eafaf1;display:flex;align-items:center;justify-content:center;font-size:32px;">✅</div>
               <div>
-                <h3 class="fw-bold mb-1 fs-4 fs-sm-3" style="font-family:'Playfair Display',serif;color:var(--teal);">Order Confirmed!</h3>
+                <h3 class="fw-bold mb-1 fs-4 fs-sm-3" style="font-family:'Fraunces',serif;font-weight:700;color:var(--teal);">Order Confirmed!</h3>
                 <p class="text-muted mb-0 small">Thank you for supporting PDL artisans. Your order has been placed successfully.</p>
               </div>
             </div>
@@ -124,6 +125,11 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <div class="text-center mb-4">
+        <div class="fw-bold mb-1">What&rsquo;s Next?</div>
+        <p class="text-muted mb-0">We&rsquo;ll prepare your order and update you when it&rsquo;s ready for delivery.</p>
       </div>
 
       <div class="d-grid d-sm-flex gap-2 gap-sm-3 justify-content-sm-center">
