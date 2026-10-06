@@ -153,6 +153,35 @@
   .auth-split-card { height: auto; }
   .auth-feature-list { display: none; }
 }
+
+/* ============ Phone: smaller text & tighter spacing ============ */
+@media (max-width: 767px) {
+  .auth-mobile-brand { margin-bottom: 14px; gap: 12px; }
+  .auth-mobile-brand .logo-chip { width: 40px; height: 40px; }
+  .auth-mobile-brand .logo-divider { height: 26px; }
+  .auth-form-panel { padding: 22px clamp(16px, 5vw, 26px) 28px; }
+  .auth-form-heading { font-size: 22px; margin-bottom: 4px; }
+  .auth-form-sub { font-size: 13px; margin-bottom: 18px; }
+  .auth-input-label { font-size: 12.5px; margin-bottom: 5px; }
+  .auth-input-group { margin-bottom: 12px; }
+  .auth-input-wrap input, .auth-input-wrap .form-control { height: 46px; font-size: 14.5px; padding-left: 40px; }
+  .auth-input-wrap .auth-input-icon { left: 14px; font-size: 13px; }
+  .auth-input-toggle { font-size: 13px; right: 14px; }
+  .auth-field-error { font-size: 12px; }
+  .auth-field-hint { font-size: 11px; }
+  .btn-auth { height: 48px; font-size: 14.5px; }
+  .auth-divider { margin: 14px 0; font-size: 11.5px; }
+  .auth-footer-links { margin-top: 10px; }
+  .auth-footer-links .auth-muted, .auth-footer-links .auth-link, .auth-back-link { font-size: 13px; }
+  .auth-back-link { margin-top: 10px; }
+  .auth-check-row { margin: 10px 0 16px; }
+  .auth-check-row label { font-size: 13px; }
+  .auth-check-row input[type="checkbox"] { width: 18px; height: 18px; }
+  .row.g-3 { --bs-gutter-y: .6rem; }
+  .auth-input-group.mt-3 { margin-top: 12px !important; }
+  #loginForm label[for="rememberMe"], #loginForm .d-flex > a { font-size: 13px !important; }
+  #rememberMe { width: 18px !important; height: 18px !important; }
+}
 </style>
 {% endblock %}
 
