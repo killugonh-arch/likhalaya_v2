@@ -370,6 +370,82 @@
   .dash-greeting-title { font-size: 18px; }
 }
 
+.ds-datetime-badge {
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+.ds-datetime-badge i { color: #10b981; }
+
+/* Chart panels: fixed height on desktop, shorter on phones */
+.dash-chart-body { height: 320px; position: relative; }
+.dash-panel, .ds-kpi-card { min-width: 0; }
+.ds-kpi-card .d-flex > div:first-child { min-width: 0; }
+
+@media (max-width: 767.98px) {
+  .dash-chart-body { height: 250px; }
+}
+@media (max-width: 575.98px) {
+  .ds-kpi-card { padding: 14px; }
+  .ds-kpi-card .kpi-label { font-size: 10px; letter-spacing: .03em; }
+  .ds-kpi-card .kpi-value { font-size: 22px !important; }
+  .dash-kpi-delta { font-size: 11px; }
+  .dash-kpi-icon { width: 32px; height: 32px; font-size: 13px; }
+  .dash-secondary-strip { gap: var(--space-2) var(--space-3); font-size: 12px; }
+  .ds-datetime-badge { white-space: normal; font-size: 12px; padding: 6px 10px; }
+  .dash-panel-header { padding: var(--space-2) var(--space-3); }
+  .dash-list-row { padding: var(--space-2) var(--space-3); }
+}
+
+.ds-row-clickable { cursor: pointer; }
+.ds-row-clickable:hover { background-color: var(--surface-subtle); }
+
+/* ---- UX pass: clickable KPI cards, consistent status colors, dark-mode fixes ---- */
+.ds-kpi-link { display: block; height: 100%; color: inherit; text-decoration: none; border-radius: var(--radius-md); }
+.ds-kpi-link:hover { color: inherit; text-decoration: none; }
+.ds-kpi-link:hover .ds-kpi-card { box-shadow: var(--shadow-md); border-color: var(--brand-green); }
+.ds-kpi-link:focus-visible { outline: 2px solid var(--brand-green); outline-offset: 2px; }
+.ds-kpi-card { height: 100%; }
+.ds-kpi-card .kpi-value { font-size: clamp(20px, 1.4vw + 10px, 28px); overflow-wrap: anywhere; }
+.dash-kpi-delta .trend-up { color: var(--brand-green); }
+.dash-kpi-delta .trend-down { color: var(--danger); }
+
+.dash-panel-link { font-size: 12.5px; font-weight: 600; color: var(--brand-green); text-decoration: none; white-space: nowrap; }
+.dash-panel-link:hover { text-decoration: underline; }
+
+a.dash-list-row { color: inherit; text-decoration: none; transition: background var(--transition); }
+a.dash-list-row:hover { background: var(--surface-subtle); color: inherit; }
+a.dash-list-row:focus-visible { outline: 2px solid var(--brand-green); outline-offset: -2px; }
+.order-link { color: var(--brand-green); font-weight: 600; text-decoration: none; }
+.order-link:hover { text-decoration: underline; }
+
+/* One distinct badge color per order status (matches the donut chart) */
+.ds-badge-info   { background: #E8F1FB; color: #2471A3; }
+.ds-badge-teal   { background: #E3F6F2; color: #138D75; }
+.ds-badge-purple { background: #F1E9FB; color: #7D3C98; }
+
+.ds-datetime-badge { max-width: 100%; }
+@media (max-width: 575.98px) {
+  .ds-datetime-badge { width: 100%; justify-content: center; }
+  .dash-greeting-title { font-size: 17px; }
+}
+
+/* Dark mode: the light chips / badges above must not stay white */
+body.dark-mode .ds-datetime-badge { background: var(--dm-surface); border-color: var(--dm-border); color: var(--dm-text); }
+body.dark-mode .dash-kpi-icon.icon-orders { background: rgba(79,169,232,.16); color: #4fa9e8; }
+body.dark-mode .ds-badge-info   { background: rgba(79,169,232,.16); color: #4fa9e8; }
+body.dark-mode .ds-badge-teal   { background: rgba(26,188,156,.16); color: #4fd1c5; }
+body.dark-mode .ds-badge-purple { background: rgba(155,89,182,.2);  color: #c39bd3; }
+body.dark-mode .ds-badge-neutral { background: var(--dm-surface-3); color: var(--dm-text-dim); }
+body.dark-mode .ds-kpi-link:hover .ds-kpi-card { border-color: var(--dm-teal); }
+
 </style>
 {% endblock %}
 
@@ -388,9 +464,10 @@
     <p class="dash-greeting-sub mb-0">Here's what's happening with your store today.</p>
   </div>
   <div class="d-flex gap-2 flex-wrap">
-    <a href="{% url 'dashboard:order_export_csv' %}" class="ds-btn ds-btn-secondary ds-btn-sm">
-      <i class="fas fa-download me-1"></i>Export Orders
-    </a>
+    <div class="ds-datetime-badge" id="dashDateTime">
+      <i class="fas fa-calendar-day me-1"></i>
+      <span id="dashDateTimeText">{% now "l, F j, Y" %}</span>
+    </div>
   </div>
 </div>
 
@@ -398,56 +475,71 @@
      via icon color + delta text, never background fill, per approved KPI spec) -->
 <div class="row g-3 mb-3">
   <div class="col-6 col-lg-3">
+    <a class="ds-kpi-link" href="{% url 'dashboard:reports' %}" aria-label="Total revenue — open Reports">
     <div class="ds-kpi-card">
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <div class="kpi-label">Total Revenue</div>
-          <div class="kpi-value" style="font-size:22px;">₱{{ stats.total_revenue|floatformat:0|intcomma }}</div>
-          <div class="dash-kpi-delta ok">₱{{ stats.monthly_revenue|floatformat:0|intcomma }} this month</div>
+          <div class="kpi-value">₱{{ stats.total_revenue|floatformat:0|intcomma }}</div>
+          <div class="dash-kpi-delta ok">
+            ₱{{ stats.monthly_revenue|floatformat:0|intcomma }} this month
+            {% if stats.revenue_change_pct is not None %}
+            <span class="{% if stats.revenue_change_pct >= 0 %}trend-up{% else %}trend-down{% endif %}">
+              {% if stats.revenue_change_pct >= 0 %}▲{% else %}▼{% endif %} {{ stats.revenue_change_pct|floatformat:"-1" }}%
+            </span> vs last month
+            {% endif %}
+          </div>
         </div>
         <div class="dash-kpi-icon icon-revenue"><i class="fas fa-peso-sign"></i></div>
       </div>
     </div>
+    </a>
   </div>
   <div class="col-6 col-lg-3">
+    <a class="ds-kpi-link" href="{% url 'dashboard:order_list' %}" aria-label="Total orders — open Orders">
     <div class="ds-kpi-card">
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <div class="kpi-label">Total Orders</div>
-          <div class="kpi-value counter" data-target="{{ stats.total_orders }}">0</div>
-          <div class="dash-kpi-delta ok">+{{ stats.orders_today }} today</div>
+          <div class="kpi-value">{{ stats.total_orders|intcomma }}</div>
+          <div class="dash-kpi-delta ok">{{ stats.orders_today }} new today</div>
         </div>
         <div class="dash-kpi-icon icon-orders"><i class="fas fa-shopping-bag"></i></div>
       </div>
     </div>
+    </a>
   </div>
   <div class="col-6 col-lg-3">
+    <a class="ds-kpi-link" href="{% url 'dashboard:order_list' %}?status=pending" aria-label="Pending orders — open pending Orders">
     <div class="ds-kpi-card">
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <div class="kpi-label">Pending Orders</div>
-          <div class="kpi-value counter" data-target="{{ stats.pending_orders }}">0</div>
+          <div class="kpi-value">{{ stats.pending_orders|intcomma }}</div>
           <div class="dash-kpi-delta {% if stats.pending_orders %}attention{% else %}ok{% endif %}">
-            {% if stats.pending_orders %}Needs action{% else %}All caught up{% endif %}
+            {% if stats.pending_orders %}Needs action →{% else %}All caught up{% endif %}
           </div>
         </div>
         <div class="dash-kpi-icon icon-pending"><i class="fas fa-clock"></i></div>
       </div>
     </div>
+    </a>
   </div>
   <div class="col-6 col-lg-3">
+    <a class="ds-kpi-link" href="{% url 'dashboard:product_list' %}?status=low_stock" aria-label="Low stock items — open Products">
     <div class="ds-kpi-card">
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <div class="kpi-label">Low Stock Items</div>
-          <div class="kpi-value counter" data-target="{{ stats.low_stock }}">0</div>
+          <div class="kpi-value">{{ stats.low_stock|intcomma }}</div>
           <div class="dash-kpi-delta {% if stats.low_stock %}attention{% else %}ok{% endif %}">
-            {% if stats.low_stock %}Out of {{ stats.total_products }} products{% else %}Stock is healthy{% endif %}
+            {% if stats.low_stock %}{% if stats.out_of_stock %}{{ stats.out_of_stock }} out of stock →{% else %}Running low →{% endif %}{% else %}Stock is healthy{% endif %}
           </div>
         </div>
         <div class="dash-kpi-icon icon-stock"><i class="fas fa-box-open"></i></div>
       </div>
     </div>
+    </a>
   </div>
 </div>
 
@@ -465,8 +557,16 @@
         <h6>Orders – Last 7 Days</h6>
         <span class="ds-badge ds-badge-neutral">Daily Trend</span>
       </div>
-      <div class="dash-panel-body">
-        <canvas id="chartDailyOrders" height="220"></canvas>
+      <div class="d-flex flex-wrap gap-4 px-4 pt-3" id="dailySummary" style="font-size:13px;">
+        <div><span class="text-muted">This week</span><div class="fw-bold" style="font-size:20px;" id="dsWeekTotal">0</div></div>
+        <div><span class="text-muted">Today</span><div class="fw-bold" style="font-size:20px;" id="dsToday">0</div></div>
+        <div><span class="text-muted">Busiest day</span><div class="fw-bold" style="font-size:20px;" id="dsBusiest">&ndash;</div></div>
+      </div>
+      <div class="dash-panel-body dash-chart-body" style="position:relative;">
+        <canvas id="chartDailyOrders"></canvas>
+        <div id="dailyEmptyMsg" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;pointer-events:none;text-align:center;font-weight:600;color:#888;">
+          No new orders in the last 7 days
+        </div>
       </div>
     </div>
   </div>
@@ -475,11 +575,11 @@
       <div class="dash-panel-header">
         <h6>Order Status</h6>
       </div>
-      <div class="dash-panel-body d-flex align-items-center justify-content-center">
+      <div class="dash-panel-body dash-chart-body d-flex align-items-center justify-content-center">
         {% if chart_status_data == "[]" %}
           <div class="dash-panel-empty"><i class="fas fa-inbox fa-lg mb-2 d-block"></i>No orders yet.</div>
         {% else %}
-          <canvas id="chartStatusPie" height="230"></canvas>
+          <canvas id="chartStatusPie"></canvas>
         {% endif %}
       </div>
     </div>
@@ -493,7 +593,7 @@
     <div class="dash-panel">
       <div class="dash-panel-header">
         <h6>Recent Orders</h6>
-        <a href="{% url 'dashboard:order_list' %}" class="ds-btn ds-btn-secondary ds-btn-sm">View All</a>
+        <a href="{% url 'dashboard:order_list' %}" class="dash-panel-link">View all <i class="fas fa-arrow-right fa-xs"></i></a>
       </div>
       <div class="table-responsive">
         <table class="ds-table mb-0">
@@ -503,30 +603,28 @@
             <th>Amount</th>
             <th>Status</th>
             <th>Date</th>
-            <th></th>
           </tr></thead>
           <tbody>
             {% for order in recent_orders %}
-            <tr>
-              <td class="fw-semibold" style="color:var(--brand-green);">{{ order.order_number }}</td>
+            <tr class="ds-row-clickable" onclick="if(!event.target.closest('a')) window.location='{% url 'dashboard:order_detail' order.pk %}'">
+              <td><a class="order-link" href="{% url 'dashboard:order_detail' order.pk %}">{{ order.order_number }}</a></td>
               <td>{{ order.full_name }}</td>
               <td class="fw-semibold">₱{{ order.total|floatformat:0|intcomma }}</td>
               <td>
                 <span class="ds-badge
                   {% if order.status == 'pending' %}ds-badge-warning
-                  {% elif order.status == 'confirmed' %}ds-badge-success
-                  {% elif order.status == 'processing' %}ds-badge-neutral
-                  {% elif order.status == 'shipped' %}ds-badge-neutral
+                  {% elif order.status == 'processing' %}ds-badge-teal
+                  {% elif order.status == 'confirmed' %}ds-badge-info
+                  {% elif order.status == 'shipped' %}ds-badge-purple
                   {% elif order.status == 'delivered' %}ds-badge-success
                   {% else %}ds-badge-danger{% endif %}">
                   {{ order.get_status_display }}
                 </span>
               </td>
               <td class="text-muted">{{ order.created_at|date:"M d, Y" }}</td>
-              <td><a href="{% url 'dashboard:order_detail' order.pk %}" class="ds-btn ds-btn-ghost ds-btn-sm" style="padding:4px 10px;font-size:11px;">View</a></td>
             </tr>
             {% empty %}
-            <tr><td colspan="6" class="dash-panel-empty">No orders yet.</td></tr>
+            <tr><td colspan="5" class="dash-panel-empty">No orders yet.</td></tr>
             {% endfor %}
           </tbody>
         </table>
@@ -540,19 +638,19 @@
     <div class="dash-panel mb-4">
       <div class="dash-panel-header">
         <h6 style="color:var(--danger);"><i class="fas fa-exclamation-triangle me-1"></i>Low Stock</h6>
-        <a href="{% url 'dashboard:product_list' %}?status=low_stock" class="ds-btn ds-btn-secondary ds-btn-sm">Manage</a>
+        {% if stats.low_stock > low_stock_products|length %}<a href="{% url 'dashboard:product_list' %}?status=low_stock" class="dash-panel-link">View all {{ stats.low_stock }}</a>{% endif %}
       </div>
       <div>
         {% for p in low_stock_products %}
-        <div class="dash-list-row">
+        <a class="dash-list-row" href="{% url 'dashboard:product_detail' p.pk %}">
           <div>
             <div class="item-title">{{ p.name|truncatechars:22 }}</div>
             <div class="item-meta">{{ p.category.name|default:"—" }}</div>
           </div>
           <span class="ds-badge {% if p.stock == 0 %}ds-badge-danger{% else %}ds-badge-warning{% endif %}">
-            {{ p.stock }} left
+            {% if p.stock == 0 %}Out of stock{% else %}{{ p.stock }} left{% endif %}
           </span>
-        </div>
+        </a>
         {% empty %}
         <div class="dash-panel-empty"><i class="fas fa-check-circle"></i>All stocked!</div>
         {% endfor %}
@@ -563,7 +661,6 @@
     <div class="dash-panel">
       <div class="dash-panel-header">
         <h6>New Customers</h6>
-        <a href="{% url 'dashboard:user_list' %}" class="ds-btn ds-btn-secondary ds-btn-sm">All</a>
       </div>
       <div>
         {% for u in recent_customers %}
@@ -598,47 +695,143 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 const chartData = JSON.parse(document.getElementById('chart-data').textContent);
-
-if (document.body.classList.contains('dark-mode')) {
-  Chart.defaults.color = '#aab2c2';
-  Chart.defaults.borderColor = '#2a3448';
-}
-
-document.querySelectorAll('.counter').forEach(el => {
-  const target = +el.dataset.target;
-  let cur = 0;
-  const step = Math.max(1, Math.ceil(target / 40));
-  const timer = setInterval(() => {
-    cur = Math.min(cur + step, target);
-    el.textContent = cur.toLocaleString();
-    if (cur >= target) clearInterval(timer);
-  }, 30);
-});
-
 const BRAND_GREEN = '#0F6B4F';
 
+// Chart.js comes from a CDN — if it can't load, say so instead of leaving blank boxes
+if (typeof Chart === 'undefined') {
+  document.querySelectorAll('.dash-chart-body').forEach(el => {
+    el.innerHTML = '<div class="dash-panel-empty w-100"><i class="fas fa-plug"></i>Chart could not load. Check your connection and refresh.</div>';
+  });
+} else {
+
+// Keep chart text readable when dark mode is on, including when it is toggled live
+function applyChartTheme() {
+  const dark = document.body.classList.contains('dark-mode');
+  Chart.defaults.color = dark ? '#aab2c2' : '#666';
+  Chart.defaults.borderColor = dark ? '#2a3448' : 'rgba(0,0,0,.1)';
+  Object.values(Chart.instances).forEach(c => c.update('none'));
+}
+applyChartTheme();
+document.getElementById('darkModeToggle').addEventListener('click', () => setTimeout(applyChartTheme, 0));
+
+// ---- Orders: last 7 days (bar chart: one bar = one day, number on top) ----
+const dailyCounts = chartData.daily_orders;
+const dailyLabels = chartData.daily_labels.map((l, i, arr) =>
+  i === arr.length - 1 ? 'Today' : (i === arr.length - 2 ? 'Yesterday' : l)
+);
+const weekTotal = dailyCounts.reduce((a, b) => a + b, 0);
+const maxCount = Math.max(...dailyCounts);
+
+document.getElementById('dsWeekTotal').textContent = weekTotal;
+document.getElementById('dsToday').textContent = dailyCounts[dailyCounts.length - 1];
+document.getElementById('dsBusiest').textContent = maxCount > 0
+  ? chartData.daily_labels[dailyCounts.indexOf(maxCount)] + ' (' + maxCount + ')'
+  : '\u2013';
+if (weekTotal === 0) document.getElementById('dailyEmptyMsg').style.display = 'flex';
+
+// writes the number above each bar
+const barNumbers = {
+  id: 'barNumbers',
+  afterDatasetsDraw(chart) {
+    const { ctx } = chart;
+    const dark = document.body.classList.contains('dark-mode');
+    ctx.save();
+    ctx.font = '700 13px sans-serif';
+    ctx.fillStyle = dark ? '#e6e9f0' : '#1f2933';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'bottom';
+    chart.getDatasetMeta(0).data.forEach((bar, i) => {
+      ctx.fillText(chart.data.datasets[0].data[i], bar.x, bar.y - 4);
+    });
+    ctx.restore();
+  }
+};
+
 new Chart(document.getElementById('chartDailyOrders'), {
-  type: 'line',
+  type: 'bar',
   data: {
-    labels: chartData.daily_labels,
+    labels: dailyLabels,
     datasets: [{
       label: 'Orders',
-      data: chartData.daily_orders,
-      borderColor: BRAND_GREEN,
-      backgroundColor: 'rgba(15,107,79,.08)',
-      tension: 0.4, fill: true,
-      pointBackgroundColor: BRAND_GREEN, pointRadius: 4,
+      data: dailyCounts,
+      backgroundColor: dailyCounts.map((_, i) => i === dailyCounts.length - 1 ? BRAND_GREEN : 'rgba(15,107,79,.55)'),
+      borderRadius: 6,
+      maxBarThickness: 46,
+      minBarLength: 2,
     }]
   },
   options: {
     responsive: true, maintainAspectRatio: false,
-    plugins: { legend: { display: false } },
-    scales: { y: { beginAtZero: true, ticks: { stepSize: 1, precision: 0 } } }
-  }
+    layout: { padding: { top: 20 } },
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        callbacks: {
+          title: (items) => chartData.daily_labels[items[0].dataIndex],
+          label: (ctx) => ' ' + ctx.parsed.y + (ctx.parsed.y === 1 ? ' order' : ' orders')
+        }
+      }
+    },
+    scales: {
+      x: { grid: { display: false } },
+      y: {
+        beginAtZero: true,
+        suggestedMax: 5,
+        ticks: { stepSize: 1, precision: 0 },
+        title: { display: true, text: 'Number of orders' }
+      }
+    }
+  },
+  plugins: [barNumbers]
 });
 
 const statusEl = document.getElementById('chartStatusPie');
 if (statusEl && chartData.status_data.length) {
+  const statusTotal = chartData.status_data.reduce((a, b) => a + b, 0);
+
+  // Draws each slice's count on the ring (skips slices too thin to fit text;
+  // those numbers are still visible in the legend below).
+  const sliceNumbers = {
+    id: 'sliceNumbers',
+    afterDatasetsDraw(chart) {
+      const { ctx } = chart;
+      const meta = chart.getDatasetMeta(0);
+      const values = chart.data.datasets[0].data;
+      ctx.save();
+      ctx.font = '700 13px sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      meta.data.forEach((arc, i) => {
+        if (!values[i] || (values[i] / statusTotal) < 0.06) return;
+        const pos = arc.tooltipPosition();
+        ctx.fillText(values[i], pos.x, pos.y);
+      });
+      ctx.restore();
+    }
+  };
+
+  // Total orders in the middle of the doughnut
+  const centerTotal = {
+    id: 'centerTotal',
+    afterDraw(chart) {
+      const { ctx, chartArea } = chart;
+      const cx = (chartArea.left + chartArea.right) / 2;
+      const cy = (chartArea.top + chartArea.bottom) / 2;
+      const dark = document.body.classList.contains('dark-mode');
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = dark ? '#e6e9f0' : '#1f2933';
+      ctx.font = '800 28px sans-serif';
+      ctx.fillText(statusTotal, cx, cy - 8);
+      ctx.fillStyle = dark ? '#aab2c2' : '#666';
+      ctx.font = '600 11px sans-serif';
+      ctx.fillText('TOTAL ORDERS', cx, cy + 14);
+      ctx.restore();
+    }
+  };
+
   new Chart(statusEl, {
     type: 'doughnut',
     data: {
@@ -650,11 +843,55 @@ if (statusEl && chartData.status_data.length) {
       }]
     },
     options: {
-      responsive: true,
-      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12 } } },
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: {
+          position: 'bottom',
+          labels: {
+            font: { size: 12, weight: 'bold' }, boxWidth: 12,
+            // legend shows the count too, e.g. "Pending (12)"
+            generateLabels(chart) {
+              const ds = chart.data.datasets[0];
+              return chart.data.labels.map((label, i) => ({
+                text: `${label} (${ds.data[i]})`,
+                fillStyle: ds.backgroundColor[i],
+                strokeStyle: ds.backgroundColor[i],
+                fontColor: Chart.defaults.color,
+                hidden: !chart.getDataVisibility(i),
+                index: i
+              }));
+            }
+          }
+        },
+        tooltip: {
+          callbacks: {
+            label(ctx) {
+              const v = ctx.parsed;
+              const pct = statusTotal ? Math.round((v / statusTotal) * 100) : 0;
+              return ` ${ctx.label}: ${v} order${v === 1 ? '' : 's'} (${pct}%)`;
+            }
+          }
+        }
+      },
       cutout: '65%',
-    }
+    },
+    plugins: [sliceNumbers, centerTotal]
   });
 }
+
+}  // end Chart.js available
+
+// Live-updating date/time badge — minute precision (a ticking seconds counter is just visual noise)
+function updateDashDateTime() {
+  const el = document.getElementById('dashDateTimeText');
+  if (!el) return;
+  const now = new Date();
+  const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const dateStr = now.toLocaleDateString(undefined, options);
+  const timeStr = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  el.textContent = `${dateStr} • ${timeStr}`;
+}
+updateDashDateTime();
+setInterval(updateDashDateTime, 30000);
 </script>
 {% endblock %}

@@ -1,0 +1,274 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block page_title %}Add Staff Account{% endblock %}
+{% block sb_users %}active{% endblock %}
+{% block title %}Add Staff Account – Dashboard{% endblock %}
+
+{% block dash_content %}
+<style>
+.sform-shell { max-width: 1200px; margin: 0 auto; }
+
+/* ── Page header (consistent with Products/Categories/Videos edit pages) ── */
+.pform-header {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
+  margin-bottom: 20px; padding-bottom: 14px; border-bottom: 1px solid #e8e3db;
+}
+.pform-header h4 {
+  color: #1a1a1a; font-family: 'Playfair Display', serif; font-weight: 700;
+  font-size: 24px; margin: 0 0 3px; line-height: 1.2;
+}
+.pform-header p { color: #8a8578; font-size: 13px; margin: 0; }
+.pform-header-actions { display: flex; gap: 10px; flex-shrink: 0; }
+.pform-header-actions .btn { border-radius: 10px; font-weight: 600; font-size: 13.5px; padding: 9px 20px; }
+.pform-header-actions .btn-gold {
+  background: #219653; border-color: #219653; color: #fff; box-shadow: 0 4px 14px rgba(33,150,83,.3);
+}
+.pform-header-actions .btn-gold:hover { background: #1f8a4c; border-color: #1f8a4c; color: #fff; }
+
+.sform-card {
+  background: #fff; border-radius: 16px; border: 1px solid #e9e9ee;
+  box-shadow: 0 2px 14px rgba(20,20,40,.04); overflow: hidden;
+}
+
+.sform-subheader {
+  display: flex; align-items: center; gap: 10px; padding: 16px 26px;
+  border-bottom: 1px solid #f0f0f4; background: #fafafd;
+}
+.sform-subheader i { color: #40405c; font-size: 14px; }
+.sform-subheader h6 { margin: 0; font-size: 13.5px; font-weight: 700; color: #26263a; }
+.sform-subheader .subtitle { font-size: 11.5px; color: #9a9ab0; margin-top: 1px; }
+
+.sform-body { padding: 22px 26px 8px; }
+
+.sform-body label.form-label {
+  font-size: 11px; font-weight: 700; color: #6b6b80; letter-spacing: .4px;
+  text-transform: uppercase; margin-bottom: 7px; display: flex; align-items: center; gap: 4px;
+}
+.sform-body label.form-label .req { color: #d64545; }
+
+.icon-input { position: relative; }
+.icon-input i.field-icon {
+  position: absolute; left: 13px; top: 50%; transform: translateY(-50%);
+  color: #a9a9c0; font-size: 13px; pointer-events: none;
+}
+.icon-input .form-control {
+  padding-left: 38px;
+}
+.icon-input:has(.toggle-eye) .form-control {
+  padding-right: 38px;
+}
+.icon-input .toggle-eye {
+  position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
+  color: #a9a9c0; font-size: 13px; cursor: pointer; background: none; border: none; padding: 0;
+}
+.icon-input .toggle-eye:hover { color: #6b6b80; }
+
+.sform-body .form-control {
+  border-radius: 10px; border: 1.5px solid #e4e4ec; font-size: 13.5px;
+  padding: 10px 14px 10px 38px; height: 42px; transition: border-color .15s, box-shadow .15s; width: 100%;
+  background: #fff;
+}
+.sform-body .form-control::placeholder { color: #b3b3c6; }
+.sform-body .form-control:focus {
+  border-color: #1f8a4c; box-shadow: 0 0 0 3px rgba(31,138,76,.12); outline: none;
+}
+.invalid-feedback.d-block { font-size: 11.5px; margin-top: 4px; }
+
+.sform-note {
+  display: flex; align-items: flex-start; gap: 10px; background: #eaf1fc;
+  border: 1px solid #d7e6fb; border-radius: 10px; padding: 12px 14px; font-size: 12px;
+  color: #3c5f8a; margin: 18px 0;
+}
+.sform-note i { color: #3b6fc9; margin-top: 1px; }
+
+.sform-actions {
+  padding: 16px 26px 24px; display: flex; justify-content: flex-end; gap: 10px;
+}
+.sform-actions .btn { border-radius: 10px; font-weight: 600; font-size: 13.5px; padding: 10px 22px; }
+.sform-actions .btn-gold {
+  background: #219653; border-color: #219653; color: #fff; box-shadow: 0 4px 14px rgba(33,150,83,.3);
+}
+.sform-actions .btn-gold:hover { background: #1f8a4c; border-color: #1f8a4c; color: #fff; }
+.sform-actions .btn-outline-secondary { border-color: #dcdce6; color: #5a5a70; }
+
+/* ── Right sidebar card ── */
+.sform-side {
+  background: #f0f9f3; border: 1px solid #d5ecdd; border-radius: 16px; padding: 22px 22px 20px;
+}
+.sform-side .side-head { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.sform-side .side-icon {
+  width: 38px; height: 38px; border-radius: 50%; background: #bfe3cd; color: #1f7a45;
+  display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+}
+.sform-side h6 { margin: 0; font-size: 14.5px; font-weight: 700; color: #2a2a2a; }
+.sform-side ul { list-style: none; margin: 0 0 18px; padding: 0; }
+.sform-side ul li {
+  display: flex; align-items: flex-start; gap: 9px; font-size: 12.5px; color: #4a4a4a;
+  margin-bottom: 11px; line-height: 1.4;
+}
+.sform-side ul li:last-child { margin-bottom: 0; }
+.sform-side ul li i { color: #2c9d5f; font-size: 12px; margin-top: 3px; flex-shrink: 0; }
+.sform-side hr { border-color: #d5ecdd; margin: 16px 0; }
+.sform-help { display: flex; align-items: flex-start; gap: 10px; }
+.sform-help i { color: #1f8a4c; font-size: 14px; margin-top: 2px; }
+.sform-help strong { font-size: 13px; color: #2a2a2a; display: block; margin-bottom: 3px; }
+.sform-help span { font-size: 12px; color: #7a7a7a; line-height: 1.4; }
+</style>
+
+<div class="dash-breadcrumb">
+  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+  <span class="sep">/</span><a href="{% url 'dashboard:user_list' %}">Users</a>
+  <span class="sep">/</span><span class="current">Add Staff</span>
+</div>
+
+<a href="{% url 'dashboard:user_list' %}" class="pd-back-link"><i class="fas fa-arrow-left"></i> Back to Users</a>
+
+<div class="pd-header-top">
+  <div class="pd-header-titles">
+    <h1>Add Staff Account</h1>
+    <p>Create a login for a staff member. They can sign in immediately with the password you set below.</p>
+  </div>
+  <div class="pd-header-actions">
+    <a href="{% url 'dashboard:user_list' %}" class="pd-btn pd-btn-outline">Cancel</a>
+    <button type="submit" form="staffForm" class="pd-btn pd-btn-primary"><i class="fas fa-check"></i> Create Staff Account</button>
+  </div>
+</div>
+
+<div class="sform-shell">
+  <form method="post" id="staffForm">
+    {% csrf_token %}
+    <div class="row g-4">
+      <div class="col-lg-8">
+        <div class="sform-card">
+          <div class="sform-subheader">
+            <i class="fas fa-id-badge"></i>
+            <div>
+              <h6>Staff Details</h6>
+              <div class="subtitle">Fill in the information for the new staff member.</div>
+            </div>
+          </div>
+
+          <div class="sform-body">
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <label class="form-label">First Name <span class="req">*</span></label>
+                <div class="icon-input">
+                  <i class="fas fa-user field-icon"></i>
+                  {{ form.first_name }}
+                </div>
+                {% if form.first_name.errors %}<div class="invalid-feedback d-block">{{ form.first_name.errors.0 }}</div>{% endif %}
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label">Last Name <span class="req">*</span></label>
+                <div class="icon-input">
+                  <i class="fas fa-user field-icon"></i>
+                  {{ form.last_name }}
+                </div>
+                {% if form.last_name.errors %}<div class="invalid-feedback d-block">{{ form.last_name.errors.0 }}</div>{% endif %}
+              </div>
+
+              <div class="col-sm-6">
+                <label class="form-label">Username <span class="req">*</span></label>
+                <div class="icon-input">
+                  <i class="fas fa-user field-icon"></i>
+                  {{ form.username }}
+                </div>
+                {% if form.username.errors %}<div class="invalid-feedback d-block">{{ form.username.errors.0 }}</div>{% endif %}
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label">Email <span class="req">*</span></label>
+                <div class="icon-input">
+                  <i class="fas fa-envelope field-icon"></i>
+                  {{ form.email }}
+                </div>
+                {% if form.email.errors %}<div class="invalid-feedback d-block">{{ form.email.errors.0 }}</div>{% endif %}
+              </div>
+
+              <div class="col-sm-6">
+                <label class="form-label">Phone</label>
+                <div class="icon-input">
+                  <i class="fas fa-phone field-icon"></i>
+                  {{ form.phone }}
+                </div>
+                {% if form.phone.errors %}<div class="invalid-feedback d-block">{{ form.phone.errors.0 }}</div>{% endif %}
+              </div>
+              <div class="col-sm-6"></div>
+
+              <div class="col-sm-6">
+                <label class="form-label">Password <span class="req">*</span></label>
+                <div class="icon-input">
+                  <i class="fas fa-lock field-icon"></i>
+                  {{ form.password1 }}
+                  <button type="button" class="toggle-eye" data-target="{{ form.password1.id_for_label }}"><i class="fas fa-eye"></i></button>
+                </div>
+                {% if form.password1.errors %}<div class="invalid-feedback d-block">{{ form.password1.errors.0 }}</div>{% endif %}
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label">Confirm Password <span class="req">*</span></label>
+                <div class="icon-input">
+                  <i class="fas fa-lock field-icon"></i>
+                  {{ form.password2 }}
+                  <button type="button" class="toggle-eye" data-target="{{ form.password2.id_for_label }}"><i class="fas fa-eye"></i></button>
+                </div>
+                {% if form.password2.errors %}<div class="invalid-feedback d-block">{{ form.password2.errors.0 }}</div>{% endif %}
+              </div>
+            </div>
+
+            <div class="sform-note">
+              <i class="fas fa-circle-info"></i>
+              <span>Staff accounts get dashboard access (Products, Orders, Messages, etc.), but not full Administrator permissions.</span>
+            </div>
+          </div>
+
+          <div class="sform-actions">
+            <a href="{% url 'dashboard:user_list' %}" class="btn btn-outline-secondary">Cancel</a>
+            <button type="submit" class="btn btn-gold"><i class="fas fa-user-plus me-1"></i>Create Staff Account</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="sform-side">
+          <div class="side-head">
+            <div class="side-icon"><i class="fas fa-shield-halved"></i></div>
+            <h6>Staff Account Access</h6>
+          </div>
+          <ul>
+            <li><i class="fas fa-check"></i><span>Access to dashboard and assigned features</span></li>
+            <li><i class="fas fa-check"></i><span>Can manage orders and products</span></li>
+            <li><i class="fas fa-check"></i><span>Can view reports (based on role)</span></li>
+            <li><i class="fas fa-check"></i><span>Account will be <strong>activated immediately</strong></span></li>
+            <li><i class="fas fa-check"></i><span>You can set the initial password</span></li>
+          </ul>
+          <hr>
+          <div class="sform-help">
+            <i class="fas fa-lightbulb"></i>
+            <div>
+              <strong>Need Help?</strong>
+              <span>Make sure to give the right permissions based on the staff's role and responsibilities.</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+</div>
+
+<script>
+document.querySelectorAll('.toggle-eye').forEach(function (btn) {
+  btn.addEventListener('click', function () {
+    var input = document.getElementById(btn.dataset.target);
+    if (!input) return;
+    var icon = btn.querySelector('i');
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.classList.remove('fa-eye');
+      icon.classList.add('fa-eye-slash');
+    } else {
+      input.type = 'password';
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+    }
+  });
+});
+</script>
+{% endblock %}

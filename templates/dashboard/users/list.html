@@ -8,9 +8,16 @@
   <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
   <span class="sep">/</span><span class="current">Users</span>
 </div>
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-  <h4 class="fw-bold mb-0" style="color:var(--teal);">User Management</h4>
-  <span class="text-muted small">{{ page_obj.paginator.count }} users total</span>
+<div class="pd-header-top">
+  <div class="pd-header-titles">
+    <h1>User Management</h1>
+    <p>Manage customer and staff accounts. {{ page_obj.paginator.count }} user{{ page_obj.paginator.count|pluralize }} total.</p>
+  </div>
+  <div class="pd-header-actions">
+    <a href="{% url 'dashboard:staff_create' %}" class="pd-btn pd-btn-primary">
+      <i class="fas fa-user-plus"></i> Add Staff
+    </a>
+  </div>
 </div>
 
 <div class="card border-0 shadow-sm mb-4">

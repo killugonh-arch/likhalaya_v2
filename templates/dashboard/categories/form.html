@@ -114,25 +114,28 @@ input.form-control { height: 50px; }
 {% endblock %}
 
 {% block dash_content %}
-<nav class="ds-breadcrumb" aria-label="Breadcrumb">
+<div class="dash-breadcrumb">
   <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
   <span class="sep">/</span><a href="{% url 'dashboard:category_list' %}">Categories</a>
-  <span class="sep">/</span><span class="current" aria-current="page">{{ title }}</span>
-</nav>
+  <span class="sep">/</span><span class="current">{{ title }}</span>
+</div>
 
-<div class="ds-page-header">
-  <div>
+<a href="{% url 'dashboard:category_list' %}" class="pd-back-link"><i class="fas fa-arrow-left"></i> Back to Categories</a>
+
+<div class="pd-header-top">
+  <div class="pd-header-titles">
     <h1>{{ title }}</h1>
     <p>{% if category %}Update this category's name and description.{% else %}Create a new category to organize your products.{% endif %}</p>
   </div>
-  <a href="{% url 'dashboard:category_list' %}" class="ds-btn ds-btn-outline-brand ds-btn-sm">
-    <i class="fas fa-arrow-left me-2"></i>Back to Categories
-  </a>
+  <div class="pd-header-actions">
+    <a href="{% url 'dashboard:category_list' %}" class="pd-btn pd-btn-outline">Cancel</a>
+    <button type="submit" form="categoryForm" class="pd-btn pd-btn-primary"><i class="fas fa-check"></i> {% if category %}Save Category{% else %}Create Category{% endif %}</button>
+  </div>
 </div>
 
 <div class="row justify-content-center">
   <div class="col-12 col-xxl-10">
-    <form method="post" enctype="multipart/form-data" novalidate>
+    <form method="post" enctype="multipart/form-data" novalidate id="categoryForm">
       {% csrf_token %}
       <div class="dash-panel">
         <div class="dash-panel-header">

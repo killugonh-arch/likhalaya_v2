@@ -75,6 +75,7 @@ class Product(models.Model):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name='products')
     name = models.CharField(max_length=200)
     slug = models.SlugField(unique=True, blank=True)
+    materials_used = models.TextField(blank=True)
     description = models.TextField(blank=True)
     price_min = models.DecimalField(max_digits=10, decimal_places=2)
     price_medium = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
@@ -179,8 +180,11 @@ class Product(models.Model):
         if self.image:
             data['general'].append(self.image.url)
         for extra in self.extra_images.all():
-            if extra.image:
-                data['general'].append(extra.image.url)
+            if not extra.image:
+                continue
+            # extra.size is '' for "All sizes", or 'S' / 'M' / 'L'
+            key = extra.size if extra.size in ('S', 'M', 'L') else 'general'
+            data[key].append(extra.image.url)
         return json.dumps(data)
 
     @property

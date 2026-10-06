@@ -214,7 +214,10 @@
   align-items: center;
   justify-content: center;
 }
-.spm-image-frame img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.spm-image-frame img {
+  width: 100%; height: 100%; object-fit: contain; display: block;
+  transition: opacity .25s ease;
+}
 
 /* Options column */
 .spm-options { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
@@ -775,40 +778,85 @@
     return state.legacyPrice || 0;
   }
 
+  // "All sizes" photos show for EVERY size; the picked size's own photos
+  // are added after them. (General first, so the cover photo leads.)
   function imagesForSize(code) {
     var general = state.imgBySize.general || [];
     var specific = (code === 'S' || code === 'M' || code === 'L') ? (state.imgBySize[code] || []) : [];
-    if (specific.length) return specific;
-    if (general.length) return general;
+    var all = general.concat(specific);
+    if (all.length) return all;
     return (state.imgBySize.S || []).concat(state.imgBySize.M || [], state.imgBySize.L || []);
   }
 
+  // ---- Auto-rotating slideshow for the main image (every 2s) ----
+  var SLIDE_MS = 2000;
+  var slideTimer = null;
+  var slideList = [];
+  var slideIdx = 0;
+
+  function stopSlideshow() {
+    if (slideTimer) { clearInterval(slideTimer); slideTimer = null; }
+  }
+
+  function showSlide(src, instant) {
+    if (instant) { imgMain.style.opacity = '1'; imgMain.src = src; return; }
+    imgMain.style.opacity = '0';
+    setTimeout(function() {
+      imgMain.src = src;
+      imgMain.style.opacity = '1';
+    }, 250);
+  }
+
   function updateMainImage() {
-    var src = '';
+    var list = [];
+
     if (state.design && state.design.image) {
-      src = state.design.image;
+      // a design is picked -> show that design's photo only
+      list = [state.design.image];
     } else {
-      var imgs = imagesForSize(state.size || 'M');
-      if (imgs.length) src = imgs[0];
-      // No product photo at all (photos live on the designs) — fall back
-      // to the first design photo for the selected size, then any size.
-      if (!src && state.hasVariants) {
-        var pool = [];
+      // photos uploaded for the selected size (falls back to "All sizes")
+      list = imagesForSize(state.size || 'M').slice();
+
+      // no product photos at all -> use the design photos instead
+      if (!list.length && state.hasVariants) {
         var cur = getSizeObj(state.size);
-        if (cur) pool = pool.concat(cur.designs || []);
+        var pool = cur ? (cur.designs || []).slice() : [];
         state.sizeList.forEach(function(sz) { pool = pool.concat(sz.designs || []); });
-        for (var i = 0; i < pool.length; i++) {
-          if (pool[i].image) { src = pool[i].image; break; }
-        }
+        pool.forEach(function(d) { if (d.image) list.push(d.image); });
       }
     }
-    if (src) {
-      imgMain.src = src;
-      imgWrap.style.display = '';
-    } else {
+
+    if (!list.length) {
+      stopSlideshow();
+      slideList = [];
       imgWrap.style.display = 'none';
+      return;
+    }
+
+    imgWrap.style.display = '';
+
+    // only restart if the set of photos actually changed, so render()
+    // being called often doesn't reset the timer
+    if (list.join('|') === slideList.join('|')) return;
+
+    stopSlideshow();
+    slideList = list;
+    slideIdx = 0;
+    showSlide(slideList[0], true);
+
+    if (slideList.length > 1) {
+      slideTimer = setInterval(function() {
+        slideIdx = (slideIdx + 1) % slideList.length;
+        showSlide(slideList[slideIdx], false);
+      }, SLIDE_MS);
     }
   }
+
+  // stop the timer when the modal closes
+  modalEl.addEventListener('hidden.bs.modal', function() {
+    stopSlideshow();
+    slideList = [];
+  });
 
   // -----------------------------------------------------------------
   // Renders every piece of UI from `state`. Called after ANY state

@@ -123,6 +123,56 @@ class RegisterForm(UserCreationForm):
             raise forms.ValidationError('An account with that email already exists.')
         return email
 
+class StaffCreateForm(UserCreationForm):
+    """Used by admins in the dashboard to create a Staff account directly
+    (no email OTP step — the admin is vouching for this account)."""
+    email = forms.EmailField(required=True)
+    first_name = forms.CharField(max_length=50, required=True)
+    last_name = forms.CharField(max_length=50, required=True)
+    phone = forms.CharField(max_length=20, required=False)
+
+    class Meta:
+        model = CustomUser
+        fields = ['username', 'first_name', 'last_name', 'email', 'phone', 'password1', 'password2']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for name, field in self.fields.items():
+            field.widget.attrs.update({'class': 'form-control'})
+        placeholders = {
+            'username': 'Enter a username',
+            'first_name': 'Enter first name',
+            'last_name': 'Enter last name',
+            'email': 'Enter email address',
+            'phone': 'Enter phone number (optional)',
+            'password1': 'Enter password',
+            'password2': 'Confirm password',
+        }
+        for fname, text in placeholders.items():
+            if fname in self.fields:
+                self.fields[fname].widget.attrs['placeholder'] = text
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username')
+        if CustomUser.all_objects.filter(username=username).exists():
+            raise forms.ValidationError('A user with that username already exists.')
+        return username
+
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if CustomUser.all_objects.filter(email=email).exists():
+            raise forms.ValidationError('An account with that email already exists.')
+        return email
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.role = 'staff'
+        user.is_active = True
+        if commit:
+            user.save()
+        return user
+
+
 class OTPVerifyForm(forms.Form):
     code = forms.CharField(
         max_length=6, min_length=6,

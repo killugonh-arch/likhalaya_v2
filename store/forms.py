@@ -285,18 +285,23 @@ class ProductForm(forms.ModelForm):
         # always calculated automatically from each design's own quantity
         # (see Product.total_stock / Product.recalculate_stock) — the admin
         # can never type a product-level stock number directly.
-        fields = ['name', 'category', 'description', 'price_min', 'price_medium', 'price_max',
+        fields = ['name', 'category', 'materials_used', 'description', 'price_min', 'price_medium', 'price_max',
                   'image', 'gcash_qr_code', 'is_active']
         labels = {
             'price_min': 'Small Price',
             'price_medium': 'Medium Price',
             'price_max': 'Large Price',
             'gcash_qr_code': 'GCash QR Code',
+            'materials_used': 'Materials Used',
         }
         widgets = {
+            'materials_used': forms.Textarea(attrs={
+                'rows': 3,
+                'placeholder': 'e.g. Acrylic paint, canvas, wooden frame'
+            }),
             'description': forms.Textarea(attrs={
                 'rows': 5,
-                'placeholder': 'Describe the product...\n• Materials used\n• Size\n• Production time\n• Other details'
+                'placeholder': 'Other info about the product (size, production time, care tips, etc.)'
             }),
             'price_min': forms.NumberInput(attrs={'step': '0.01', 'placeholder': 'Small (lowest price)'}),
             'price_medium': forms.NumberInput(attrs={'step': '0.01', 'placeholder': 'Medium (optional)'}),
@@ -339,26 +344,31 @@ class ProductForm(forms.ModelForm):
 
 
 class ProductImageForm(forms.ModelForm):
+    """One gallery photo. `size` is '' for "all sizes" or S / M / L when the
+    photo belongs to a single size (set by the Product Images tabs in the
+    dashboard product form)."""
     class Meta:
         model = ProductImage
-        fields = ['image', 'caption', 'order']
+        fields = ['image', 'caption', 'order', 'size']
         widgets = {
             'image': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
             'caption': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Caption (optional)'}),
             'order': forms.NumberInput(attrs={'class': 'form-control', 'style': 'display:none;'}),
+            'size': forms.HiddenInput(),
         }
 
 
 class BaseProductImageFormSet(BaseInlineFormSet):
-    """Enforces a max of 3 extra product photos — server-side backstop for
-    the same cap the dashboard JS enforces live."""
-    MAX_IMAGES = 3
+    """Server-side backstop for the photo cap the dashboard JS enforces
+    live: at most MAX_PER_SIZE photos in each tab (All sizes, Small,
+    Medium, Large)."""
+    MAX_PER_SIZE = 10
 
     def clean(self):
         super().clean()
         if any(self.errors):
             return
-        count = 0
+        counts = {}
         for form in self.forms:
             cleaned = getattr(form, 'cleaned_data', None)
             if not cleaned or cleaned.get('DELETE'):
@@ -366,17 +376,23 @@ class BaseProductImageFormSet(BaseInlineFormSet):
             # Skip untouched blank extra rows (no new image, no existing instance)
             if not cleaned.get('image') and not form.instance.pk:
                 continue
-            count += 1
-        if count > self.MAX_IMAGES:
-            raise forms.ValidationError(f'You can only add up to {self.MAX_IMAGES} photos.')
+            key = cleaned.get('size') or ''
+            counts[key] = counts.get(key, 0) + 1
+        labels = {'': 'All sizes', 'S': 'Small', 'M': 'Medium', 'L': 'Large'}
+        for key, count in counts.items():
+            if count > self.MAX_PER_SIZE:
+                raise forms.ValidationError(
+                    f'You can only add up to {self.MAX_PER_SIZE} photos per tab '
+                    f'("{labels.get(key, key)}" has {count}).'
+                )
 
 
 ProductImageFormSet = inlineformset_factory(
     Product, ProductImage,
     form=ProductImageForm,
     formset=BaseProductImageFormSet,
-    extra=3,
-    max_num=3,
+    extra=0,
+    max_num=40,
     validate_max=True,
     can_delete=True,
 )

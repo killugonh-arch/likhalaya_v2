@@ -6,18 +6,16 @@
 {% block dash_content %}
 <style>
 .pform-header {
-  background: linear-gradient(120deg, var(--teal), #2D7A73);
-  border-radius: 18px; padding: 28px 32px; margin-bottom: 28px;
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
-  box-shadow: 0 8px 24px rgba(30,95,90,.18);
+  margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #e8e3db;
 }
-.pform-header h4 { color: #fff; font-family: 'Playfair Display', serif; font-size: 24px; margin: 0; }
-.pform-header p { color: rgba(255,255,255,.75); font-size: 13px; margin: 4px 0 0; }
-.pform-header .btn-back {
-  background: rgba(255,255,255,.14); color: #fff; border: 1px solid rgba(255,255,255,.28);
-  border-radius: 10px; font-size: 13px; padding: 8px 16px; transition: background .15s;
+.pform-header h4 {
+  color: #1a1a1a; font-family: 'Playfair Display', serif; font-weight: 700;
+  font-size: 24px; margin: 0 0 3px; line-height: 1.2;
 }
-.pform-header .btn-back:hover { background: rgba(255,255,255,.24); color: #fff; }
+.pform-header p { color: #8a8578; font-size: 13px; margin: 0; }
+.pform-header-actions { display: flex; gap: 10px; flex-shrink: 0; }
+.pform-header-actions .btn { border-radius: 10px; font-weight: 600; font-size: 13.5px; padding: 9px 20px; }
 
 .pform-card {
   background: #fff; border-radius: 16px; border: 1px solid #eee6d8;
@@ -127,14 +125,17 @@
   <span class="sep">/</span><span class="current">{{ title }}</span>
 </div>
 
-<div class="pform-header">
-  <div>
-    <h4><i class="fas fa-video me-2"></i>{{ title }}</h4>
+<a href="{% url 'dashboard:video_list' %}" class="pd-back-link"><i class="fas fa-arrow-left"></i> Back to Livelihood Videos</a>
+
+<div class="pd-header-top">
+  <div class="pd-header-titles">
+    <h1>{{ title }}</h1>
     <p>Videos appear on the About page (and Home, if featured). Use a YouTube/Facebook link, or upload a file if you don't have one.</p>
   </div>
-  <a href="{% url 'dashboard:video_list' %}" class="btn-back text-decoration-none">
-    <i class="fas fa-arrow-left me-1"></i>Back to Videos
-  </a>
+  <div class="pd-header-actions">
+    <a href="{% url 'dashboard:video_list' %}" class="pd-btn pd-btn-outline">Cancel</a>
+    <button type="submit" form="video-form" class="pd-btn pd-btn-primary"><i class="fas fa-check"></i> Save Video</button>
+  </div>
 </div>
 
 <form method="post" enctype="multipart/form-data" id="video-form">

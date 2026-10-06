@@ -42,6 +42,7 @@ urlpatterns = [
     path('messages/<int:pk>/restore/', views.message_restore, name='message_restore'),
     path('messages/<int:pk>/delete-permanent/', views.message_delete_permanent, name='message_delete_permanent'),
     # Users
+    path('users/new/', views.staff_create, name='staff_create'),
     path('users/', views.user_list, name='user_list'),
     path('users/<int:pk>/', views.user_detail, name='user_detail'),
     path('users/<int:pk>/toggle/', views.user_toggle_active, name='user_toggle'),

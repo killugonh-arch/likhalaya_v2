@@ -19,7 +19,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction
 from .chat_helpers import chat_inbox
-from django.db.models import Sum, Count, Q, Avg, Case, When, Value, IntegerField
+from django.db.models import Sum, Count, Q, Avg, Case, When, Value, IntegerField, F, ExpressionWrapper, DecimalField
 from django.db.models.functions import TruncMonth, TruncDate, Coalesce, ExtractYear
 from django.utils import timezone
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -262,7 +262,9 @@ def _xlsx_bytes(wb):
 # ─── Dashboard Home ─────────────────────────────────────────────────────────────
 @staff_required
 def dashboard_home(request):
-    now = timezone.now()
+    # Local time (Asia/Manila), not UTC — otherwise "today" and "this month"
+    # roll over at 8:00 AM Philippine time instead of midnight.
+    now = timezone.localtime()
     thirty_days_ago = now - timedelta(days=30)
     seven_days_ago = now - timedelta(days=7)
 
@@ -275,23 +277,29 @@ def dashboard_home(request):
     last_month_end = this_month_start - timedelta(microseconds=1)
     last_month_start = last_month_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-    this_month_revenue = Order.objects.filter(
-        status='delivered', created_at__gte=this_month_start
+    # Same revenue-recognition rule as the Reports page: a delivered order
+    # counts in the month it was delivered (falls back to the order date for
+    # legacy orders), so Dashboard and Reports always agree.
+    delivered_orders = Order.objects.filter(status='delivered').annotate(
+        revenue_date=Coalesce('delivery_confirmed_at', 'created_at')
+    )
+    this_month_revenue = delivered_orders.filter(
+        revenue_date__gte=this_month_start
     ).aggregate(t=Sum('total'))['t'] or 0
-    last_month_revenue = Order.objects.filter(
-        status='delivered', created_at__gte=last_month_start, created_at__lt=this_month_start
+    last_month_revenue = delivered_orders.filter(
+        revenue_date__gte=last_month_start, revenue_date__lt=this_month_start
     ).aggregate(t=Sum('total'))['t'] or 0
 
     # % change vs last month, for a "up/down from last month" indicator on the card
     if last_month_revenue:
         revenue_change_pct = round(((this_month_revenue - last_month_revenue) / last_month_revenue) * 100, 1)
     else:
-        revenue_change_pct = 100.0 if this_month_revenue else 0.0
+        revenue_change_pct = None  # no previous month to compare against
 
     stats = {
         'total_orders': Order.objects.count(),
         'orders_today': Order.objects.filter(created_at__date=now.date()).count(),
-        'total_revenue': Order.objects.filter(status='delivered').aggregate(t=Sum('total'))['t'] or 0,
+        'total_revenue': delivered_orders.aggregate(t=Sum('total'))['t'] or 0,
         'monthly_revenue': this_month_revenue,
         'last_month_revenue': last_month_revenue,
         'revenue_change_pct': revenue_change_pct,
@@ -329,8 +337,8 @@ def dashboard_home(request):
     status_counts = {s[0]: Order.objects.filter(status=s[0]).count() for s in Order.STATUS_CHOICES}
     status_counts = {k: v for k, v in status_counts.items() if v > 0}
 
-    recent_orders = Order.objects.select_related('user').prefetch_related('items').order_by('-created_at')[:8]
-    low_stock_products = Product.objects.filter(stock__lte=5, is_active=True).select_related('category')[:5]
+    recent_orders = Order.objects.select_related('user').prefetch_related('items').order_by('-created_at')[:10]
+    low_stock_products = Product.objects.filter(stock__lte=5, is_active=True).select_related('category').order_by('stock', 'name')[:5]
     recent_customers = CustomUser.objects.filter(role='customer').order_by('-created_at')[:5]
 
     ctx = {
@@ -624,6 +632,7 @@ def product_edit(request, pk):
         # category, artisan, and image all count too).
         old_values = {
             'name': product.name,
+            'materials_used': product.materials_used,
             'description': product.description,
             'category': product.category.name if product.category else '(none)',
             'price_min': product.price_min,
@@ -645,6 +654,7 @@ def product_edit(request, pk):
 
             new_values = {
                 'name': product.name,
+                'materials_used': product.materials_used,
                 'description': product.description,
                 'category': product.category.name if product.category else '(none)',
                 'price_min': product.price_min,
@@ -658,6 +668,7 @@ def product_edit(request, pk):
 
             field_labels = {
                 'name': 'Name',
+                'materials_used': 'Materials used',
                 'description': 'Description',
                 'category': 'Category',
                 'price_min': 'Min price',
@@ -676,7 +687,7 @@ def product_edit(request, pk):
                     if field == 'image':
                         old_display = old_val.rsplit('/', 1)[-1] if old_val else '(none)'
                         new_display = new_val.rsplit('/', 1)[-1] if new_val else '(none)'
-                    elif field == 'description':
+                    elif field in ('description', 'materials_used'):
                         # Full text is kept here; the detail page truncates
                         # long values visually and offers a "see all" toggle.
                         old_display = old_val or '(empty)'
@@ -1161,6 +1172,22 @@ def user_list(request):
 
 
 @admin_required
+def staff_create(request):
+    from accounts.forms import StaffCreateForm
+    if request.method == 'POST':
+        form = StaffCreateForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            log_activity(request, 'create', f'Created staff account "{user.username}"',
+                         resource='User', resource_label=user.username)
+            messages.success(request, f'Staff account "{user.username}" was created.')
+            return redirect('dashboard:user_list')
+    else:
+        form = StaffCreateForm()
+    return render(request, 'dashboard/users/form.html', {'form': form})
+
+
+@admin_required
 def user_detail(request, pk):
     user = get_object_or_404(CustomUser, pk=pk)
     from orders.models import Order
@@ -1394,7 +1421,29 @@ def activity_log(request):
     failed_logins = base_qs.filter(action='login_failed')
     if search:
         failed_logins = failed_logins.filter(Q(username__icontains=search) | Q(ip_address__icontains=search))
-    failed_logins = failed_logins.order_by('-timestamp')[:10]
+    failed_total = failed_logins.count()
+    failed_logins = list(failed_logins.order_by('-timestamp')[:10])
+
+    # Attach the matching account (if the attempted username/email exists) and a
+    # friendly network label to each row, for the Failed Login Attempts table.
+    import ipaddress
+    _names = {f.username.lower() for f in failed_logins if f.username}
+    _accounts = {}
+    if _names:
+        for u in CustomUser.objects.filter(Q(username__in=_names) | Q(email__in=_names)):
+            _accounts.setdefault(u.username.lower(), u)
+            if u.email:
+                _accounts.setdefault(u.email.lower(), u)
+    for f in failed_logins:
+        f.matched_user = _accounts.get((f.username or '').lower())
+        label = ''
+        if f.ip_address:
+            try:
+                ip = ipaddress.ip_address(f.ip_address)
+                label = 'Localhost' if ip.is_loopback else ('Local Network' if ip.is_private else 'Internet')
+            except ValueError:
+                label = ''
+        f.ip_label = label
 
     session_logs = base_qs.exclude(action='login_failed')
     if staff_filter:
@@ -1455,6 +1504,7 @@ def activity_log(request):
         'user_rows': page_obj,
         'page_obj': page_obj,
         'failed_logins': failed_logins,
+        'failed_total': failed_total,
         'search': search,
         'staff_filter': staff_filter,
         'action_filter': action_filter,
@@ -1908,13 +1958,17 @@ def reports(request):
         count=Count('id'), revenue=Sum('total')
     ).order_by('-count')
     top_products = (items_qs.values('product_name')
-                    .annotate(units=Sum('quantity'), revenue=Sum('product_price'))
+                    .annotate(units=Sum('quantity'),
+                              revenue=Sum(ExpressionWrapper(
+                                  F('product_price') * F('quantity'),
+                                  output_field=DecimalField(max_digits=14, decimal_places=2))))
                     .order_by('-units')[:10])
 
     # Trend chart is anchored to the selected YEAR (Jan–Dec) rather than a
     # rolling window that could bleed across years, so it never mixes data
     # outside the period the administrator has chosen.
     monthly_trend = (Order.objects.filter(created_at__year=selected_year)
+                     .exclude(status='cancelled')
                      .annotate(month=TruncMonth('created_at'))
                      .values('month')
                      .annotate(orders=Count('id'), revenue=Sum('total'))
@@ -1941,6 +1995,14 @@ def reports(request):
             'is_finalized': m_period.is_finalized if m_period else False,
         })
 
+    # Orders placed this period that are still on their way (not yet delivered, not
+    # cancelled). They are NOT in the "money received" cards until delivered — the
+    # Revenue tab shows this so zeros don't look like a bug.
+    in_progress = [r for r in sales_by_status
+                   if r['status'] in ('pending', 'processing', 'confirmed', 'shipped')]
+    awaiting_count = sum(r['count'] for r in in_progress)
+    awaiting_value = sum((r['revenue'] or 0) for r in in_progress)
+
     ctx = {
         'available_years': available_years,
         'months': [(i, calendar.month_name[i]) for i in range(1, 13)],
@@ -1954,6 +2016,8 @@ def reports(request):
         'monthly_period': monthly_period,
         'expenses': expenses,
         'sales_by_status': sales_by_status,
+        'awaiting_count': awaiting_count,
+        'awaiting_value': awaiting_value,
         'top_products': top_products,
         'monthly_trend': monthly_trend,
         'monthly_history': monthly_history,

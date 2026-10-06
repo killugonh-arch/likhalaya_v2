@@ -136,6 +136,14 @@
         {% endif %}
       </div>
 
+      {% if product.materials_used %}
+      <!-- Materials -->
+      <div class="mb-4">
+        <h6 class="fw-bold mb-2">Materials Used</h6>
+        <p class="text-muted" style="line-height:1.8; white-space:pre-line;">{{ product.materials_used }}</p>
+      </div>
+      {% endif %}
+
       <!-- Description -->
       <div class="mb-4">
         <h6 class="fw-bold mb-2">About this Product</h6>
@@ -236,8 +244,7 @@
 {% include 'partials/size_picker_modal.html' %}
 <script>
 // Product image gallery: main image + up to 3 clickable thumbnails, auto-advancing.
-// Shows gallery photos (general + Small + Medium + Large) in one set,
-// deduplicated so a photo reused across sizes only appears once, capped at 3.
+// Shows only the "All sizes" gallery photos (deduplicated, capped at 3).
 (function() {
   var wrap = document.getElementById('detailImageWrap');
   if (!wrap) return;
@@ -252,7 +259,9 @@
   var MAX_THUMBS = 3;
 
   function allImagesDeduped() {
-    var combined = (bySize.general || []).concat(bySize.S || [], bySize.M || [], bySize.L || []);
+    // Only "All sizes" photos belong in this gallery. Small/Medium/Large
+    // photos are shown in the size picker modal when that size is picked.
+    var combined = bySize.general || [];
     var seen = {};
     var result = [];
     combined.forEach(function(url) {
