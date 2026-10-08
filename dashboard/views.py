@@ -318,14 +318,25 @@ def dashboard_home(request):
         'total_categories': Category.objects.filter(is_active=True).count(),
     }
 
-    # Chart 1: last 7 days orders (trend — is business picking up?)
-    daily_orders = []
-    daily_labels = []
-    for i in range(6, -1, -1):
-        d = (now - timedelta(days=i)).date()
-        cnt = Order.objects.filter(created_at__date=d).count()
-        daily_orders.append(cnt)
-        daily_labels.append(d.strftime('%b %d'))
+    # Chart 1: weekly orders, last 8 weeks (trend - is business picking up?)
+    # Weeks run Sunday 12:00 AM to Saturday 11:59 PM (new week starts at the midnight
+    # between Saturday and Sunday); the last bar is the current (in-progress) week.
+    today = now.date()
+    this_week_start = today - timedelta(days=(today.weekday() + 1) % 7)
+    weekly_orders = []
+    weekly_labels = []
+    for i in range(7, -1, -1):
+        week_start = this_week_start - timedelta(weeks=i)
+        week_end = week_start + timedelta(days=6)
+        cnt = Order.objects.filter(
+            created_at__date__gte=week_start,
+            created_at__date__lte=week_end,
+        ).count()
+        weekly_orders.append(cnt)
+        if week_start.month == week_end.month:
+            weekly_labels.append(f"{week_start.strftime('%b %d')} - {week_end.strftime('%d')}")
+        else:
+            weekly_labels.append(f"{week_start.strftime('%b %d')} - {week_end.strftime('%b %d')}")
 
     # Chart 2: order status distribution (only statuses that actually have orders,
     # so the legend/chart isn't cluttered with zero-count slices)
@@ -346,8 +357,8 @@ def dashboard_home(request):
         'recent_orders': recent_orders,
         'low_stock_products': low_stock_products,
         'recent_customers': recent_customers,
-        'chart_daily_labels': json.dumps(daily_labels),
-        'chart_daily_orders': json.dumps(daily_orders),
+        'chart_weekly_labels': json.dumps(weekly_labels),
+        'chart_weekly_orders': json.dumps(weekly_orders),
         'chart_status_labels': json.dumps([status_display[k] for k in status_counts.keys()]),
         'chart_status_data': json.dumps(list(status_counts.values())),
         'chart_status_colors': json.dumps([status_colors[k] for k in status_counts.keys()]),
@@ -1961,8 +1972,20 @@ def reports(request):
                     .annotate(units=Sum('quantity'),
                               revenue=Sum(ExpressionWrapper(
                                   F('product_price') * F('quantity'),
-                                  output_field=DecimalField(max_digits=14, decimal_places=2))))
+                                  output_field=DecimalField(max_digits=14, decimal_places=2))),
+                              # flags so the report can show whether the product / its
+                              # category has since been deleted
+                              n_items=Count('id'),
+                              n_product_gone=Count('id', filter=Q(product__isnull=True)),
+                              n_product_archived=Count('id', filter=Q(product__is_deleted=True)),
+                              n_category_archived=Count('id', filter=Q(product__category__is_deleted=True)))
                     .order_by('-units')[:10])
+    top_products = list(top_products)
+    for tp in top_products:
+        # permanently deleted (row gone) or moved to Archive
+        tp['product_deleted'] = tp['n_product_gone'] == tp['n_items'] or tp['n_product_archived'] > 0
+        tp['product_deleted_permanent'] = tp['n_product_gone'] == tp['n_items']
+        tp['category_deleted'] = tp['n_category_archived'] > 0
 
     # Trend chart is anchored to the selected YEAR (Jan–Dec) rather than a
     # rolling window that could bleed across years, so it never mixes data

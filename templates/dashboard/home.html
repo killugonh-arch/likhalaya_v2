@@ -386,11 +386,16 @@
 
 /* Chart panels: fixed height on desktop, shorter on phones */
 .dash-chart-body { height: 320px; position: relative; }
+/* status doughnut: fills the full panel height so the circle is bigger and the legend sits at the bottom */
+.dash-chart-fill { height: auto; min-height: 320px; flex: 1 1 auto; }
+.dash-chart-fill .dash-chart-canvas { position: relative; flex: 1 1 auto; align-self: stretch; min-width: 0; }
+.dash-chart-fill .dash-chart-canvas canvas { position: absolute; inset: 0; }
 .dash-panel, .ds-kpi-card { min-width: 0; }
 .ds-kpi-card .d-flex > div:first-child { min-width: 0; }
 
 @media (max-width: 767.98px) {
   .dash-chart-body { height: 250px; }
+  .dash-chart-fill { height: auto; min-height: 340px; }
 }
 @media (max-width: 575.98px) {
   .ds-kpi-card { padding: 14px; }
@@ -554,32 +559,31 @@ body.dark-mode .ds-kpi-link:hover .ds-kpi-card { border-color: var(--dm-teal); }
   <div class="col-lg-7">
     <div class="dash-panel h-100">
       <div class="dash-panel-header">
-        <h6>Orders – Last 7 Days</h6>
-        <span class="ds-badge ds-badge-neutral">Daily Trend</span>
+        <h6>Orders – Last 8 Weeks</h6>
+        <span class="ds-badge ds-badge-neutral">Weekly Trend</span>
       </div>
-      <div class="d-flex flex-wrap gap-4 px-4 pt-3" id="dailySummary" style="font-size:13px;">
-        <div><span class="text-muted">This week</span><div class="fw-bold" style="font-size:20px;" id="dsWeekTotal">0</div></div>
-        <div><span class="text-muted">Today</span><div class="fw-bold" style="font-size:20px;" id="dsToday">0</div></div>
-        <div><span class="text-muted">Busiest day</span><div class="fw-bold" style="font-size:20px;" id="dsBusiest">&ndash;</div></div>
+      <div class="text-center px-4 pt-3" id="weeklySummary">
+        <span class="text-muted fw-semibold" style="font-size:17px;" id="wsLabel">This week</span>
+        <div class="fw-bold" style="font-size:40px;line-height:1.1;" id="wsValue">0</div>
       </div>
       <div class="dash-panel-body dash-chart-body" style="position:relative;">
-        <canvas id="chartDailyOrders"></canvas>
-        <div id="dailyEmptyMsg" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;pointer-events:none;text-align:center;font-weight:600;color:#888;">
-          No new orders in the last 7 days
+        <canvas id="chartWeeklyOrders"></canvas>
+        <div id="weeklyEmptyMsg" style="display:none;position:absolute;inset:0;align-items:center;justify-content:center;pointer-events:none;text-align:center;font-weight:600;color:#888;">
+          No new orders in the last 8 weeks
         </div>
       </div>
     </div>
   </div>
   <div class="col-lg-5">
-    <div class="dash-panel h-100">
+    <div class="dash-panel h-100 d-flex flex-column">
       <div class="dash-panel-header">
         <h6>Order Status</h6>
       </div>
-      <div class="dash-panel-body dash-chart-body d-flex align-items-center justify-content-center">
+      <div class="dash-panel-body dash-chart-body dash-chart-fill d-flex align-items-center justify-content-center">
         {% if chart_status_data == "[]" %}
           <div class="dash-panel-empty"><i class="fas fa-inbox fa-lg mb-2 d-block"></i>No orders yet.</div>
         {% else %}
-          <canvas id="chartStatusPie"></canvas>
+          <div class="dash-chart-canvas"><canvas id="chartStatusPie"></canvas></div>
         {% endif %}
       </div>
     </div>
@@ -685,8 +689,8 @@ body.dark-mode .ds-kpi-link:hover .ds-kpi-card { border-color: var(--dm-teal); }
 {% block dash_js %}
 <script id="chart-data" type="application/json">
 {
-  "daily_labels": {{ chart_daily_labels|safe }},
-  "daily_orders": {{ chart_daily_orders|safe }},
+  "weekly_labels": {{ chart_weekly_labels|safe }},
+  "weekly_orders": {{ chart_weekly_orders|safe }},
   "status_labels": {{ chart_status_labels|safe }},
   "status_data": {{ chart_status_data|safe }},
   "status_colors": {{ chart_status_colors|safe }}
@@ -714,20 +718,28 @@ function applyChartTheme() {
 applyChartTheme();
 document.getElementById('darkModeToggle').addEventListener('click', () => setTimeout(applyChartTheme, 0));
 
-// ---- Orders: last 7 days (bar chart: one bar = one day, number on top) ----
-const dailyCounts = chartData.daily_orders;
-const dailyLabels = chartData.daily_labels.map((l, i, arr) =>
-  i === arr.length - 1 ? 'Today' : (i === arr.length - 2 ? 'Yesterday' : l)
+// ---- Orders: last 8 weeks (bar chart: one bar = one week, Sun-Sat, number on top) ----
+const weeklyCounts = chartData.weekly_orders;
+// short axis labels (week start date) so they stay flat; full range shows in the tooltip
+const weeklyLabels = chartData.weekly_labels.map((l, i, arr) =>
+  i === arr.length - 1 ? 'This week' : (i === arr.length - 2 ? 'Last week' : l.split(' - ')[0])
 );
-const weekTotal = dailyCounts.reduce((a, b) => a + b, 0);
-const maxCount = Math.max(...dailyCounts);
+const totalOrders = weeklyCounts.reduce((a, b) => a + b, 0);
+const lastIdx = weeklyCounts.length - 1;
+let selectedWeek = lastIdx;   // starts on "This week"
 
-document.getElementById('dsWeekTotal').textContent = weekTotal;
-document.getElementById('dsToday').textContent = dailyCounts[dailyCounts.length - 1];
-document.getElementById('dsBusiest').textContent = maxCount > 0
-  ? chartData.daily_labels[dailyCounts.indexOf(maxCount)] + ' (' + maxCount + ')'
-  : '\u2013';
-if (weekTotal === 0) document.getElementById('dailyEmptyMsg').style.display = 'flex';
+function weekName(i) {
+  if (i === lastIdx) return 'This week';
+  if (i === lastIdx - 1) return 'Last week';
+  return chartData.weekly_labels[i];
+}
+function showWeek(i) {
+  selectedWeek = i;
+  document.getElementById('wsLabel').textContent = weekName(i);
+  document.getElementById('wsValue').textContent = weeklyCounts[i];
+}
+showWeek(lastIdx);
+if (totalOrders === 0) document.getElementById('weeklyEmptyMsg').style.display = 'flex';
 
 // writes the number above each bar
 const barNumbers = {
@@ -747,14 +759,14 @@ const barNumbers = {
   }
 };
 
-new Chart(document.getElementById('chartDailyOrders'), {
+new Chart(document.getElementById('chartWeeklyOrders'), {
   type: 'bar',
   data: {
-    labels: dailyLabels,
+    labels: weeklyLabels,
     datasets: [{
       label: 'Orders',
-      data: dailyCounts,
-      backgroundColor: dailyCounts.map((_, i) => i === dailyCounts.length - 1 ? BRAND_GREEN : 'rgba(15,107,79,.55)'),
+      data: weeklyCounts,
+      backgroundColor: (c) => c.dataIndex === selectedWeek ? BRAND_GREEN : 'rgba(15,107,79,.55)',
       borderRadius: 6,
       maxBarThickness: 46,
       minBarLength: 2,
@@ -763,17 +775,26 @@ new Chart(document.getElementById('chartDailyOrders'), {
   options: {
     responsive: true, maintainAspectRatio: false,
     layout: { padding: { top: 20 } },
+    onClick: (evt, _els, chart) => {
+      const hit = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, true);
+      if (!hit.length) return;
+      showWeek(hit[0].index);
+      chart.update();
+    },
+    onHover: (evt, _els, chart) => {
+      chart.canvas.style.cursor = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, true).length ? 'pointer' : 'default';
+    },
     plugins: {
       legend: { display: false },
       tooltip: {
         callbacks: {
-          title: (items) => chartData.daily_labels[items[0].dataIndex],
+          title: (items) => chartData.weekly_labels[items[0].dataIndex],
           label: (ctx) => ' ' + ctx.parsed.y + (ctx.parsed.y === 1 ? ' order' : ' orders')
         }
       }
     },
     scales: {
-      x: { grid: { display: false } },
+      x: { grid: { display: false }, ticks: { maxRotation: 0, minRotation: 0, autoSkip: false } },
       y: {
         beginAtZero: true,
         suggestedMax: 5,
@@ -849,6 +870,7 @@ if (statusEl && chartData.status_data.length) {
           position: 'bottom',
           labels: {
             font: { size: 12, weight: 'bold' }, boxWidth: 12,
+            padding: 16,
             // legend shows the count too, e.g. "Pending (12)"
             generateLabels(chart) {
               const ds = chart.data.datasets[0];

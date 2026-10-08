@@ -1,0 +1,65 @@
+{% load static %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>{% block title %}Likhalaya{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --teal: #1E5F5A; --teal-dark: #174B47; --gold: #C9841A;
+      --bg: #EEF5F0; --surface: #FFFFFF; --border: #DCE6DF;
+      --text: #1A1A1A; --muted: #5A5A5A;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root { --teal: #3FC4B8; --teal-dark: #2FA89D; --bg: #101615; --surface: #172120; --border: #263331; --text: #EAF2EF; --muted: #9DB0AB; }
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      padding: 24px; background: var(--bg); color: var(--text);
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; line-height: 1.55;
+    }
+    .err-card {
+      width: 100%; max-width: 480px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 40px 32px 32px; text-align: center;
+      box-shadow: 0 1px 2px rgba(16,24,20,.06);
+    }
+    .err-logo { height: 40px; width: auto; margin-bottom: 24px; }
+    .err-code {
+      font-family: 'Poppins', system-ui, sans-serif; font-weight: 700; font-size: clamp(64px, 18vw, 96px);
+      line-height: 1; margin: 0; color: var(--teal); letter-spacing: -.02em;
+    }
+    .err-code::after { content: ""; display: block; width: 48px; height: 3px; background: var(--gold); border-radius: 2px; margin: 16px auto 0; }
+    .err-title { font-family: 'Poppins', system-ui, sans-serif; font-weight: 600; font-size: 22px; margin: 20px 0 8px; }
+    .err-text { margin: 0 auto 28px; max-width: 36ch; color: var(--muted); font-size: 15px; }
+    .err-actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .err-btn {
+      display: inline-flex; align-items: center; justify-content: center; min-height: 44px; padding: 10px 22px;
+      border-radius: 10px; font: 600 14px 'Inter', system-ui, sans-serif; text-decoration: none; cursor: pointer;
+      border: 1px solid transparent; transition: background-color .15s, border-color .15s;
+    }
+    .err-btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+    .err-btn-primary { background: var(--teal); color: #fff; }
+    .err-btn-primary:hover { background: var(--teal-dark); }
+    @media (prefers-color-scheme: dark) { .err-btn-primary { color: #0B1413; } }
+    .err-btn-secondary { background: transparent; color: var(--text); border-color: var(--border); }
+    .err-btn-secondary:hover { border-color: var(--teal); }
+    .err-foot { margin-top: 20px; font-size: 12px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main class="err-card" role="main">
+    <img class="err-logo" src="{% static 'imgs/likhalaya.png' %}" alt="Likhalaya" onerror="this.style.display='none'">
+    <h1 class="err-code">{% block code %}{% endblock %}</h1>
+    <h2 class="err-title">{% block heading %}{% endblock %}</h2>
+    <p class="err-text">{% block message %}{% endblock %}</p>
+    <div class="err-actions">{% block actions %}{% endblock %}</div>
+  </main>
+  <p class="err-foot">{% block foot %}{% endblock %}</p>
+</body>
+</html>

@@ -770,7 +770,15 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
           <tbody>
             {% for p in top_products %}
             <tr>
-              <td class="fw-semibold" style="font-size:13px;">{{ p.product_name|truncatechars:28 }}</td>
+              <td class="fw-semibold" style="font-size:13px;">
+                {{ p.product_name|truncatechars:28 }}
+                {% if p.product_deleted %}
+                <span class="ds-badge ds-badge-danger ms-1" style="font-size:10px;" title="{% if p.product_deleted_permanent %}Permanently deleted{% else %}Deleted (in Archive, can be restored){% endif %}">Deleted</span>
+                {% endif %}
+                {% if p.category_deleted %}
+                <span class="ds-badge ds-badge-warning ms-1" style="font-size:10px;" title="This product's category was deleted (in Archive)">Category deleted</span>
+                {% endif %}
+              </td>
               <td><span class="ds-badge ds-badge-neutral">{{ p.units }}</span></td>
               <td class="fw-semibold" style="color:var(--brand-green);">₱{{ p.revenue|floatformat:2|intcomma }}</td>
             </tr>

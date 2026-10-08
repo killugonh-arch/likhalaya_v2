@@ -127,12 +127,15 @@
               </form>
             </div>
             <div class="fw-bold" style="font-size:16px;color:var(--gold);">₱{{ item.price|floatformat:0|intcomma }}</div>
+            {# hide the remove (x) button when this is the only product in the order #}
+            {% if not forloop.first or not forloop.last %}
             <form method="post" action="{% url 'orders:cart_remove' item.key %}">
               {% csrf_token %}
               <button type="submit" class="btn btn-sm btn-outline-danger rounded-rectangle p-0 d-flex align-items-center justify-content-center" style="width:24px;height:24px;font-size:12px;line-height:1;" title="Remove item">
                 <i class="fas fa-times"></i>
               </button>
             </form>
+            {% endif %}
           </div>
           {% endfor %}
           <hr>
