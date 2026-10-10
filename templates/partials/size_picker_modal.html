@@ -33,6 +33,10 @@
           <div class="spm-image-frame" id="modalImageWrap">
             <img id="modalImgMain" src="" alt="">
           </div>
+          <div class="spm-desc" id="spmDescWrap" style="display:none;">
+            <div class="spm-desc-title">Description</div>
+            <p class="spm-desc-text" id="spmDescText"></p>
+          </div>
         </div>
 
         <!-- RIGHT: guided selection flow -->
@@ -214,6 +218,10 @@
   align-items: center;
   justify-content: center;
 }
+.spm-desc { margin-top: 14px; padding: 0 4px; }
+.spm-desc-title { font-family: 'Poppins', sans-serif; font-weight: 700; font-size: 12.5px; color: #202525; text-transform: uppercase; letter-spacing: .04em; margin-bottom: 4px; }
+.spm-desc-text { font-size: 13.5px; line-height: 1.55; color: #5A6360; margin: 0; white-space: pre-line; max-height: 180px; overflow-y: auto; word-break: break-word; }
+
 .spm-image-frame img {
   width: 100%; height: 100%; object-fit: contain; display: block;
   transition: opacity .25s ease;
@@ -431,7 +439,7 @@
     padding: 26px 30px 10px;
   }
   .spm-visual { position: sticky; top: 0; margin-bottom: 0; align-self: start; }
-  .spm-image-frame { aspect-ratio: 4 / 5; max-height: none; height: 100%; min-height: 340px; }
+  .spm-image-frame { aspect-ratio: 4 / 3; max-height: 280px; height: auto; min-height: 0; }
   .spm-design-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
@@ -444,7 +452,7 @@
     gap: 22px;
     padding: 22px 24px 8px;
   }
-  .spm-image-frame { aspect-ratio: 4 / 5; max-height: none; height: 100%; min-height: 260px; }
+  .spm-image-frame { aspect-ratio: 4 / 3; max-height: 240px; height: auto; min-height: 0; }
   .spm-design-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
@@ -670,6 +678,13 @@
   .spm-footer-variant { font-size: 11px; }
   .spm-footer-actions { gap: 6px; }
   .spm-footer-actions .btn { height: 40px; min-height: 40px; font-size: 12.5px; padding: 0 10px; border-radius: 9px; }
+}
+
+/* Phones: full-screen modal, no description */
+@media (max-width: 767.98px) {
+  #sizePickerDialog { min-height: 100dvh; align-items: stretch; }
+  .spm-content { height: 100dvh; max-height: 100dvh; border-radius: 0; box-shadow: none; }
+  .spm-desc { display: none !important; }
 }
 </style>
 
@@ -1238,10 +1253,18 @@
       state.legacyPrice = parseFloat(btn.dataset.priceM) || parseFloat(btn.dataset.priceS) || 0;
 
       state.imgBySize = { general: [], S: [], M: [], L: [] };
+      var descWrapEl = document.getElementById('spmDescWrap');
+      var descTextEl = document.getElementById('spmDescText');
+      descTextEl.textContent = '';
+      descWrapEl.style.display = 'none';
       var imagesId = btn.dataset.imagesId;
       var dataEl = imagesId ? document.getElementById(imagesId) : null;
       if (dataEl) {
         try { state.imgBySize = JSON.parse(dataEl.textContent) || state.imgBySize; } catch (e) {}
+      }
+      if (state.imgBySize && state.imgBySize.description) {
+        descTextEl.textContent = state.imgBySize.description;
+        descWrapEl.style.display = '';
       }
 
       subtitleEl.textContent = hasSizes ? 'Choose your size and design.' : 'Confirm your order.';

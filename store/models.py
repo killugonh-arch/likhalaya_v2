@@ -184,7 +184,7 @@ class Product(models.Model):
 
     @property
     def images_by_size_json(self):
-        data = {'general': [], 'S': [], 'M': [], 'L': []}
+        data = {'general': [], 'S': [], 'M': [], 'L': [], 'description': (self.description or '').strip()}
         if self.image:
             data['general'].append(self.image.url)
         for extra in self.extra_images.all():
