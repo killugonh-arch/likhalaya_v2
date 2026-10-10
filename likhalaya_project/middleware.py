@@ -13,10 +13,11 @@ STAFF_IDLE_TIMEOUT_SECONDS = 30 * 60
 
 
 def _client_ip(request):
-    forwarded = request.META.get('HTTP_X_FORWARDED_FOR')
-    if forwarded:
-        return forwarded.split(',')[0].strip()
-    return request.META.get('REMOTE_ADDR', 'unknown')
+    # Use the same proxy-aware resolver as django-axes (honours
+    # DJANGO_BEHIND_PROXY / DJANGO_PROXY_COUNT) so a client can't spoof
+    # X-Forwarded-For to dodge or trigger the /admin/ lockout.
+    from likhalaya_project.rate_limit import get_client_ip
+    return get_client_ip(request)
 
 
 class StaffIdleTimeoutMiddleware:

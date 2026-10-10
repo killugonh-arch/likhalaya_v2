@@ -29,10 +29,6 @@ services:
         sync: false
       - key: BREVO_SENDER_EMAIL
         sync: false
-      - key: GCASH_ACCOUNT_NAME
-        sync: false
-      - key: GCASH_ACCOUNT_NUMBER
-        sync: false
       - key: MESSAGE_ENCRYPTION_KEY
         generateValue: true
 

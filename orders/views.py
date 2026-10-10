@@ -751,7 +751,11 @@ def gcash_finalize(request, pk):
 
 
 def order_confirmation(request, pk):
-    order = get_object_or_404(Order, pk=pk)
+    # Only the customer who placed the order may view it. Without this check
+    # anyone (even logged out) could read any order by guessing its number.
+    if not request.user.is_authenticated:
+        return redirect('accounts:login')
+    order = get_object_or_404(Order, pk=pk, user=request.user)
     status_order = ['pending', 'processing', 'confirmed', 'shipped', 'delivered', 'cancelled']
     reached_status = order.previous_status if order.status == 'cancelled' and order.previous_status else order.status
     status_index = status_order.index(reached_status) + 1 if reached_status in status_order else 1

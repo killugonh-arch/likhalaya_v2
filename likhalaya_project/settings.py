@@ -12,6 +12,10 @@ SECRET_KEY = os.environ.get(
 
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True') == 'True'
 
+if not DEBUG and not os.environ.get('DJANGO_SECRET_KEY'):
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured('DJANGO_SECRET_KEY must be set when DEBUG is off.')
+
 ALLOWED_HOSTS = [
     '10.178.80.208', '127.0.0.1', 'localhost',
     '192.168.1.7', '192.168.254.139', '192.168.254.160',
@@ -33,6 +37,11 @@ if not DEBUG:
     X_FRAME_OPTIONS = 'DENY'
     SESSION_COOKIE_HTTPONLY = True
     CSRF_COOKIE_HTTPONLY = True
+    # Render terminates TLS at its proxy; without this Django never sees the
+    # request as secure and SECURE_SSL_REDIRECT loops forever.
+    if os.environ.get('DJANGO_BEHIND_PROXY', 'False') == 'True':
+        SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -144,9 +153,6 @@ DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 # videos use cloudinary video storage
 CLOUDINARY_VIDEO_STORAGE = 'cloudinary_storage.storage.VideoMediaCloudinaryStorage'
 
-# gcash qr config
-GCASH_ACCOUNT_NAME = os.environ.get('GCASH_ACCOUNT_NAME', 'Deniel Bryan Perea')
-GCASH_ACCOUNT_NUMBER = os.environ.get('GCASH_ACCOUNT_NUMBER', '09751548542')
 MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
@@ -270,11 +276,31 @@ SIMPLE_JWT = {
 CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'False') == 'True'
 CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if os.environ.get('CORS_ALLOWED_ORIGINS') else []
 
-# message encryption key - set via env var in production
-MESSAGE_ENCRYPTION_KEY = os.environ.get(
-    'MESSAGE_ENCRYPTION_KEY',
-    'Yj9y5oNQ5o3cQb1t9zW1nQwqz6XwK1r9Cq8y2s5aB0o='  # dev only
-)
+# Message encryption key. Production: MESSAGE_ENCRYPTION_KEY env var is
+# REQUIRED. Local dev: a random key is generated once and kept in the
+# git-ignored .dev_message_key file, so no key is ever committed.
+# MESSAGE_ENCRYPTION_KEY_OLD (comma-separated) lets previous keys still decrypt
+# while you rotate - see `python manage.py rotate_message_key`.
+def _load_message_key():
+    key = os.environ.get('MESSAGE_ENCRYPTION_KEY', '').strip()
+    if key:
+        return key
+    if not DEBUG:
+        from django.core.exceptions import ImproperlyConfigured
+        raise ImproperlyConfigured('MESSAGE_ENCRYPTION_KEY must be set when DEBUG is off.')
+    key_file = BASE_DIR / '.dev_message_key'
+    if key_file.exists():
+        return key_file.read_text().strip()
+    from cryptography.fernet import Fernet
+    key = Fernet.generate_key().decode()
+    key_file.write_text(key)
+    return key
+
+
+MESSAGE_ENCRYPTION_KEY = _load_message_key()
+MESSAGE_ENCRYPTION_KEY_OLD = [
+    k.strip() for k in os.environ.get('MESSAGE_ENCRYPTION_KEY_OLD', '').split(',') if k.strip()
+]
 
 
 # Google sign-in (mobile app): the OAuth *Web application* client ID from

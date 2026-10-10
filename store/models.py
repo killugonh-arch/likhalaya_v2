@@ -1,4 +1,12 @@
 import json
+
+
+def _json_for_script(data):
+    """json.dumps that is safe inside <script> tags (|safe in templates).
+    Escapes < > & so a title like "</script><script>..." cannot break out."""
+    return (json.dumps(data)
+            .replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026'))
+
 from decimal import Decimal, ROUND_HALF_UP
 from django.db import models
 from django.utils import timezone
@@ -185,7 +193,7 @@ class Product(models.Model):
             # extra.size is '' for "All sizes", or 'S' / 'M' / 'L'
             key = extra.size if extra.size in ('S', 'M', 'L') else 'general'
             data[key].append(extra.image.url)
-        return json.dumps(data)
+        return _json_for_script(data)
 
     @property
     def has_designs(self):
@@ -233,7 +241,7 @@ class Product(models.Model):
                 'price': str(self.get_price_for_size(size.code)),
                 'designs': designs,
             })
-        return json.dumps({'sizes': sizes, 'default_image': self.default_variant_image})
+        return _json_for_script({'sizes': sizes, 'default_image': self.default_variant_image})
 
     def get_price_for_size(self, size):
         prices = {
