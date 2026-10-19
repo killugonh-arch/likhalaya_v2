@@ -1965,10 +1965,17 @@ def reports(request):
         created_at__year=selected_year, created_at__month=selected_month
     )
     items_qs = OrderItem.objects.filter(order__in=orders_created_qs)
-    sales_by_status = orders_created_qs.values('status').annotate(
-        count=Count('id'), revenue=Sum('total')
-    ).order_by('-count')
-    top_products = (items_qs.values('product_name')
+    # Every status is listed (in workflow order), even when it has 0 orders this month.
+    _status_rows = {r['status']: r for r in orders_created_qs.values('status').annotate(
+        count=Count('id'), revenue=Sum('total'))}
+    sales_by_status = [
+        {'status': key,
+         'count': _status_rows.get(key, {}).get('count', 0),
+         'revenue': _status_rows.get(key, {}).get('revenue') or 0}
+        for key, _label in Order.STATUS_CHOICES
+    ]
+    sales_total_orders = sum(r['count'] for r in sales_by_status)
+    top_products = (items_qs.exclude(order__status='cancelled').values('product_name')
                     .annotate(units=Sum('quantity'),
                               revenue=Sum(ExpressionWrapper(
                                   F('product_price') * F('quantity'),
@@ -2039,6 +2046,7 @@ def reports(request):
         'monthly_period': monthly_period,
         'expenses': expenses,
         'sales_by_status': sales_by_status,
+        'sales_total_orders': sales_total_orders,
         'awaiting_count': awaiting_count,
         'awaiting_value': awaiting_value,
         'top_products': top_products,
@@ -2423,8 +2431,6 @@ def reports_export_excel(request):
         ('Product Income', f"₱{financials['product_income']:,.2f}"),
         ('Approved Expenses', f"₱{pdl['approved_expenses']:,.2f}"),
         ('Net Product Income', f"₱{pdl['net_product_income']:,.2f}"),
-        ('PDL Share %', pdl_pct_display),
-        ('PDL Share Amount', pdl_amt_display),
         ('Month Status', period_status),
     ]
     for label, value in pdl_rows:

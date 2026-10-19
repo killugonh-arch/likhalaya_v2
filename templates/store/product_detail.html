@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load review_tags %}
 {% block title %}{{ product.name }} – Likhalaya{% endblock %}
 {% block nav_shop %}active{% endblock %}
 
@@ -89,7 +90,7 @@
 </div>
 
 <div class="container pt-4">
-  <button type="button" class="btn btn-sm btn-outline-secondary" id="backBtn" data-shop-url="{% url 'store:shop' %}"><i class="fas fa-arrow-left me-1"></i>Back</button>
+  <button type="button" class="back-pill" id="backBtn" data-shop-url="{% url 'store:shop' %}"><i class="fas fa-arrow-left"></i>Back</button>
 </div>
 
 <div class="container py-5">
@@ -118,6 +119,7 @@
       <span class="badge-cat me-2">{{ product.category.name|default:"Artisan Craft" }}</span>
 
       <h2 class="fw-bold mt-3 mb-2" style="font-family:'Playfair Display',serif;color:var(--teal);">{{ product.name }}</h2>
+      <div class="mb-3">{% rating_summary product %}</div>
 
       <!-- Price -->
       <div class="mb-4">
@@ -212,6 +214,9 @@
       </div>
     </div>
   </div>
+
+  <!-- Ratings & Reviews -->
+  {% product_reviews product %}
 
   <!-- Related Products -->
   {% if related_products %}

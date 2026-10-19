@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'orders',
     'dashboard',
     'chats',
+    'reviews',
     # api
     'rest_framework',
     'rest_framework_simplejwt',

@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load review_tags %}
 {% block title %}Shop – Likhalaya{% endblock %}
 {% block nav_shop %}active{% endblock %}
 
@@ -71,9 +72,6 @@
 .home-product-media .carousel-control-next { opacity: 0; transition: opacity .2s; z-index: 3; }
 .home-product-card:hover .carousel-control-prev,
 .home-product-card:hover .carousel-control-next { opacity: .8; }
-.home-product-media .carousel-indicators { position: absolute; bottom: 4px; margin: 0; z-index: 3; }
-.home-product-media .carousel-indicators [data-bs-target] { background-color: #fff; opacity: .6; }
-.home-product-media .carousel-indicators .active { opacity: 1; }
 
 .home-product-body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 6px; flex: 1 1 auto; }
 
@@ -223,12 +221,6 @@
                 <button class="carousel-control-next" type="button" data-bs-target="#cardCarousel{{ product.pk }}" data-bs-slide="next" style="width:15%;">
                   <span class="carousel-control-next-icon" style="width:16px;height:16px;"></span>
                 </button>
-                <div class="carousel-indicators">
-                  {% if product.image %}<button type="button" data-bs-target="#cardCarousel{{ product.pk }}" data-bs-slide-to="0" class="active" style="width:6px;height:6px;border-radius:50%;"></button>{% endif %}
-                  {% for img in product.extra_images.all %}
-                  <button type="button" data-bs-target="#cardCarousel{{ product.pk }}" data-bs-slide-to="{% if product.image %}{{ forloop.counter }}{% else %}{{ forloop.counter0 }}{% endif %}" {% if not product.image and forloop.first %}class="active"{% endif %} style="width:6px;height:6px;border-radius:50%;"></button>
-                  {% endfor %}
-                </div>
                 {% endif %}
               </div>
               {% else %}
@@ -246,6 +238,7 @@
               <h6 class="home-product-name">
                 <a href="{{ product.get_absolute_url }}" class="stretched-link">{{ product.name }}</a>
               </h6>
+              {% card_rating product %}
 
               <p class="home-product-desc">{{ product.description|truncatechars:65 }}</p>
 

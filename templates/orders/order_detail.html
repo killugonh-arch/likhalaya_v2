@@ -4,6 +4,77 @@
 
 {% block extra_css %}
 <style>
+/* ===== Order detail layout ===== */
+.od-step-card { background:#fff; border:1px solid #e6ece9; border-radius:16px; padding:14px 16px; }
+.od-steps { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:8px; }
+.od-step-line { width:26px; height:2px; background:#d9dedc; flex-shrink:0; }
+.od-step-line.done { background:#27ae60; }
+.od-step { display:inline-flex; align-items:center; gap:9px; padding:9px 20px 9px 9px; border-radius:999px; background:#eceeed; color:#8a938f; font-size:17px; font-weight:600; white-space:nowrap; }
+.od-step .od-step-dot { width:30px; height:30px; border-radius:50%; background:#c9cfcc; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:15px; }
+.od-step.done { background:#27ae60; color:#fff; }
+.od-step.done .od-step-dot { background:rgba(255,255,255,.28); }
+.od-step.current { background:var(--teal); color:#fff; }
+.od-step.current .od-step-dot { background:rgba(255,255,255,.28); }
+.od-step.cancelled { background:#f8d7da; color:#c0392b; }
+.od-step.cancelled .od-step-dot { background:#f1b0b7; }
+
+.od-card { background:#fff; border:1px solid #e6ece9; border-radius:16px; overflow:hidden; box-shadow:0 2px 10px rgba(15,61,57,.04); }
+.od-card-head { display:flex; align-items:center; gap:10px; padding:13px 20px; font-weight:700; font-size:19px; color:#14323a; }
+.od-card-head.tint { background:#e9f3f0; }
+.od-head-icon { width:33px; height:33px; border-radius:10px; background:var(--teal); color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
+.od-bag-icon { color:var(--gold); font-size:24px; }
+
+.od-info-grid { display:grid; grid-template-columns:repeat(4, 1fr); padding:16px 8px; }
+.od-info-cell { display:flex; align-items:center; gap:10px; padding:0 14px; border-left:1px solid #e3e8e6; min-width:0; }
+.od-info-cell:first-child { border-left:0; }
+.od-info-ico { width:34px; height:34px; border-radius:10px; background:#e9f3f0; color:var(--teal); display:inline-flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+.od-info-label { font-size:14px; color:#8a938f; line-height:1.2; }
+.od-info-value { font-size:15.5px; font-weight:600; color:#14323a; line-height:1.3; word-break:break-word; }
+.od-info-note { padding:0 22px 16px; font-size:15.5px; color:#5f6b67; }
+
+.od-item { display:flex; align-items:center; gap:16px; margin:0 16px 14px; padding:12px; border:1px solid #e3e8e6; border-radius:14px; background:#fff; }
+.od-thumb { width:90px; height:90px; border-radius:10px; overflow:hidden; background:#f5f5f5; flex-shrink:0; }
+.od-thumb img { width:100%; height:100%; object-fit:cover; }
+.od-item-name { font-weight:700; font-size:17.5px; color:#14323a; }
+.od-pill { display:inline-block; padding:2px 11px; border-radius:7px; background:#eaf2ef; color:#14323a; font-size:13.5px; font-weight:600; border:1px solid #dbe7e3; }
+.od-item-sub { font-size:15px; color:#6b7672; }
+.od-item-price { font-weight:800; font-size:19.5px; color:var(--teal); white-space:nowrap; }
+
+.od-totals { margin:0 16px 16px; padding:14px 18px; background:#f1f4f3; border-radius:14px; }
+.od-totals-row { display:flex; justify-content:space-between; font-size:15px; color:#5f6b67; margin-bottom:6px; }
+.od-totals-row span:last-child { font-weight:600; color:#14323a; }
+.od-totals-final { display:flex; justify-content:space-between; align-items:center; border-top:1px solid #d9dfdc; margin-top:8px; padding-top:12px; }
+.od-totals-final .lbl { display:flex; align-items:center; gap:10px; font-weight:700; font-size:17.5px; color:#14323a; }
+.od-totals-final .amt { font-weight:800; font-size:24.5px; color:var(--teal); }
+
+.od-cancel-btn { display:inline-flex; align-items:center; gap:8px; background:#e0334c; color:#fff; border:0; border-radius:10px; padding:11px 36px; font-weight:700; font-size:17.5px; box-shadow:0 4px 12px rgba(224,51,76,.25); }
+.od-cancel-btn:hover { background:#c52a41; color:#fff; }
+
+@media (max-width: 767.98px) {
+  .od-info-grid { grid-template-columns:repeat(2, 1fr); row-gap:14px; padding:14px 6px; }
+  .od-info-cell:nth-child(3) { border-left:0; }
+}
+@media (max-width: 575.98px) {
+  .od-card-head { padding:10px 14px; font-size:17px; }
+  .od-info-label { font-size:12.5px; }
+  .od-info-value { font-size:14.5px; }
+  .od-info-ico { width:30px; height:30px; font-size:13px; }
+  .od-item-name { font-size:16px; }
+  .od-pill { font-size:12px; }
+  .od-item-sub { font-size:14px; }
+  .od-totals-row { font-size:14px; }
+  .od-totals-final .lbl { font-size:16px; }
+  .od-cancel-btn { font-size:16.5px; padding:10px 30px; }
+  .od-item { margin:0 10px 10px; gap:12px; padding:10px; }
+  .od-thumb { width:64px; height:64px; }
+  .od-item-price { font-size:17px; }
+  .od-totals { margin:0 10px 12px; padding:12px 14px; }
+  .od-totals-final .amt { font-size:21px; }
+  .od-step { font-size:13px; padding:5px 12px 5px 6px; }
+  .od-step .od-step-dot { width:20px; height:20px; font-size:10.5px; }
+  .od-step-line { width:6px; }
+}
+
 /* ===== Compact phone spacing ===== */
 @media (max-width: 575.98px) {
   .od-page { padding: .5rem .6rem 1rem !important; }
@@ -18,9 +89,7 @@
   .od-page .od-timeline .rounded-pill { padding: .2rem .5rem !important; gap: 4px !important; }
   .od-page .od-timeline .rounded-pill span { font-size: 10.5px !important; }
   .od-page .od-timeline > div[style*="width:24px"] { width: 6px !important; }
-  .od-page .od-info { flex-direction: column; gap: .2rem !important; }
   .od-page .od-proof-img { max-height: 150px !important; display: block; margin: 0 auto; }
-  .od-page [style*="width:64px"] { width: 50px !important; height: 50px !important; }
   .od-page .btn-lg { width: 100%; padding: .6rem 1rem; font-size: 1rem; }
 }
 </style>
@@ -30,8 +99,8 @@
 <div class="container py-5 od-page" style="max-width:1100px;">
   <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
-      <h4 class="fw-bold mb-1" style="color:var(--teal);">Order Details</h4>
-      <div class="text-muted small">
+      <h4 class="fw-bold mb-1" style="color:var(--teal);font-size:27px;">Order Details</h4>
+      <div class="text-muted" style="font-size:16px;">
         {% with items=order.items.all %}
         {% if items|length > 1 %}
           {{ items.0.product_name }} <span class="text-muted">+{{ items|length|add:"-1" }} more</span>
@@ -43,52 +112,22 @@
         Placed: <span class="fw-semibold text-dark">{{ order.created_at|date:"M d, Y \a\t H:i" }}</span>
       </div>
     </div>
-    <a href="{% url 'orders:my_orders' %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-arrow-left me-1"></i>Back</a>
+    <a href="{% url 'orders:my_orders' %}" class="back-pill"><i class="fas fa-arrow-left"></i>Back</a>
   </div>
 
-  <!-- Delivery Status Banner (Shopee-style) -->
+  <!-- Order status steps -->
   <div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
-    <div class="p-4" style="background:linear-gradient(135deg, var(--teal), #0d5c56);">
-      <div class="d-flex align-items-center gap-3">
-        <div style="width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-          {% if order.status == 'delivered' %}
-            <i class="fas fa-box-open text-white fs-5"></i>
-          {% elif order.status == 'shipped' %}
-            <i class="fas fa-truck text-white fs-5"></i>
-          {% elif order.status == 'cancelled' %}
-            <i class="fas fa-times-circle text-white fs-5"></i>
-          {% else %}
-            <i class="fas fa-clock text-white fs-5"></i>
-          {% endif %}
-        </div>
-        <div>
-          <div class="text-white fw-bold fs-5">{{ order.get_status_display }}</div>
-          <div class="text-white-50 small">
-            {% if order.status == 'delivered' %}Your order has been delivered.
-            {% elif order.status == 'shipped' %}Your order is on its way.
-            {% elif order.status == 'cancelled' %}This order was cancelled.
-            {% else %}We're preparing your order.{% endif %}
-          </div>
-        </div>
-      </div>
-    </div>
     <!-- Status Timeline -->
-    <div class="p-4">
-      <div class="d-flex align-items-center justify-content-center flex-wrap gap-2 od-timeline">
+    <div class="p-3 p-md-4">
+      <div class="od-steps">
         {% for s, l in order.STATUS_CHOICES %}
         {% if s != 'cancelled' %}
-        {% if not forloop.first %}
-        <div style="width:24px;height:2px;background:{% if forloop.counter0 < status_index %}#27ae60{% else %}#e0e0e0{% endif %};flex-shrink:0;"></div>
-        {% endif %}
-        <div class="d-flex align-items-center gap-2 px-3 py-2 rounded-pill" style="{% if forloop.counter < status_index %}background:#27ae60;{% elif forloop.counter == status_index %}background:var(--teal);{% elif order.status == 'cancelled' %}background:#f8d7da;{% else %}background:#e9e9e9;{% endif %}white-space:nowrap;">
-          {% if forloop.counter < status_index %}
-          <i class="fas fa-check" style="color:#fff;font-size:11px;"></i>
-          {% elif forloop.counter > status_index and order.status == 'cancelled' %}
-          <i class="fas fa-xmark" style="color:#c0392b;font-size:11px;"></i>
-          {% else %}
-          <span class="fw-bold" style="color:{% if forloop.counter == status_index %}#fff{% else %}#999{% endif %};font-size:11px;">{{ forloop.counter }}</span>
-          {% endif %}
-          <span class="fw-semibold" style="color:{% if forloop.counter <= status_index %}#fff{% elif order.status == 'cancelled' %}#c0392b{% else %}#999{% endif %};font-size:12px;">{{ l }}</span>
+        {% if not forloop.first %}<div class="od-step-line{% if forloop.counter0 < status_index %} done{% endif %}"></div>{% endif %}
+        <div class="od-step{% if forloop.counter < status_index %} done{% elif forloop.counter == status_index %} current{% elif order.status == 'cancelled' %} cancelled{% endif %}">
+          <span class="od-step-dot">
+            {% if forloop.counter < status_index or forloop.counter == status_index and order.status != 'cancelled' %}<i class="fas fa-check"></i>{% elif order.status == 'cancelled' %}<i class="fas fa-xmark"></i>{% endif %}
+          </span>
+          {{ forloop.counter }}. {{ l }}
         </div>
         {% endif %}
         {% endfor %}
@@ -97,20 +136,17 @@
   </div>
 
   <!-- Delivery / Shipping Information -->
-  <div class="card border-0 shadow-sm rounded-4 mb-4 p-3 px-4">
-    <div class="d-flex align-items-center gap-2 mb-2">
-      <i class="fas fa-map-marker-alt" style="color:var(--gold);"></i>
-      <h6 class="fw-bold mb-0">Delivery Information</h6>
+  <div class="od-card mb-4">
+    <div class="od-card-head tint"><span class="od-head-icon"><i class="fas fa-location-dot"></i></span>Delivery Information</div>
+    <div class="od-info-grid">
+      <div class="od-info-cell"><span class="od-info-ico"><i class="fas fa-user"></i></span><div><div class="od-info-label">Name</div><div class="od-info-value">{{ order.full_name }}</div></div></div>
+      <div class="od-info-cell"><span class="od-info-ico"><i class="fas fa-phone"></i></span><div><div class="od-info-label">Phone</div><div class="od-info-value">{{ order.phone }}</div></div></div>
+      <div class="od-info-cell"><span class="od-info-ico"><i class="fas fa-credit-card"></i></span><div><div class="od-info-label">Payment</div><div class="od-info-value">{{ order.get_payment_method_display }}</div></div></div>
+      <div class="od-info-cell"><span class="od-info-ico"><i class="fas fa-location-dot"></i></span><div><div class="od-info-label">Address</div><div class="od-info-value">{{ order.address }}, {{ order.city }}, {{ order.province }} {{ order.zip_code }}</div></div></div>
     </div>
-    <div class="d-flex flex-wrap gap-4 od-info" style="font-size:13px;">
-      <div><span class="text-muted">Name:</span> <span class="fw-semibold">{{ order.full_name }}</span></div>
-      <div><span class="text-muted">Phone:</span> <span class="fw-semibold">{{ order.phone }}</span></div>
-      <div><span class="text-muted">Payment:</span> <span class="fw-semibold">{{ order.get_payment_method_display }}</span></div>
-      <div><span class="text-muted">Address:</span> <span class="fw-semibold">{{ order.address }}, {{ order.city }}, {{ order.province }} {{ order.zip_code }}</span></div>
-      {% if order.notes %}
-      <div><span class="text-muted">Notes:</span> <span class="fw-semibold">{{ order.notes }}</span></div>
-      {% endif %}
-    </div>
+    {% if order.notes %}
+    <div class="od-info-note"><span class="text-muted">Notes:</span> <span class="fw-semibold">{{ order.notes }}</span></div>
+    {% endif %}
   </div>
 
   <!-- GCash Payment Verification -->
@@ -118,7 +154,7 @@
   <div class="card border-0 shadow-sm rounded-4 mb-4 p-3 px-4">
     <div class="d-flex align-items-center gap-2 mb-2">
       <i class="fas fa-mobile-screen-button" style="color:#0071CE;"></i>
-      <h6 class="fw-bold mb-0">GCash Payment</h6>
+      <h6 class="fw-bold mb-0" style="font-size:18.5px;">GCash Payment</h6>
     </div>
     {% if order.payment_proof %}
     <div class="row g-3 align-items-center">
@@ -127,7 +163,7 @@
           <img src="{{ order.payment_proof.url }}" alt="GCash payment verification" class="img-fluid rounded-3 border od-proof-img" style="max-height:220px;object-fit:cover;">
         </a>
       </div>
-      <div class="col-sm-8" style="font-size:13px;">
+      <div class="col-sm-8" style="font-size:15.5px;">
         <div class="text-success fw-semibold mb-1"><i class="fas fa-circle-check me-1"></i>Verification image received</div>
         {% if order.payment_submitted_at %}
         <div class="text-muted">Sent: {{ order.payment_submitted_at|date:"M d, Y \a\t H:i" }}</div>
@@ -137,7 +173,7 @@
       </div>
     </div>
     {% else %}
-    <div class="p-2 rounded" style="background:#fff8e6; color:#8a6d1f; font-size:13px;">
+    <div class="p-2 rounded" style="background:#fff8e6; color:#8a6d1f; font-size:15.5px;">
       <i class="fas fa-triangle-exclamation me-1"></i>No GCash payment verification image was received yet.
       <a href="{% url 'orders:gcash_payment' order.pk %}" class="fw-semibold" style="color:var(--teal);text-decoration:underline;">Send it now</a>
     </div>
@@ -146,44 +182,46 @@
   {% endif %}
 
   <!-- Order Items -->
-  <div class="card border-0 shadow-sm rounded-4 mb-4">
-    <div class="card-header bg-white border-0 py-3 px-4"><h6 class="fw-bold mb-0"><i class="fas fa-shopping-bag me-2" style="color:var(--gold);"></i>Order Items</h6></div>
+  <div class="od-card mb-4">
+    <div class="od-card-head"><i class="fas fa-bag-shopping od-bag-icon"></i>Order Items</div>
     {% for item in order.items.all %}
-    <div class="d-flex align-items-center gap-3 px-4 py-3 border-bottom">
-      <div style="width:64px;height:64px;border-radius:8px;overflow:hidden;background:#f5f5f5;flex-shrink:0;">
+    <div class="od-item">
+      <div class="od-thumb">
         {% if item.design.image %}
-          <img src="{{ item.design.image.url }}" alt="{{ item.product_name }}" style="width:100%;height:100%;object-fit:cover;">
+          <img src="{{ item.design.image.url }}" alt="{{ item.product_name }}">
         {% elif item.product.image %}
-          <img src="{{ item.product.image.url }}" alt="{{ item.product_name }}" style="width:100%;height:100%;object-fit:cover;">
+          <img src="{{ item.product.image.url }}" alt="{{ item.product_name }}">
         {% else %}
           <div class="d-flex align-items-center justify-content-center h-100"><i class="fas fa-image text-muted"></i></div>
         {% endif %}
       </div>
       <div style="flex:1;min-width:0;">
-        <div class="fw-semibold text-truncate">
-          {{ item.product_name }}
-          {% if item.size_display %}<span class="badge bg-light text-dark border ms-1" style="font-size:11px;">{{ item.size_display }}</span>{% endif %}
-          {% if item.design_name %}<span class="badge bg-light text-dark border ms-1" style="font-size:11px;">{{ item.design_name }}</span>{% endif %}
+        <div class="od-item-name">{{ item.product_name }}</div>
+        {% if item.size_display or item.design_name %}
+        <div class="d-flex flex-wrap gap-1 my-1">
+          {% if item.size_display %}<span class="od-pill">{{ item.size_display }}</span>{% endif %}
+          {% if item.design_name %}<span class="od-pill">{{ item.design_name }}</span>{% endif %}
         </div>
-        {% if item.product.category %}
-        <div class="text-muted small">{{ item.product.category.name }}</div>
         {% endif %}
-        <div class="text-muted small">₱{{ item.product_price|floatformat:0|intcomma }} × {{ item.quantity }}</div>
+        <div class="od-item-sub">₱{{ item.product_price|floatformat:0|intcomma }} × {{ item.quantity }}</div>
       </div>
-      <div class="fw-bold text-end" style="color:var(--gold);white-space:nowrap;">₱{{ item.item_total|floatformat:0|intcomma }}</div>
+      <div class="od-item-price">₱{{ item.item_total|floatformat:0|intcomma }}</div>
     </div>
     {% endfor %}
-    <div class="p-4">
-      <div class="d-flex justify-content-between mb-1 small"><span class="text-muted">Merchandise Subtotal</span><span>₱{{ order.subtotal|floatformat:0|intcomma }}</span></div>
-      <div class="d-flex justify-content-between mb-2 small"><span class="text-muted">Shipping Fee</span><span>₱{{ order.shipping_fee|floatformat:0|intcomma }}</span></div>
-      <div class="d-flex justify-content-between fw-bold border-top pt-2"><span>Order Total</span><span style="color:var(--gold);font-size:18px;">₱{{ order.total|floatformat:0|intcomma }}</span></div>
+    <div class="od-totals">
+      <div class="od-totals-row"><span>Merchandise Subtotal</span><span>₱{{ order.subtotal|floatformat:0|intcomma }}</span></div>
+      <div class="od-totals-row"><span>Shipping Fee</span><span>₱{{ order.shipping_fee|floatformat:0|intcomma }}</span></div>
+      <div class="od-totals-final">
+        <span class="lbl"><span class="od-head-icon"><i class="fas fa-wallet"></i></span>Order Total</span>
+        <span class="amt">₱{{ order.total|floatformat:0|intcomma }}</span>
+      </div>
     </div>
   </div>
 
   {% if order.status != 'shipped' and order.status != 'delivered' and order.status != 'cancelled' %}
   <div class="text-center">
-    <button type="button" class="btn btn-danger btn-lg px-5 shadow-sm" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">
-      <i class="fas fa-times-circle me-2"></i>Cancel Order
+    <button type="button" class="od-cancel-btn" data-bs-toggle="modal" data-bs-target="#cancelOrderModal">
+      <i class="fas fa-circle-xmark"></i>Cancel Order
     </button>
   </div>
   {% endif %}

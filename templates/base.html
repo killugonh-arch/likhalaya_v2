@@ -108,6 +108,83 @@
             font-weight: 600;
         }
 
+        /* Bigger header on desktop */
+        @media (min-width: 992px) {
+            .navbar { padding-top: 14px; padding-bottom: 14px; }
+            .navbar-brand img { height: 58px !important; }
+            .navbar-brand { gap: 10px !important; }
+            .navbar .nav-link { font-size: 15px; padding: 10px 14px !important; }
+            #navbarMain form input.form-control { height: 42px; font-size: 14px !important; }
+            #navbarMain form .btn-gold { height: 42px; padding: 0 16px; }
+            #navbarMain .btn.btn-teal,
+            #navbarMain .btn.btn-outline-secondary { padding: 10px 22px; font-size: 15px; }
+            .utility-icon { font-size: 24px; }
+        }
+
+        /* Keep cart, bell and profile on one centered line */
+        @media (min-width: 768px) {
+            .navbar-utility-row > .dropdown:not(.mobile-menu-wrapper) {
+                display: flex !important;
+                align-items: center;
+            }
+            .navbar-utility-row .user-chip {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                line-height: 1;
+                height: 100%;
+            }
+            .navbar-utility-row .user-chip .utility-icon { display: block; line-height: 1; }
+            .navbar-utility-row .user-email-text { font-size: 14px; line-height: 1; }
+            /* menu edges line up with the profile chip (icon on the left, email end on the right) */
+            /* Notification panel drops BELOW the header (never over the search bar),
+               right edge lined up with the end of the header content */
+            .navbar .container { position: relative; }
+            .navbar-utility-row > .notif-wrapper { position: static !important; }
+            .navbar-utility-row .notif-dropdown {
+                position: absolute !important;
+                top: 100% !important;
+                right: 12px !important;
+                left: auto !important;
+                margin-top: 14px !important;
+                transform: none !important;
+            }
+            .navbar-utility-row .account-dropdown-menu {
+                margin-top: 14px !important;
+                width: 100% !important;
+                min-width: 170px !important;
+                max-width: none !important;
+                right: 0 !important;
+                left: auto !important;
+            }
+        }
+
+        /* Shared "Back" pill button (same look as Back to Profile) */
+        .back-pill {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 10px 18px;
+            background: #fff;
+            border: 1.5px solid #dceae1;
+            border-radius: 12px;
+            font-family: inherit;
+            font-size: 13.5px; font-weight: 700; color: var(--teal);
+            text-decoration: none;
+            margin: 0 0 16px;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(15,61,57,.06);
+            transition: background .18s ease, border-color .18s ease, color .18s ease, transform .18s ease;
+        }
+        .back-pill i { font-size: 12px; }
+        .back-pill:hover {
+            background: var(--teal);
+            border-color: var(--teal);
+            color: #fff;
+            transform: translateX(-2px);
+        }
+        @media (max-width: 575.98px) {
+            .back-pill { padding: 6px 12px; font-size: 12.5px; border-radius: 10px; margin-bottom: 10px; }
+        }
+
         .navbar-brand-text {
             font-family: 'Poppins', sans-serif;
             font-size: 18px;
@@ -303,8 +380,8 @@
             font-weight: 900;
             font-size: 11px;
             color: var(--gold-lt);
-            opacity: 0;
-            transform: translateX(-4px);
+            opacity: .85;
+            transform: translateX(0);
             transition:
                 opacity .2s ease,
                 transform .2s ease;
@@ -317,7 +394,7 @@
 
         .footer-link-list a:hover::before {
             opacity: 1;
-            transform: translateX(0);
+            transform: translateX(2px);
         }
 
         .footer-contact-list {
@@ -531,7 +608,7 @@
             display: block;
             padding: 8px 16px 6px;
             color: var(--charcoal);
-            font-size: 12.5px;
+            font-size: 14.5px;
         }
 
         .account-dropdown-menu .dropdown-divider {
@@ -544,15 +621,15 @@
             align-items: center;
             gap: 10px;
             padding: 8px 16px;
-            font-size: 13px;
+            font-size: 15px;
             color: #3a3a3a;
             line-height: 1.2;
         }
 
         .account-dropdown-menu .dropdown-item i {
-            width: 14px;
+            width: 16px;
             text-align: center;
-            font-size: 13px;
+            font-size: 15px;
             color: #8a8a8a !important;
             flex-shrink: 0;
         }
@@ -717,7 +794,7 @@
             }
 
             .navbar-brand {
-                gap: 4px !important;
+                gap: 6px !important;
             }
 
             .navbar-nav .nav-link {
@@ -771,7 +848,7 @@
             }
 
             .navbar-brand {
-                gap: 2px !important;
+                gap: 4px !important;
             }
 
             .navbar .container {
@@ -1200,6 +1277,53 @@
         }
 
 
+        /* Smaller mobile account menu */
+        @media (max-width: 767.98px) {
+            .mobile-account-menu {
+                width: 180px !important;
+                min-width: 180px !important;
+                padding: 4px 0 !important;
+                border-radius: 10px;
+            }
+            .mobile-account-menu .mobile-menu-header { padding: 9px 12px !important; }
+            .mobile-account-menu .mobile-menu-user { font-size: 12px; gap: 8px; }
+            .mobile-account-menu .mobile-menu-user i { font-size: 17px; width: 18px; min-width: 18px; }
+            .mobile-account-menu .mobile-menu-item {
+                min-height: 36px !important;
+                padding: 7px 12px !important;
+                gap: 10px;
+                font-size: 12px !important;
+            }
+            .mobile-account-menu .mobile-menu-item i {
+                font-size: 13px;
+                width: 16px;
+                min-width: 16px;
+            }
+            .mobile-account-menu .mobile-menu-divider { margin: 2px 0; }
+
+            /* Smaller notifications panel on mobile (no sideways scrolling) */
+            .notif-dropdown {
+                width: 240px !important;
+                min-width: 0 !important;
+                max-width: calc(100vw - 24px) !important;
+                max-height: 240px !important;
+                overflow-x: hidden !important;
+                font-size: 12px !important;
+                border-radius: 10px;
+            }
+            .notif-dropdown .dropdown-header { padding: 8px 12px 4px !important; font-size: 12px !important; }
+            .notif-dropdown .dropdown-item,
+            .notif-dropdown .dropdown-item-text {
+                padding: 7px 12px !important;
+                font-size: 12px !important;
+                white-space: normal !important;
+                word-break: break-word;
+            }
+            .notif-dropdown .dropdown-item small,
+            .notif-dropdown .dropdown-item .small { font-size: 10.5px !important; }
+        }
+
+
         /* =========================================================
            GENERIC FLUID SECTION SCALING
            ========================================================= */
@@ -1488,10 +1612,12 @@
                 <div class="navbar-utility-row d-flex align-items-center gap-4">
 
 
+                    {% if user.is_authenticated %}
+
                     <!-- CART -->
                     <a
                         href="{% url 'orders:cart_detail' %}"
-                        class="position-relative text-decoration-none utility-icon{% if not user.is_authenticated %} d-none d-md-inline-block{% endif %}"
+                        class="position-relative text-decoration-none utility-icon"
                         title="Cart"
                     >
 
@@ -1510,29 +1636,18 @@
                     </a>
 
 
-                    <!-- ORDERS -->
-                    {% if user.is_authenticated %}
-
-                    <a
-                        href="{% url 'orders:my_orders' %}"
-                        class="position-relative text-decoration-none utility-icon"
-                        title="My Orders"
-                    >
-                        <i class="bi bi-box-seam"></i>
-                    </a>
-
-                    {% endif %}
 
 
                     <!-- =================================================
                          NOTIFICATIONS
                          ================================================= -->
 
-                    <div class="dropdown{% if not user.is_authenticated %} d-none d-md-block{% endif %}">
+                    <div class="dropdown notif-wrapper">
 
                         <button
                             class="btn btn-sm border-0 position-relative utility-icon utility-icon-btn"
                             data-bs-toggle="dropdown"
+                            data-bs-display="static"
                             style="background:transparent;"
                             title="Notifications"
                         >
@@ -1618,6 +1733,8 @@
                         </ul>
 
                     </div>
+
+                    {% endif %}
 
 
                     {% if user.is_authenticated %}

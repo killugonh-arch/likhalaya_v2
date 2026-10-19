@@ -565,6 +565,8 @@ body.dark-mode .ds-kpi-link:hover .ds-kpi-card { border-color: var(--dm-teal); }
       <div class="text-center px-4 pt-3" id="weeklySummary">
         <span class="text-muted fw-semibold" style="font-size:17px;" id="wsLabel">This week</span>
         <div class="fw-bold" style="font-size:40px;line-height:1.1;" id="wsValue">0</div>
+        <div class="text-muted" style="font-size:12.5px;" id="wsRange"></div>
+        <div class="mt-1"><span id="wsChange" class="ds-badge ds-badge-neutral"></span></div>
       </div>
       <div class="dash-panel-body dash-chart-body" style="position:relative;">
         <canvas id="chartWeeklyOrders"></canvas>
@@ -733,10 +735,34 @@ function weekName(i) {
   if (i === lastIdx - 1) return 'Last week';
   return chartData.weekly_labels[i];
 }
+const bestCount = Math.max(...weeklyCounts);
+const bestIdx = weeklyCounts.lastIndexOf(bestCount);
+
 function showWeek(i) {
   selectedWeek = i;
+  const n = weeklyCounts[i];
   document.getElementById('wsLabel').textContent = weekName(i);
-  document.getElementById('wsValue').textContent = weeklyCounts[i];
+  document.getElementById('wsValue').textContent = n;
+  document.getElementById('wsRange').textContent = chartData.weekly_labels[i] + (i === lastIdx ? ' (still ongoing)' : '');
+
+  const chg = document.getElementById('wsChange');
+  if (i === 0) {
+    chg.textContent = 'First week shown';
+    chg.className = 'ds-badge ds-badge-neutral';
+  } else {
+    const diff = n - weeklyCounts[i - 1];
+    const prev = i - 1 === lastIdx - 1 ? 'last week' : 'the week before';
+    if (diff > 0) {
+      chg.textContent = '▲ ' + diff + ' more than ' + prev;
+      chg.className = 'ds-badge ds-badge-success';
+    } else if (diff < 0) {
+      chg.textContent = '▼ ' + Math.abs(diff) + ' fewer than ' + prev;
+      chg.className = 'ds-badge ds-badge-danger';
+    } else {
+      chg.textContent = 'Same as ' + prev;
+      chg.className = 'ds-badge ds-badge-neutral';
+    }
+  }
 }
 showWeek(lastIdx);
 if (totalOrders === 0) document.getElementById('weeklyEmptyMsg').style.display = 'flex';
@@ -766,7 +792,14 @@ new Chart(document.getElementById('chartWeeklyOrders'), {
     datasets: [{
       label: 'Orders',
       data: weeklyCounts,
-      backgroundColor: (c) => c.dataIndex === selectedWeek ? BRAND_GREEN : 'rgba(15,107,79,.55)',
+      backgroundColor: (c) => {
+        const isPeak = bestCount > 0 && c.dataIndex === bestIdx;   // highest week = gold
+        if (isPeak) return c.dataIndex === selectedWeek ? '#c9971c' : '#e0b43c';
+        if (document.body.classList.contains('dark-mode')) {   // lighter greens on dark background
+          return c.dataIndex === selectedWeek ? '#5fd3a8' : '#3a9d7c';
+        }
+        return c.dataIndex === selectedWeek ? BRAND_GREEN : 'rgba(15,107,79,.55)';
+      },
       borderRadius: 6,
       maxBarThickness: 46,
       minBarLength: 2,

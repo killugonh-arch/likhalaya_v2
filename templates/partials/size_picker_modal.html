@@ -1298,5 +1298,37 @@
       bsModal.show();
     });
   });
+
+  // -----------------------------------------------------------------
+  // Back from Buy Now checkout: reopen this product's picker with the
+  // previous choices so the customer can change them or buy again.
+  // -----------------------------------------------------------------
+  (function reopenFromCheckout() {
+    var params = new URLSearchParams(window.location.search);
+    var pid = params.get('reopen_buy_now');
+    if (!pid) return;
+    var size = params.get('bn_size');
+    var design = params.get('bn_design');
+    var qty = parseInt(params.get('bn_qty'), 10);
+    ['reopen_buy_now', 'bn_size', 'bn_design', 'bn_qty'].forEach(function(k) { params.delete(k); });
+    var rest = params.toString();
+    history.replaceState(null, '', window.location.pathname + (rest ? '?' + rest : '') + window.location.hash);
+
+    var btn = Array.prototype.find.call(
+      document.querySelectorAll('.js-open-size-modal[data-mode="buy_now"]'),
+      function(b) { return (b.dataset.url || '').indexOf('/cart/add/' + pid + '/') !== -1; }
+    );
+    if (!btn) return;
+    btn.click();
+    var sizeObj = size ? getSizeObj(size) : null;
+    if (state.hasSizes && sizeObj && sizeAvailableStock(sizeObj) > 0) {
+      selectSize(size);
+      if (design && state.hasVariants) {
+        var d = (sizeObj.designs || []).find(function(x) { return String(x.id) === String(design); });
+        if (d && (d.stock || 0) > 0) selectDesign(d);
+      }
+    }
+    if (qty > 1) setQty(qty);
+  })();
 })();
 </script>

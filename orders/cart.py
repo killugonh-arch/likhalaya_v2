@@ -171,7 +171,30 @@ class Cart:
             design = ProductDesign.objects.filter(id=raw['design_id']).first()
         item = self._resolve(raw, {product.id: product}, {design.id: design} if design else {})
         item['key'] = self.make_key(item['product_id'], item.get('size'), item.get('design_id'))
+        item['max_qty'] = _max_purchasable(product, design)
         return item
+
+    def update_buy_now_quantity(self, action):
+        """Increase/decrease the pending buy now item, capped by its stock."""
+        raw = self.session.get(BUY_NOW_SESSION_ID)
+        if not raw:
+            return None
+        product = Product.objects.filter(id=raw.get('product_id'), is_active=True).first()
+        if not product:
+            return None
+        design = None
+        if raw.get('design_id'):
+            design = ProductDesign.objects.filter(id=raw['design_id']).first()
+        max_qty = _max_purchasable(product, design)
+        qty = raw.get('quantity', 1)
+        if action == 'increase':
+            qty += 1
+        elif action == 'decrease':
+            qty -= 1
+        raw['quantity'] = max(1, min(qty, max_qty)) if max_qty else 0
+        self.session[BUY_NOW_SESSION_ID] = raw
+        self.save()
+        return raw
 
     def clear_buy_now(self):
         if BUY_NOW_SESSION_ID in self.session:

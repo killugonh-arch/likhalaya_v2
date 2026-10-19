@@ -1,0 +1,250 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block page_title %}Reviews{% endblock %}
+{% block sb_reviews %}active{% endblock %}
+{% block title %}Product Reviews – Dashboard{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+.rv-page { --g: #0F6B4F; --g-hover: #0C5940; --g-light: #E6F4EF; --surface: #fff; --subtle: #F9FAF9; --bd: #E4E7E4; --tx: #1A1D1B; --tx2: #5B615D; --mut: #9AA09C; --danger: #C0362C; --danger-bg: #FBEAE8; --star: #E0A82E; }
+.rv-page .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
+.rv-page .stat { background: var(--surface); border: 1px solid var(--bd); border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(16,24,20,.06); }
+.rv-page .stat .n { font-size: 24px; font-weight: 800; color: var(--tx); line-height: 1.1; }
+.rv-page .stat .l { font-size: 12px; color: var(--mut); margin-top: 2px; }
+.rv-page .stat .n .fa-star { color: var(--star); font-size: 18px; }
+.rv-page .toolbar { background: var(--surface); border: 1px solid var(--bd); border-radius: 12px; padding: 14px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(16,24,20,.06); }
+.rv-page .toolbar form { display: flex; gap: 8px; flex-wrap: wrap; }
+.rv-page .toolbar input[type=text], .rv-page .toolbar select { padding: 9px 12px; border: 1px solid var(--bd); border-radius: 6px; font-size: 13px; background: var(--subtle); }
+.rv-page .toolbar input[type=text] { flex: 1 1 220px; }
+.rv-page .toolbar select { flex: 0 1 170px; }
+.rv-page .toolbar input:focus, .rv-page .toolbar select:focus { outline: none; border-color: var(--g); background: #fff; }
+.rv-page .btn-g { background: var(--g); color: #fff; border: none; border-radius: 6px; padding: 9px 16px; font-size: 13px; font-weight: 600; }
+.rv-page .btn-g:hover { background: var(--g-hover); color: #fff; }
+.rv-page .btn-o { background: #fff; color: var(--tx); border: 1px solid var(--bd); border-radius: 6px; padding: 9px 14px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; }
+.rv-page .panel { background: var(--surface); border: 1px solid var(--bd); border-radius: 12px; box-shadow: 0 1px 2px rgba(16,24,20,.06); overflow: hidden; }
+.rv-page .row-item { display: flex; gap: 14px; padding: 16px 20px; border-bottom: 1px solid var(--bd); }
+.rv-page .row-item:last-child { border-bottom: none; }
+.rv-page .row-item.is-hidden { background: #fafafa; }
+.rv-page .row-item.is-hidden .body { opacity: .6; }
+.rv-page .avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--g); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+.rv-page .body { flex: 1; min-width: 0; }
+.rv-page .stars { color: var(--star); font-size: 13px; }
+.rv-page .pname { font-weight: 700; font-size: 13.5px; color: var(--tx); text-decoration: none; }
+.rv-page .pname:hover { color: var(--g); }
+.rv-page .meta { font-size: 12px; color: var(--mut); }
+.rv-page .comment { margin: 6px 0 0; font-size: 13.5px; color: var(--tx2); white-space: pre-line; word-break: break-word; }
+.rv-page .chip { font-size: 10.5px; font-weight: 700; padding: 2px 9px; border-radius: 20px; white-space: nowrap; }
+.rv-page .chip-green { background: var(--g-light); color: var(--g); }
+.rv-page .chip-grey { background: #eceeed; color: var(--tx2); }
+.rv-page .chip-warn { background: #fff6e5; color: #a8700f; }
+.rv-page .reply { margin-top: 10px; background: var(--subtle); border-left: 3px solid var(--g); border-radius: 0 8px 8px 0; padding: 8px 12px; font-size: 13px; color: var(--tx2); white-space: pre-line; }
+.rv-page .reply .who { font-size: 11.5px; font-weight: 700; color: var(--g); margin-bottom: 2px; }
+.rv-page .actions { display: flex; gap: 6px; align-items: flex-start; flex-shrink: 0; }
+.rv-page .act { width: 34px; height: 34px; border-radius: 8px; border: 1px solid var(--bd); background: #fff; color: var(--tx2); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; font-size: 13px; }
+.rv-page .act:hover { background: var(--g-light); color: var(--g); border-color: var(--g); }
+.rv-page .act.del:hover { background: var(--danger-bg); color: var(--danger); border-color: var(--danger); }
+.rv-page .footer { display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; border-top: 1px solid var(--bd); background: var(--subtle); font-size: 13px; }
+.rv-page .empty { text-align: center; color: var(--mut); padding: 56px 16px; }
+
+body.dark-mode .rv-page { --surface: var(--dm-surface); --subtle: var(--dm-surface-2); --bd: var(--dm-border); --tx: var(--dm-text); --tx2: var(--dm-text-dim); --mut: var(--dm-text-mute); --g: var(--dm-teal); --g-light: rgba(79,209,197,.12); --danger-bg: rgba(255,107,107,.12); --danger: var(--dm-danger); }
+body.dark-mode .rv-page .row-item.is-hidden { background: var(--dm-surface-2); }
+body.dark-mode .rv-page .btn-g { color: #0e1420; }
+body.dark-mode .rv-page .toolbar input:focus, body.dark-mode .rv-page .toolbar select:focus { background: var(--dm-surface-3); }
+body.dark-mode .rv-page .act, body.dark-mode .rv-page .btn-o { background: var(--dm-surface); }
+
+@media (max-width: 767.98px) {
+  .rv-page .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .rv-page .row-item { flex-wrap: wrap; padding: 14px; }
+  .rv-page .actions { width: 100%; justify-content: flex-end; }
+  .rv-page .toolbar select { flex: 1 1 140px; }
+}
+</style>
+{% endblock %}
+
+{% block dash_content %}
+<div class="rv-page">
+  <div class="dash-breadcrumb">
+    <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
+    <span class="sep">/</span><span class="current">Reviews</span>
+  </div>
+  <div class="pd-header-top">
+    <div class="pd-header-titles">
+      <h1>Product Reviews</h1>
+      <p>Ratings and comments left by customers. Hidden reviews disappear from the shop and from the product's average rating.</p>
+    </div>
+  </div>
+
+  <div class="stat-grid">
+    <div class="stat"><div class="n">{{ overall.total }}</div><div class="l">Total reviews</div></div>
+    <div class="stat"><div class="n">{{ overall.avg }} <i class="fas fa-star"></i></div><div class="l">Average rating (visible)</div></div>
+    <div class="stat"><div class="n">{{ overall.unreplied }}</div><div class="l">Without a reply</div></div>
+    <div class="stat"><div class="n">{{ overall.hidden }}</div><div class="l">Hidden</div></div>
+  </div>
+
+  <div class="toolbar">
+    <form method="get">
+      <input type="text" name="q" value="{{ search }}" placeholder="Search product, customer, or comment…">
+      <select name="product" aria-label="Product">
+        <option value="">All products</option>
+        {% for p in products %}<option value="{{ p.pk }}" {% if product_filter == p.pk|stringformat:'s' %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+      </select>
+      <select name="rating" aria-label="Rating">
+        <option value="">All ratings</option>
+        {% for n in '54321' %}<option value="{{ n }}" {% if rating_filter == n %}selected{% endif %}>{{ n }} star{% if n != '1' %}s{% endif %}</option>{% endfor %}
+      </select>
+      <select name="status" aria-label="Status">
+        <option value="">All status</option>
+        <option value="visible" {% if status_filter == 'visible' %}selected{% endif %}>Visible</option>
+        <option value="hidden" {% if status_filter == 'hidden' %}selected{% endif %}>Hidden</option>
+        <option value="unreplied" {% if status_filter == 'unreplied' %}selected{% endif %}>No reply yet</option>
+        <option value="verified" {% if status_filter == 'verified' %}selected{% endif %}>Verified purchase</option>
+      </select>
+      <button type="submit" class="btn-g"><i class="fas fa-filter me-1"></i>Filter</button>
+      {% if search or rating_filter or status_filter or product_filter %}<a href="{% url 'reviews:dashboard_list' %}" class="btn-o">Clear</a>{% endif %}
+    </form>
+  </div>
+
+  <div class="panel">
+    {% for r in reviews %}
+    <div class="row-item {% if not r.is_visible %}is-hidden{% endif %}">
+      <div class="avatar">{{ r.display_name|first|upper }}</div>
+      <div class="body">
+        <div class="d-flex flex-wrap align-items-center gap-2">
+          <a class="pname" href="{% url 'dashboard:product_detail' r.product.pk %}">{{ r.product.name }}</a>
+          <span class="stars" aria-label="{{ r.rating }} out of 5">{% for s in r.stars %}{% if s == 'full' %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}{% endfor %}</span>
+          {% if r.is_verified_purchase %}<span class="chip chip-green"><i class="fas fa-circle-check me-1"></i>Verified</span>{% endif %}
+          {% if not r.is_visible %}<span class="chip chip-grey"><i class="fas fa-eye-slash me-1"></i>Hidden</span>{% endif %}
+          {% if not r.staff_reply %}<span class="chip chip-warn">No reply</span>{% endif %}
+        </div>
+        <div class="meta">{{ r.display_name }}{% if r.user %} · {{ r.user.email }}{% endif %} · {{ r.created_at|date:"M d, Y g:i A" }}</div>
+        {% if r.comment %}<p class="comment">{{ r.comment }}</p>{% else %}<p class="comment" style="font-style:italic;color:var(--mut);">No comment — rating only.</p>{% endif %}
+        {% if r.staff_reply %}
+        <div class="reply">
+          <div class="who"><i class="fas fa-reply me-1"></i>{{ r.replied_by.get_full_name|default:r.replied_by.username|default:'Staff' }}{% if r.replied_at %} · {{ r.replied_at|date:"M d, Y" }}{% endif %}</div>
+          {{ r.staff_reply }}
+        </div>
+        {% endif %}
+      </div>
+      <div class="actions">
+        <button type="button" class="act js-reply" title="{% if r.staff_reply %}Edit reply{% else %}Reply{% endif %}"
+                data-action="{% url 'reviews:dashboard_reply' r.pk %}"
+                data-name="{{ r.display_name }}" data-product="{{ r.product.name }}"
+                data-comment="{{ r.comment }}" data-reply="{{ r.staff_reply }}">
+          <i class="fas fa-reply"></i>
+        </button>
+        <form method="post" action="{% url 'reviews:dashboard_toggle' r.pk %}" class="m-0">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ request.get_full_path }}">
+          <button type="submit" class="act" title="{% if r.is_visible %}Hide from shop{% else %}Show on shop{% endif %}">
+            <i class="fas {% if r.is_visible %}fa-eye-slash{% else %}fa-eye{% endif %}"></i>
+          </button>
+        </form>
+        {% if request.user.is_admin_user %}
+        <button type="button" class="act del js-delete" title="Delete"
+                data-action="{% url 'reviews:dashboard_delete' r.pk %}"
+                data-label="{{ r.display_name }}'s review of {{ r.product.name }}">
+          <i class="fas fa-trash"></i>
+        </button>
+        {% endif %}
+      </div>
+    </div>
+    {% empty %}
+    <div class="empty">
+      <i class="far fa-star" style="font-size:34px;opacity:.5;"></i>
+      <div class="mt-2">{% if search or rating_filter or status_filter or product_filter %}No reviews match your filters.{% else %}No reviews yet. They'll appear here once customers start rating products.{% endif %}</div>
+    </div>
+    {% endfor %}
+
+    {% if page_obj.has_other_pages %}
+    <div class="footer">
+      <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+      <nav><ul class="pagination pagination-sm mb-0">
+        {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.previous_page_number }}">‹</a></li>{% endif %}
+        {% for n in page_obj.paginator.page_range %}
+        <li class="page-item {% if n == page_obj.number %}active{% endif %}"><a class="page-link" href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ n }}">{{ n }}</a></li>
+        {% endfor %}
+        {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ page_obj.next_page_number }}">›</a></li>{% endif %}
+      </ul></nav>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Reply modal -->
+<div class="modal fade" id="replyModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="post" id="replyForm" class="modal-content">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Reply to review</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div class="small text-muted mb-1" id="replyContext"></div>
+        <blockquote class="small mb-3" id="replyQuote" style="border-left:3px solid #ddd;padding-left:10px;white-space:pre-line;"></blockquote>
+        <label class="form-label fw-semibold small" for="replyText">Your public reply</label>
+        <textarea name="staff_reply" id="replyText" class="form-control" rows="4" maxlength="1000" placeholder="Thank the customer or address their concern…"></textarea>
+        <div class="form-text">Shown under the review on the product page. Leave empty and save to remove an existing reply.</div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-success">Save reply</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if request.user.is_admin_user %}
+<!-- Delete modal -->
+<div class="modal fade" id="deleteReviewModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <form method="post" id="deleteReviewForm" class="modal-content">
+      {% csrf_token %}
+      <input type="hidden" name="next" value="{{ request.get_full_path }}">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Delete review</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        Are you sure you want to delete <strong id="deleteReviewLabel"></strong>? This action cannot be undone. To keep it but remove it from the shop, use <em>Hide</em> instead.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-danger">Delete</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var replyModalEl = document.getElementById('replyModal');
+  if (replyModalEl) {
+    var replyModal = new bootstrap.Modal(replyModalEl);
+    document.querySelectorAll('.js-reply').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.getElementById('replyForm').action = btn.dataset.action;
+        document.getElementById('replyContext').textContent = btn.dataset.name + ' on ' + btn.dataset.product;
+        var q = document.getElementById('replyQuote');
+        q.textContent = btn.dataset.comment || '(rating only)';
+        document.getElementById('replyText').value = btn.dataset.reply || '';
+        replyModal.show();
+      });
+    });
+  }
+  var delEl = document.getElementById('deleteReviewModal');
+  if (delEl) {
+    var delModal = new bootstrap.Modal(delEl);
+    document.querySelectorAll('.js-delete').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        document.getElementById('deleteReviewForm').action = btn.dataset.action;
+        document.getElementById('deleteReviewLabel').textContent = btn.dataset.label;
+        delModal.show();
+      });
+    });
+  }
+});
+</script>
+{% endblock %}

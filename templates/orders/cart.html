@@ -131,7 +131,8 @@
 
 /* ===== Empty cart ===== */
 .empty-cart-card { background: #fff; border-radius: 20px; box-shadow: 0 6px 26px rgba(20,60,50,.07); padding: 64px 24px; }
-.empty-cart-icon { font-size: 68px; margin-bottom: 14px; }
+.empty-cart-title { font-size: 34px; }
+.empty-cart-text { font-size: 18px; }
 
 /* ===== Sticky mobile checkout bar (phones/tablets) ===== */
 .cart-mobile-bar {
@@ -189,7 +190,8 @@
   .free-shipping-alert { font-size: 11.5px; }
   .secure-checkout-note { margin-top: 10px; padding: 9px 12px; font-size: 12px; gap: 9px; }
   .empty-cart-card { padding: 36px 16px; }
-  .empty-cart-icon { font-size: 52px; margin-bottom: 8px; }
+  .empty-cart-title { font-size: 26px; }
+  .empty-cart-text { font-size: 16px; }
 }
 </style>
 {% endblock %}
@@ -198,7 +200,7 @@
 <div class="cart-page-wrap py-5">
   <div class="container cart-page-container">
     <div class="cart-page-header">
-      <a href="{% url 'store:shop' %}" class="cart-back-link"><i class="fas fa-arrow-left"></i>Continue Shopping</a>
+      <a href="{% url 'store:shop' %}" class="back-pill"><i class="fas fa-arrow-left"></i>Continue Shopping</a>
       <h1>Shopping Cart</h1>
       <p>Review your items and proceed to checkout when you're ready.</p>
     </div>
@@ -336,9 +338,8 @@
     </div>
     {% else %}
     <div class="empty-cart-card text-center">
-      <div class="empty-cart-icon">🛒</div>
-      <h4 class="fw-bold text-muted mb-2">Your cart is empty</h4>
-      <p class="text-muted small mb-4">Discover handcrafted products from our PDL artisans.</p>
+      <h4 class="empty-cart-title fw-bold text-muted mb-2">Your cart is empty</h4>
+      <p class="empty-cart-text text-muted mb-4">Discover handcrafted products from our PDL artisans.</p>
       <a href="{% url 'store:shop' %}" class="btn btn-teal btn-lg px-5 rounded-3">Start Shopping</a>
     </div>
     {% endif %}

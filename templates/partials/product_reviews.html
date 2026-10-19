@@ -1,0 +1,188 @@
+<section id="reviews" class="rv-section">
+  <style>
+    .rv-section { margin-top: 56px; padding-top: 32px; border-top: 1px solid #ece7dc; scroll-margin-top: 90px; }
+    .rv-title { font-family: 'Playfair Display', serif; font-weight: 700; color: var(--teal); margin-bottom: 20px; }
+    .rv-stars { color: #E0A82E; letter-spacing: 1px; }
+    .rv-summary { background: #faf8f3; border: 1px solid #ece7dc; border-radius: 16px; padding: 22px; }
+    .rv-avg { font-size: 44px; font-weight: 800; line-height: 1; color: var(--teal); font-family: 'Poppins', sans-serif; }
+    .rv-bar-row { display: flex; align-items: center; gap: 10px; font-size: 12px; color: #6b6b6b; margin-bottom: 6px; }
+    .rv-bar-row .lbl { width: 28px; flex-shrink: 0; white-space: nowrap; }
+    .rv-bar { flex: 1; height: 8px; background: #ece7dc; border-radius: 6px; overflow: hidden; }
+    .rv-bar > span { display: block; height: 100%; background: #E0A82E; border-radius: 6px; }
+    .rv-bar-row .cnt { width: 26px; text-align: right; flex-shrink: 0; }
+
+    .rv-form-card { background: #fff; border: 1px solid #ece7dc; border-radius: 16px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,.04); }
+    .rv-form-card h6 { font-weight: 700; margin-bottom: 4px; }
+    /* CSS-only star picker: radios in reverse DOM order so ~ highlights lower stars */
+    .rv-picker { display: inline-flex; flex-direction: row-reverse; gap: 4px; }
+    .rv-picker input { position: absolute; opacity: 0; pointer-events: none; }
+    .rv-picker label { font-size: 30px; line-height: 1; color: #d8d2c4; cursor: pointer; transition: color .12s, transform .12s; }
+    .rv-picker label:hover, .rv-picker label:hover ~ label,
+    .rv-picker input:checked ~ label { color: #E0A82E; }
+    .rv-picker label:hover { transform: scale(1.12); }
+    .rv-picker input:focus-visible + label { outline: 2px solid var(--teal); outline-offset: 2px; border-radius: 4px; }
+    .rv-textarea { width: 100%; border: 1.5px solid #ddd; border-radius: 10px; padding: 10px 12px; font-size: 14px; resize: vertical; min-height: 96px; }
+    .rv-textarea:focus { outline: none; border-color: var(--teal); }
+    .rv-count { font-size: 11px; color: #9a9a9a; text-align: right; }
+
+    .rv-sort { border: 1.5px solid #ddd; border-radius: 8px; padding: 6px 10px; font-size: 13px; background: #fff; }
+    .rv-item { padding: 18px 0; border-bottom: 1px solid #f0ebe0; }
+    .rv-item:last-child { border-bottom: none; }
+    .rv-avatar { width: 40px; height: 40px; border-radius: 50%; background: var(--teal); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 15px; flex-shrink: 0; }
+    .rv-name { font-weight: 700; font-size: 14px; }
+    .rv-date { font-size: 12px; color: #9a9a9a; }
+    .rv-verified { font-size: 10.5px; font-weight: 700; background: #eafaf1; color: #1e8e4e; padding: 2px 8px; border-radius: 20px; white-space: nowrap; }
+    .rv-mine { font-size: 10.5px; font-weight: 700; background: rgba(30,95,90,.1); color: var(--teal); padding: 2px 8px; border-radius: 20px; }
+    .rv-hidden-note { font-size: 12px; background: #fff6e5; color: #a8700f; border-radius: 8px; padding: 6px 10px; display: inline-block; }
+    .rv-comment { margin: 8px 0 0; line-height: 1.7; color: #444; white-space: pre-line; word-break: break-word; }
+    .rv-reply { margin-top: 10px; background: #f3f8f7; border-left: 3px solid var(--teal); border-radius: 0 10px 10px 0; padding: 10px 14px; font-size: 13.5px; }
+    .rv-reply .who { font-weight: 700; color: var(--teal); font-size: 12px; margin-bottom: 2px; }
+    @media (max-width: 575.98px) {
+      .rv-section { margin-top: 36px; }
+      .rv-avg { font-size: 36px; }
+      .rv-picker label { font-size: 34px; }
+    }
+  </style>
+
+  <h4 class="rv-title">Ratings &amp; Reviews</h4>
+
+  <div class="row g-4">
+    <!-- LEFT: summary + form -->
+    <div class="col-lg-4">
+      <div class="rv-summary mb-4">
+        {% if stats.total %}
+        <div class="d-flex align-items-center gap-3 mb-3">
+          <div class="rv-avg">{{ stats.average }}</div>
+          <div>
+            <div class="rv-stars" aria-label="{{ stats.average }} out of 5">
+              {% for s in stats.stars %}{% if s == 'full' %}<i class="fas fa-star"></i>{% elif s == 'half' %}<i class="fas fa-star-half-stroke"></i>{% else %}<i class="far fa-star"></i>{% endif %}{% endfor %}
+            </div>
+            <div class="text-muted small">{{ stats.total }} review{{ stats.total|pluralize }}</div>
+          </div>
+        </div>
+        {% for row in stats.rows %}
+        <div class="rv-bar-row">
+          <span class="lbl">{{ row.stars }} <i class="fas fa-star" style="color:#E0A82E;font-size:10px;"></i></span>
+          <div class="rv-bar"><span style="width:{{ row.percent }}%;"></span></div>
+          <span class="cnt">{{ row.count }}</span>
+        </div>
+        {% endfor %}
+        {% else %}
+        <div class="text-center py-2">
+          <div class="rv-stars" style="font-size:26px;"><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i><i class="far fa-star"></i></div>
+          <div class="text-muted small mt-2">No reviews yet. Be the first to share your thoughts!</div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div class="rv-form-card">
+        {% if user.is_authenticated %}
+        <h6>{% if my_review %}Your review{% else %}Write a review{% endif %}</h6>
+        <div class="text-muted small mb-3">
+          {% if my_review %}You can update your rating and comment anytime.{% else %}Share your experience with this product.{% endif %}
+          {% if has_purchased %}<span class="rv-verified ms-1"><i class="fas fa-circle-check me-1"></i>Verified purchase</span>{% endif %}
+        </div>
+        <form method="post" action="{% url 'reviews:submit' product.slug %}">
+          {% csrf_token %}
+          <div class="mb-3">
+            <div class="rv-picker" role="radiogroup" aria-label="Star rating">
+              {% for n in '54321' %}
+              <input type="radio" name="rating" id="rv-star-{{ n }}" value="{{ n }}" required {% if my_review and my_review.rating|stringformat:"s" == n %}checked{% endif %}>
+              <label for="rv-star-{{ n }}" title="{{ n }} star{% if n != '1' %}s{% endif %}"><i class="fas fa-star"></i></label>
+              {% endfor %}
+            </div>
+          </div>
+          <textarea name="comment" id="rvComment" class="rv-textarea" maxlength="1000" placeholder="Tell others what you think (optional)">{% if my_review %}{{ my_review.comment }}{% endif %}</textarea>
+          <div class="rv-count"><span id="rvCommentCount">{% if my_review %}{{ my_review.comment|length }}{% else %}0{% endif %}</span>/1000</div>
+          <div class="d-flex gap-2 mt-2">
+            <button type="submit" class="btn btn-teal rounded-3 px-4 flex-grow-1"><i class="fas fa-paper-plane me-2"></i>{% if my_review %}Update Review{% else %}Post Review{% endif %}</button>
+          </div>
+        </form>
+        {% if my_review %}
+        <form method="post" action="{% url 'reviews:delete_mine' my_review.pk %}" class="mt-2" onsubmit="return confirm('Delete your review?');">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-link text-danger btn-sm p-0 text-decoration-none"><i class="fas fa-trash-can me-1"></i>Delete my review</button>
+        </form>
+        {% endif %}
+        {% else %}
+        <h6>Write a review</h6>
+        <p class="text-muted small mb-3">Log in to rate this product and leave a comment.</p>
+        <a href="{% url 'accounts:login' %}?next={{ product.get_absolute_url|urlencode }}%23reviews" class="btn btn-teal rounded-3 w-100"><i class="fas fa-right-to-bracket me-2"></i>Log in to review</a>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- RIGHT: list -->
+    <div class="col-lg-8">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-1">
+        <div class="fw-bold">{% if stats.total %}{{ stats.total }} customer review{{ stats.total|pluralize }}{% else %}Customer reviews{% endif %}</div>
+        {% if stats.total > 1 %}
+        <form method="get" action="#reviews">
+          <select name="rsort" class="rv-sort" onchange="this.form.submit()" aria-label="Sort reviews">
+            <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option>
+            <option value="highest" {% if sort == 'highest' %}selected{% endif %}>Highest rated</option>
+            <option value="lowest" {% if sort == 'lowest' %}selected{% endif %}>Lowest rated</option>
+          </select>
+        </form>
+        {% endif %}
+      </div>
+
+      {% if my_review and not my_review.is_visible %}
+      <div class="mt-2"><span class="rv-hidden-note"><i class="fas fa-eye-slash me-1"></i>Your review is currently hidden by the store team.</span></div>
+      {% endif %}
+
+      {% for r in page_obj %}
+      <article class="rv-item">
+        <div class="d-flex gap-3">
+          <div class="rv-avatar">{{ r.display_name|first|upper }}</div>
+          <div class="flex-grow-1" style="min-width:0;">
+            <div class="d-flex justify-content-between align-items-start flex-wrap gap-1">
+              <div class="d-flex align-items-center flex-wrap gap-2">
+                <span class="rv-name">{{ r.display_name }}</span>
+                {% if r.is_verified_purchase %}<span class="rv-verified"><i class="fas fa-circle-check me-1"></i>Verified purchase</span>{% endif %}
+                {% if my_review and r.pk == my_review.pk %}<span class="rv-mine">You</span>{% endif %}
+              </div>
+              <span class="rv-date">{{ r.created_at|date:"M d, Y" }}</span>
+            </div>
+            <div class="rv-stars my-1" style="font-size:13px;" aria-label="{{ r.rating }} out of 5">
+              {% for s in r.stars %}{% if s == 'full' %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}{% endfor %}
+            </div>
+            {% if r.comment %}<p class="rv-comment">{{ r.comment }}</p>{% endif %}
+            {% if r.staff_reply %}
+            <div class="rv-reply">
+              <div class="who"><i class="fas fa-store me-1"></i>Response from Likhalaya</div>
+              <div style="white-space:pre-line;">{{ r.staff_reply }}</div>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </article>
+      {% empty %}
+      <div class="text-center text-muted py-5">
+        <i class="far fa-comments" style="font-size:34px;opacity:.5;"></i>
+        <div class="mt-2">No reviews yet.</div>
+      </div>
+      {% endfor %}
+
+      {% if page_obj.has_other_pages %}
+      <nav class="mt-3" aria-label="Review pages">
+        <ul class="pagination pagination-sm mb-0 justify-content-center">
+          {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?rpage={{ page_obj.previous_page_number }}&rsort={{ sort }}#reviews">‹</a></li>{% endif %}
+          {% for n in page_obj.paginator.page_range %}
+          <li class="page-item {% if n == page_obj.number %}active{% endif %}"><a class="page-link" href="?rpage={{ n }}&rsort={{ sort }}#reviews">{{ n }}</a></li>
+          {% endfor %}
+          {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?rpage={{ page_obj.next_page_number }}&rsort={{ sort }}#reviews">›</a></li>{% endif %}
+        </ul>
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var ta = document.getElementById('rvComment');
+      var cnt = document.getElementById('rvCommentCount');
+      if (ta && cnt) ta.addEventListener('input', function () { cnt.textContent = ta.value.length; });
+    })();
+  </script>
+</section>

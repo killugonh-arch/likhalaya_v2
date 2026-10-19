@@ -80,11 +80,11 @@
     <div class="{% if order.payment_proof %}col-lg-11 col-xl-10{% else %}col-lg-6{% endif %}">
 
       {% if order.is_finalized %}
-      <a href="{% url 'orders:order_detail' order.pk %}" class="btn btn-outline-secondary btn-sm rounded-3 mb-3">
+      <a href="{% url 'orders:order_detail' order.pk %}" class="back-pill">
         <i class="fas fa-arrow-left me-1"></i>Back to Order
       </a>
       {% else %}
-      <a href="{% url 'orders:gcash_back_to_checkout' order.pk %}" class="btn btn-outline-secondary btn-sm rounded-3 mb-3">
+      <a href="{% url 'orders:gcash_back_to_checkout' order.pk %}" class="back-pill">
         <i class="fas fa-arrow-left me-1"></i>Back to Cart
       </a>
       {% endif %}

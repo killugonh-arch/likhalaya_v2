@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load static %}
+{% load review_tags %}
 {% block title %}Likhalaya – PDL Marketplace | Carigara, Leyte{% endblock %}
 {% block nav_home %}active{% endblock %}
 
@@ -303,8 +304,8 @@
   border: 3px solid rgba(255,255,255,.25);
   box-shadow: 0 12px 30px rgba(0,0,0,.25);
 }
-.mission-banner h3 { font-family: 'Poppins', sans-serif; font-size: 26px; }
-.mission-banner p { color: rgba(255,255,255,.82); font-size: 15px; max-width: 540px; line-height: 1.7; margin-bottom: 26px; }
+.mission-banner h3 { font-family: 'Poppins', sans-serif; font-size: 34px; }
+.mission-banner p { color: rgba(255,255,255,.82); font-size: 17px; max-width: 640px; line-height: 1.7; margin-bottom: 26px; }
 
 /* ---------- Fix: remove white gap before footer ---------- */
 body { background-color: #F7F5EE; }
@@ -447,6 +448,7 @@ body { background-color: #F7F5EE; }
             <h6 class="home-product-name">
               <a href="{{ product.get_absolute_url }}">{{ product.name }}</a>
             </h6>
+            {% card_rating product %}
             <div class="home-product-footer">
               <div class="home-product-price-wrap">
                 <span class="home-product-price-label">Starts at</span>
@@ -610,7 +612,7 @@ body { background-color: #F7F5EE; }
 {% endif %}
 
 <!-- ═══ MISSION BANNER ═══ -->
-<section class="home-section mission-banner-section" style="background:#F7F5EE;">
+<section class="home-section mission-banner-section d-none d-md-block" style="background:#F7F5EE;">
   <div class="container">
     <div class="mission-banner" data-aos="fade-up">
       <img src="{% static 'imgs/pic02.jpg' %}" alt="Likhalaya artisans" class="mission-banner-circle-img d-none d-md-block">

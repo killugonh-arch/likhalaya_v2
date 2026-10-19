@@ -132,6 +132,35 @@
 .rpt-chart-wrap { position: relative; width: 100%; height: 280px; }
 @media (max-width: 575.98px) { .rpt-chart-wrap { height: 240px; } }
 
+/* Section headers: every block on this page is either "Selected month" or "Full year" */
+.rpt-section-head { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 28px 0 var(--space-3); }
+.rpt-section-head.first { margin-top: 0; }
+.rpt-section-head h5 { margin: 0; padding-left: 10px; border-left: 4px solid var(--brand-green); font-size: 15px; font-weight: 800; color: var(--text-primary); }
+.rpt-section-head p { flex-basis: 100%; margin: 0; font-size: 12.5px; color: var(--text-muted); }
+/* Monthly History: best-month callout + table badge */
+.mh-best { display: flex; align-items: flex-start; gap: 10px; margin: var(--space-4) var(--space-4) 0; padding: 10px 14px; border-radius: 10px; background: rgba(212,160,23,.12); border: 1px solid rgba(212,160,23,.35); font-size: 13px; line-height: 1.5; color: var(--text-primary); }
+.mh-best[hidden] { display: none; }
+.mh-best i { color: #d4a017; margin-top: 3px; }
+.mh-best-badge { display: inline-block; margin-left: 8px; padding: 1px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 700; background: rgba(212,160,23,.18); color: #a67c00; vertical-align: middle; }
+body.dark-mode .mh-best { color: var(--dm-text); }
+body.dark-mode .mh-best-badge { color: #f0c24a; }
+/* Monthly History: Graph / Table switch */
+.view-toggle { display: inline-flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.view-toggle-btn { appearance: none; background: none; border: none; cursor: pointer; padding: 5px 12px; font-size: 12px; font-weight: 700; color: var(--text-muted); transition: background var(--transition), color var(--transition); }
+.view-toggle-btn + .view-toggle-btn { border-left: 1px solid var(--border); }
+.view-toggle-btn:hover { color: var(--text-primary); }
+.view-toggle-btn.active { background: var(--brand-green-light); color: var(--brand-green); }
+.view-toggle-btn:focus-visible { outline: 2px solid var(--brand-green); outline-offset: -2px; }
+.mh-view { display: none; }
+.mh-view.active { display: block; }
+.mh-graph-body { padding: var(--space-4); }
+.mh-graph-body .rpt-chart-wrap { height: 360px; }
+@media (max-width: 575.98px) { .mh-graph-body .rpt-chart-wrap { height: 300px; } }
+body.dark-mode .view-toggle, body.dark-mode .view-toggle-btn + .view-toggle-btn { border-color: var(--dm-border); }
+body.dark-mode .view-toggle-btn { color: var(--dm-text-mute); }
+body.dark-mode .view-toggle-btn.active { color: var(--dm-teal); }
+@media print { #mhGraph { display: none !important; } #mhTable { display: block !important; } .view-toggle { display: none !important; } }
+
 /* Monthly History: highlight the selected month, keep Month column visible while scrolling sideways */
 .ds-table tr.row-selected td { background: var(--brand-green-light); }
 .ds-table.sticky-first th:first-child, .ds-table.sticky-first td:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface-white); }
@@ -375,7 +404,34 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
 </div>
 
 <div class="reports-tab-panel active" id="tab-revenue" role="tabpanel" aria-labelledby="tabbtn-revenue">
-<p class="reports-section-intro">Money actually received. Counts delivered orders only, grouped by delivery date.</p>
+<div class="rpt-section-head first">
+  <h5>Full year</h5>
+  <span class="ds-badge ds-badge-neutral">{{ selected_year }}</span>
+  <p>Delivered orders only, month by month. Click a month to open it in the section below.</p>
+</div>
+
+<!-- Monthly History -->
+<div class="dash-panel mb-4">
+  <div class="dash-panel-header">
+    <h6>Monthly History — {{ selected_year }}</h6>
+    <span class="ds-badge ds-badge-neutral">Full year</span>
+  </div>
+  <div class="mh-best" id="mhBest" hidden>
+    <i class="fas fa-trophy"></i>
+    <div id="mhBestText"></div>
+  </div>
+  <div class="mh-graph-body" id="mhGraph">
+    <div class="rpt-chart-wrap">
+      <canvas id="chartMonthlyHistory"></canvas>
+    </div>
+  </div>
+</div>
+
+<div class="rpt-section-head">
+  <h5>Selected month</h5>
+  <span class="ds-badge ds-badge-neutral">{{ period_label }}</span>
+  <p>Sales, income by payment method, expenses and month-end closing for the month chosen above.</p>
+</div>
 
 {% if awaiting_count %}
 <div class="d-flex align-items-start gap-2 mb-3" style="background:#eaf3fb;color:#2b6cb0;border-radius:10px;padding:12px 16px;font-size:13px;">
@@ -637,13 +693,14 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
   </div>
 </div>
 
-<!-- Monthly History -->
+
+<!-- Monthly History — table (kept separate, at the bottom) -->
 <div class="dash-panel mb-4">
   <div class="dash-panel-header">
-    <h6>Monthly History — {{ selected_year }}</h6>
+    <h6>Monthly History Table — {{ selected_year }}</h6>
     <span class="ds-badge ds-badge-neutral">Full year</span>
   </div>
-  <div class="table-responsive">
+  <div class="table-responsive" id="mhTable">
     <table class="ds-table no-stack sticky-first mb-0">
       <thead>
         <tr>
@@ -681,27 +738,13 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
 </div><!-- /#tab-revenue -->
 
 <div class="reports-tab-panel" id="tab-analytics" role="tabpanel" aria-labelledby="tabbtn-analytics">
-<p class="reports-section-intro">Demand and order activity — orders placed this period, any status or payment method. Kept separate from the confirmed-revenue figures on the other tab.</p>
+<div class="rpt-section-head first">
+  <h5>Selected month</h5>
+  <span class="ds-badge ds-badge-neutral">{{ period_label }}</span>
+  <p>Where this month's orders stand and what is selling.</p>
+</div>
 
 <div class="row g-4 mb-4">
-  <div class="col-lg-7">
-    <div class="dash-panel h-100">
-      <div class="dash-panel-header">
-        <h6>Order Value Trend</h6>
-        <span class="ds-badge ds-badge-neutral">{{ selected_year }} · excl. cancelled</span>
-      </div>
-      <div class="dash-panel-body">
-        {% if monthly_trend %}
-        <div class="rpt-chart-wrap">
-          <canvas id="chartRevenueTrend"></canvas>
-          <img class="print-chart-img" id="printChartRevenueTrend" alt="Order Value Trend chart">
-        </div>
-        {% else %}
-        <div class="dash-panel-empty"><i class="fas fa-chart-line fa-lg mb-2 d-block"></i>No orders placed in {{ selected_year }} yet.</div>
-        {% endif %}
-      </div>
-    </div>
-  </div>
   <div class="col-lg-5">
     <div class="dash-panel h-100">
       <div class="dash-panel-header">
@@ -709,7 +752,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         <span class="ds-badge ds-badge-neutral">{{ period_label }}</span>
       </div>
       <div class="dash-panel-body d-flex align-items-center justify-content-center">
-        {% if sales_by_status %}
+        {% if sales_total_orders %}
         <div class="rpt-chart-wrap">
           <canvas id="chartStatusBreakdown"></canvas>
           <img class="print-chart-img" id="printChartStatusBreakdown" alt="Orders by Status chart">
@@ -720,12 +763,13 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
       </div>
     </div>
   </div>
-</div>
 
-<div class="row g-4 mb-4">
-  <div class="col-lg-6">
+  <div class="col-lg-7">
     <div class="dash-panel h-100">
-      <div class="dash-panel-header"><h6>Orders by Status — Detail</h6></div>
+      <div class="dash-panel-header">
+        <h6>Orders by Status — Detail</h6>
+        <span class="ds-badge ds-badge-neutral">Order value incl. shipping</span>
+      </div>
       <div class="table-responsive">
         <table class="ds-table no-stack mb-0">
           <thead><tr><th>Status</th><th>Orders</th><th>Order Value</th></tr></thead>
@@ -760,43 +804,45 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
       </div>
     </div>
   </div>
+</div>
 
-  <div class="col-lg-6">
-    <div class="dash-panel h-100">
-      <div class="dash-panel-header"><h6>Top Products by Units Sold</h6></div>
-      <div class="table-responsive">
-        <table class="ds-table no-stack mb-0">
-          <thead><tr><th>Product</th><th>Units</th><th>Revenue</th></tr></thead>
-          <tbody>
-            {% for p in top_products %}
-            <tr>
-              <td class="fw-semibold" style="font-size:13px;">
-                {{ p.product_name|truncatechars:28 }}
-                {% if p.product_deleted %}
-                <span class="ds-badge ds-badge-danger ms-1" style="font-size:10px;" title="{% if p.product_deleted_permanent %}Permanently deleted{% else %}Deleted (in Archive, can be restored){% endif %}">Deleted</span>
-                {% endif %}
-                {% if p.category_deleted %}
-                <span class="ds-badge ds-badge-warning ms-1" style="font-size:10px;" title="This product's category was deleted (in Archive)">Category deleted</span>
-                {% endif %}
-              </td>
-              <td><span class="ds-badge ds-badge-neutral">{{ p.units }}</span></td>
-              <td class="fw-semibold" style="color:var(--brand-green);">₱{{ p.revenue|floatformat:2|intcomma }}</td>
-            </tr>
-            {% empty %}
-            <tr><td colspan="3">
-              <div class="ds-empty-state">
-                <i class="fas fa-box-open icon"></i>
-                <div class="title">No product sales yet</div>
-                <div class="desc">Top sellers will appear here once orders come in.</div>
-              </div>
-            </td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
-    </div>
+<div class="dash-panel mb-4">
+  <div class="dash-panel-header">
+    <h6>Top Products by Units Sold</h6>
+    <span class="ds-badge ds-badge-neutral">{{ period_label }} · excl. cancelled</span>
+  </div>
+  <div class="table-responsive">
+    <table class="ds-table no-stack mb-0">
+      <thead><tr><th>Product</th><th>Units</th><th>Revenue</th></tr></thead>
+      <tbody>
+        {% for p in top_products %}
+        <tr>
+          <td class="fw-semibold" style="font-size:13px;">
+            {{ p.product_name|truncatechars:40 }}
+            {% if p.product_deleted %}
+            <span class="ds-badge ds-badge-danger ms-1" style="font-size:10px;" title="{% if p.product_deleted_permanent %}Permanently deleted{% else %}Deleted (in Archive, can be restored){% endif %}">Deleted</span>
+            {% endif %}
+            {% if p.category_deleted %}
+            <span class="ds-badge ds-badge-warning ms-1" style="font-size:10px;" title="This product's category was deleted (in Archive)">Category deleted</span>
+            {% endif %}
+          </td>
+          <td><span class="ds-badge ds-badge-neutral">{{ p.units }}</span></td>
+          <td class="fw-semibold" style="color:var(--brand-green);">₱{{ p.revenue|floatformat:2|intcomma }}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="3">
+          <div class="ds-empty-state">
+            <i class="fas fa-box-open icon"></i>
+            <div class="title">No product sales yet</div>
+            <div class="desc">Top sellers will appear here once orders come in.</div>
+          </div>
+        </td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
   </div>
 </div>
+
 </div><!-- /#tab-analytics -->
 
 <div class="print-footer">
@@ -849,6 +895,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 // ── Section tabs (remembered, so changing the month doesn't kick you back to the first tab) ──
+const __fromReports = document.referrer.indexOf('/dashboard/reports') !== -1;
 const TAB_KEY = 'reportsTab';
 function showTab(name) {
   document.querySelectorAll('.reports-tab-btn').forEach(b => {
@@ -863,8 +910,21 @@ function showTab(name) {
 }
 document.querySelectorAll('.reports-tab-btn').forEach(btn => btn.addEventListener('click', () => showTab(btn.dataset.tab)));
 
-const monthlyLabels  = [{% for m in monthly_trend %}"{{ m.month|date:'M Y' }}",{% endfor %}];
-const monthlyRevenue = [{% for m in monthly_trend %}{{ m.revenue|default:0|floatformat:0 }},{% endfor %}];
+const mhLabels = [{% for row in monthly_history %}"{{ row.month_name|slice:':3' }}",{% endfor %}];
+const mhFull = [{% for row in monthly_history %}"{{ row.month_name }}",{% endfor %}];
+const mhMonths = [{% for row in monthly_history %}{{ row.month }},{% endfor %}];
+const mhSelected = {{ selected_month|default:0 }};
+const mhYear = {{ selected_year }};
+const mhData = {
+  product:  [{% for row in monthly_history %}{{ row.product_income|stringformat:"f" }},{% endfor %}],
+  shipping: [{% for row in monthly_history %}{{ row.shipping_income|stringformat:"f" }},{% endfor %}],
+  gcash:    [{% for row in monthly_history %}{{ row.gcash_income|stringformat:"f" }},{% endfor %}],
+  cod:      [{% for row in monthly_history %}{{ row.cod_income|stringformat:"f" }},{% endfor %}],
+  expenses: [{% for row in monthly_history %}{{ row.approved_expenses|stringformat:"f" }},{% endfor %}],
+  net:      [{% for row in monthly_history %}{{ row.net_product_income|stringformat:"f" }},{% endfor %}]
+};
+// Overall income = product income + shipping fees collected
+mhData.overall = mhData.product.map((v, i) => Math.round((v + mhData.shipping[i]) * 100) / 100);
 const statusLabels   = [{% for row in sales_by_status %}"{{ row.status|title }}",{% endfor %}];
 const statusCounts   = [{% for row in sales_by_status %}{{ row.count }},{% endfor %}];
 const statusKeys     = [{% for row in sales_by_status %}"{{ row.status }}",{% endfor %}];
@@ -877,7 +937,7 @@ const STATUS_COLORS = {
 const statusColors = statusKeys.map(k => STATUS_COLORS[k] || '#9AA09C');
 
 window.__reportsCharts = [];
-let revenueChart = null, statusChart = null;
+let statusChart = null, monthlyHistoryChart = null;
 
 if (typeof Chart === 'undefined') {
   document.querySelectorAll('.rpt-chart-wrap').forEach(el => {
@@ -914,41 +974,82 @@ if (typeof Chart === 'undefined') {
     }
   };
 
-  const revenueEl = document.getElementById('chartRevenueTrend');
-  if (revenueEl) {
-    revenueChart = new Chart(revenueEl, {
+  // ---- Monthly History as a bar graph (click a legend item to hide/show a series, click a bar to open that month)
+  const mhEl = document.getElementById('chartMonthlyHistory');
+  if (mhEl) {
+    // Best month = highest overall income. Drawn as a soft gold band behind its bars.
+    const mhBestIdx = (() => {
+      let idx = -1, max = 0;
+      mhData.overall.forEach((v, i) => { if (v > max) { max = v; idx = i; } });
+      return idx;
+    })();
+    const bestBand = {
+      id: 'bestBand',
+      beforeDatasetsDraw(chart) {
+        if (mhBestIdx < 0) return;
+        const { ctx, chartArea } = chart;
+        const w = (chartArea.right - chartArea.left) / chart.data.labels.length;
+        const x = chartArea.left + w * mhBestIdx;
+        ctx.save();
+        ctx.fillStyle = 'rgba(212,160,23,.14)';
+        ctx.fillRect(x, chartArea.top, w, chartArea.bottom - chartArea.top);
+        ctx.fillStyle = isDark() ? '#f0c24a' : '#a67c00';
+        ctx.font = '700 11px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText('★ BEST', x + w / 2, chartArea.top + 4);
+        ctx.restore();
+      }
+    };
+    const barValues = {
+      id: 'barValues',
+      afterDatasetsDraw(chart) {
+        const { ctx } = chart;
+        ctx.save();
+        ctx.font = '700 11px sans-serif';
+        ctx.fillStyle = isDark() ? '#e6e9f0' : '#1f2933';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        chart.getDatasetMeta(0).data.forEach((b, i) => {
+          const v = chart.data.datasets[0].data[i];
+          if (v > 0) ctx.fillText(peso(v), b.x, b.y - 4);
+        });
+        ctx.restore();
+      }
+    };
+    const bar = (label, data, color) => ({
+      label, data, backgroundColor: color, borderRadius: 4, maxBarThickness: 48
+    });
+    monthlyHistoryChart = new Chart(mhEl, {
       type: 'bar',
       data: {
-        labels: monthlyLabels,
-        datasets: [{
-          label: 'Order value',
-          data: monthlyRevenue,
-          backgroundColor: monthlyRevenue.map((_, i) => i === monthlyRevenue.length - 1 ? '#0F6B4F' : 'rgba(15,107,79,.55)'),
-          borderRadius: 6,
-          maxBarThickness: 56,
-          minBarLength: 2,
-        }]
+        labels: mhLabels,
+        datasets: [
+          bar('Overall Income', mhData.overall, '#0F6B4F')
+        ]
       },
       options: {
         responsive: true, maintainAspectRatio: false, animation: false,
+        interaction: { mode: 'index', intersect: false },
         layout: { padding: { top: 22 } },
         plugins: {
           legend: { display: false },
-          tooltip: { callbacks: { label: (ctx) => ' ' + peso(ctx.parsed.y) } }
+          tooltip: { callbacks: { label: (ctx) => ' ' + ctx.dataset.label + ': ' + peso(ctx.parsed.y) } }
         },
         scales: {
           x: { grid: { display: false } },
-          y: {
-            beginAtZero: true,
-            grace: '10%',
-            ticks: { callback: (v) => peso(v) },
-            title: { display: true, text: 'Total order value' }
-          }
+          y: { beginAtZero: true, grace: '10%', ticks: { callback: (v) => peso(v) }, title: { display: true, text: 'Amount (₱)' } }
+        },
+        onClick(evt, _els, chart) {
+          const pts = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, true);
+          if (!pts.length) return;
+          const m = mhMonths[pts[0].index];
+          if (m && m !== mhSelected) window.location.href = '?year=' + mhYear + '&month=' + m;
         }
       },
-      plugins: [valueLabels]
+      plugins: [bestBand, barValues]
     });
-    window.__reportsCharts.push(revenueChart);
+    window.__reportsCharts.push(monthlyHistoryChart);
   }
 
   // ---- Orders by status: numbers on the ring, in the legend and in the middle
@@ -1037,10 +1138,30 @@ if (typeof Chart === 'undefined') {
   }
 }
 
+// ── Monthly History: best month (highest overall income) ──
+(function () {
+  const money = (n) => '₱' + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const ranked = mhData.overall.map((v, i) => ({ v, i })).filter(r => r.v > 0).sort((a, b) => b.v - a.v);
+  if (!ranked.length) return;
+  const best = ranked[0], next = ranked[1];
+  let html = '<strong>Best month: ' + mhFull[best.i] + ' ' + mhYear + '</strong> — ' + money(best.v) +
+             ' overall income (' + money(mhData.product[best.i]) + ' product + ' + money(mhData.shipping[best.i]) + ' shipping).';
+  if (next) html += ' Next best: ' + mhFull[next.i] + ' (' + money(next.v) + ').';
+  document.getElementById('mhBestText').innerHTML = html;
+  document.getElementById('mhBest').hidden = false;
+  const row = document.querySelectorAll('#mhTable tbody tr')[best.i];
+  if (row && row.firstElementChild) {
+    const badge = document.createElement('span');
+    badge.className = 'mh-best-badge';
+    badge.textContent = '★ Best';
+    row.firstElementChild.appendChild(badge);
+  }
+})();
+
 // Restore the tab the user was on (after changing month/year, finalizing, adding an expense…)
 try {
   const saved = sessionStorage.getItem(TAB_KEY);
-  if (saved && document.getElementById('tab-' + saved)) showTab(saved);
+  if (__fromReports && saved && document.getElementById('tab-' + saved)) showTab(saved);
 } catch (e) {}
 
 // Canvas charts don't print reliably, so right before printing both tabs are shown,
@@ -1050,7 +1171,6 @@ window.addEventListener('beforeprint', () => {
   __tabBeforePrint = (document.querySelector('.reports-tab-btn.active') || {}).dataset?.tab || 'revenue';
   document.querySelectorAll('.reports-tab-panel').forEach(p => p.classList.add('active'));
   window.__reportsCharts.forEach(c => c.resize());
-  if (revenueChart) { const img = document.getElementById('printChartRevenueTrend'); if (img) img.src = revenueChart.toBase64Image(); }
   if (statusChart)  { const img = document.getElementById('printChartStatusBreakdown'); if (img) img.src = statusChart.toBase64Image(); }
 });
 window.addEventListener('afterprint', () => { if (__tabBeforePrint) showTab(__tabBeforePrint); });

@@ -229,7 +229,7 @@
 
 {% block content %}
 <div class="message-detail-page">
-  <a href="{% url 'store:my_messages' %}" class="back-link">
+  <a href="{% url 'store:my_messages' %}" class="back-pill">
     <i class="fas fa-arrow-left"></i>Back to Messages
   </a>
 
@@ -285,7 +285,6 @@
         <div class="reply-form-row">
           <div class="reply-box">
             <textarea name="body" class="reply-textarea" rows="2" placeholder="Type your reply…" required></textarea>
-            <div class="reply-tools" aria-hidden="true"><i class="fas fa-paperclip"></i><i class="far fa-face-smile"></i></div>
           </div>
           <button type="submit" class="reply-send-btn" id="replySendBtn"><i class="fas fa-paper-plane"></i><span id="replySendBtnLabel">Send</span></button>
         </div>
@@ -293,7 +292,6 @@
       </form>
     </div>
 
-    <div class="encrypted-note"><i class="fas fa-lock me-1"></i>Messages in this conversation are encrypted at rest.</div>
   </div>
 </div>
 

@@ -749,6 +749,9 @@ body.dark-mode .btn-icon-delete { background: #ff6b6b !important; }
       <i class="fas fa-envelope"></i><span>Messages</span>
       {% if new_messages_count %}<span class="sidebar-badge">{{ new_messages_count }}</span>{% endif %}
     </a>
+    <a href="{% url 'reviews:dashboard_list' %}" class="sidebar-link {% block sb_reviews %}{% endblock %}">
+      <i class="fas fa-star"></i><span>Reviews</span>
+    </a>
 
     <div class="sidebar-section-label">Payments</div>
     {% if user.is_admin_user %}

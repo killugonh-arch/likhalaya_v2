@@ -5,10 +5,12 @@ from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.cache import cache_control
 from django.views.decorators.http import require_POST
+from django.utils.http import url_has_allowed_host_and_scheme
+from urllib.parse import urlsplit, urlunsplit, urlencode, parse_qsl
 from django.core.cache import cache
 from django.db import transaction
 from store.models import Product, ProductDesign
-from .cart import Cart, calculate_shipping_fee, _max_purchasable
+from .cart import Cart, calculate_shipping_fee, _max_purchasable, BUY_NOW_SESSION_ID
 from .forms import CheckoutForm
 from .models import Order, OrderItem, GCashQRCode
 from .gcash_qr_gen import generate_gcash_qr_png
@@ -228,6 +230,12 @@ def cart_add(request, product_id):
             return redirect(product.get_absolute_url())
         request.session.pop('checkout_selected_ids', None)
         request.session['checkout_source'] = 'buy_now'
+        # remember the page the size picker was opened from, so "Back" can return there
+        ref = request.META.get('HTTP_REFERER', '')
+        if ref and url_has_allowed_host_and_scheme(ref, allowed_hosts={request.get_host()}):
+            request.session['buy_now_return'] = ref
+        else:
+            request.session.pop('buy_now_return', None)
         request.session.modified = True
         return redirect('orders:checkout')
 
@@ -444,14 +452,42 @@ def _checkout_buy_now(request, cart):
     })
 
 
+@require_POST
+def buy_now_update(request):
+    """+/- on the Buy Now checkout: edits only the Buy Now item, never the cart."""
+    cart = Cart(request)
+    action = request.POST.get('action', 'increase')
+    if action not in ('increase', 'decrease'):
+        action = 'increase'
+    cart.update_buy_now_quantity(action)
+    return redirect('orders:checkout')
+
+
 def buy_now_cancel(request):
     """'Back' from a Buy Now checkout: discard the pending Buy Now item
-    (never was in the cart) and send the customer to the Shop — their
-    actual cart is left exactly as it was."""
+    (never was in the cart) and send the customer back to the page they
+    started from, with that product's size picker reopened on their
+    previous size / design / quantity. Their actual cart is untouched."""
     cart = Cart(request)
+    raw = request.session.get(BUY_NOW_SESSION_ID) or {}
+    return_url = request.session.pop('buy_now_return', None)
     cart.clear_buy_now()
     request.session.pop('checkout_source', None)
-    return redirect('store:shop')
+
+    target = return_url or reverse('store:shop')
+    if raw.get('product_id'):
+        parts = urlsplit(target)
+        drop = ('reopen_buy_now', 'bn_size', 'bn_design', 'bn_qty')
+        query = [(k, v) for k, v in parse_qsl(parts.query) if k not in drop]
+        query.append(('reopen_buy_now', raw['product_id']))
+        if raw.get('size'):
+            query.append(('bn_size', raw['size']))
+        if raw.get('design_id'):
+            query.append(('bn_design', raw['design_id']))
+        if raw.get('quantity'):
+            query.append(('bn_qty', raw['quantity']))
+        target = urlunsplit((parts.scheme, parts.netloc, parts.path, urlencode(query), ''))
+    return redirect(target)
 
 
 def _sync_form_data_from_profile(request, form_data):

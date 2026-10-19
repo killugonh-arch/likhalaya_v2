@@ -63,11 +63,11 @@
 <div class="container py-5">
 
   {% if checkout_source == 'buy_now' %}
-  <a href="{% url 'orders:buy_now_cancel' %}" class="btn btn-outline-secondary btn-sm rounded-3 mb-3">
+  <a href="{% url 'orders:buy_now_cancel' %}" class="back-pill">
     <i class="fas fa-arrow-left me-1"></i>Back to Shop
   </a>
   {% else %}
-  <a href="{% url 'orders:cart_detail' %}" class="btn btn-outline-secondary btn-sm rounded-3 mb-3">
+  <a href="{% url 'orders:cart_detail' %}" class="back-pill">
     <i class="fas fa-arrow-left me-1"></i>Back to Cart
   </a>
   {% endif %}
@@ -119,11 +119,11 @@
                 {% if item.size_display %}<span class="badge bg-light text-dark border ms-1" style="font-size:11px;">{{ item.size_display }}</span>{% endif %}
                 {% if item.design_name %}<span class="badge bg-light text-dark border ms-1" style="font-size:11px;">{{ item.design_name }}</span>{% endif %}
               </div>
-              <form method="post" action="{% url 'orders:cart_update' item.key %}" class="d-flex align-items-center gap-2 mt-2">
+              <form method="post" action="{% if checkout_source == 'buy_now' %}{% url 'orders:buy_now_update' %}{% else %}{% url 'orders:cart_update' item.key %}{% endif %}" class="d-flex align-items-center gap-2 mt-2">
                 {% csrf_token %}
                 <button type="submit" name="action" value="decrease" class="btn btn-outline-secondary fw-bold py-1 px-2" style="font-size:15px;line-height:1;" {% if item.quantity <= 1 %}disabled{% endif %}>−</button>
                 <span class="text-muted fw-bold" style="font-size:15px;">x{{ item.quantity }}</span>
-                <button type="submit" name="action" value="increase" class="btn btn-outline-secondary fw-bold py-1 px-2" style="font-size:15px;line-height:1;" {% if item.quantity >= item.product.stock %}disabled{% endif %}>+</button>
+                <button type="submit" name="action" value="increase" class="btn btn-outline-secondary fw-bold py-1 px-2" style="font-size:15px;line-height:1;" {% if checkout_source == 'buy_now' %}{% if item.quantity >= item.max_qty %}disabled{% endif %}{% elif item.quantity >= item.product.stock %}disabled{% endif %}>+</button>
               </form>
             </div>
             <div class="fw-bold" style="font-size:16px;color:var(--gold);">₱{{ item.price|floatformat:0|intcomma }}</div>

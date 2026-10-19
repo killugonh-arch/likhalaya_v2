@@ -1,14 +1,14 @@
 """Encrypted text field for storing messages at rest."""
 from django.conf import settings
 from django.db import models
-from cryptography.fernet import Fernet, InvalidToken
+from cryptography.fernet import Fernet, InvalidToken, MultiFernet
 
 
 def _fernet():
-    key = settings.MESSAGE_ENCRYPTION_KEY
-    if isinstance(key, str):
-        key = key.encode()
-    return Fernet(key)
+    """Current key encrypts; current + any MESSAGE_ENCRYPTION_KEY_OLD keys decrypt."""
+    keys = [settings.MESSAGE_ENCRYPTION_KEY] + list(getattr(settings, 'MESSAGE_ENCRYPTION_KEY_OLD', []))
+    fernets = [Fernet(k.encode() if isinstance(k, str) else k) for k in keys if k]
+    return MultiFernet(fernets)
 
 
 class EncryptedTextField(models.TextField):
@@ -26,5 +26,5 @@ class EncryptedTextField(models.TextField):
         try:
             return _fernet().decrypt(value.encode()).decode()
         except (InvalidToken, ValueError):
-            # unencrypted old row, return as-is
+            # unencrypted old row, or encrypted with a key we don't have: return as-is
             return value
