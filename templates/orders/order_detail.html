@@ -132,6 +132,16 @@
         {% endif %}
         {% endfor %}
       </div>
+      {% if order.eta_display and order.status == 'processing' or order.eta_display and order.status == 'confirmed' or order.eta_display and order.status == 'shipped' %}
+      <div class="d-flex align-items-center gap-3 mt-3 p-3 rounded-3" style="background:#eef7f5;border:1px solid #cfe6e1;">
+        <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width:40px;height:40px;background:var(--teal);color:#fff;"><i class="fas fa-truck-fast"></i></span>
+        <div>
+          <div class="text-muted" style="font-size:12px;font-weight:600;">Estimated arrival</div>
+          <div class="fw-bold" style="font-size:17px;color:var(--teal);">{{ order.eta_date_display }}</div>
+          <div class="text-muted" style="font-size:13px;">({{ order.eta_display }})</div>
+        </div>
+      </div>
+      {% endif %}
     </div>
   </div>
 

@@ -1,5 +1,6 @@
 from django.db import models, transaction
 from django.utils import timezone
+from datetime import timedelta
 from accounts.models import CustomUser
 from store.models import Product
 
@@ -78,6 +79,15 @@ class Order(models.Model):
     delivery_proof = models.ImageField(upload_to='delivery_proofs/', null=True, blank=True)
     delivery_confirmed_at = models.DateTimeField(null=True, blank=True)
 
+    # ── Estimated delivery window (in days) ──
+    # Set by admin/staff when the order is started (Processing) and
+    # editable until it is delivered. Shown to the customer on their order
+    # page, e.g. "2–3 days". Both blank = no estimate given yet.
+    eta_days_min = models.PositiveSmallIntegerField(null=True, blank=True)
+    eta_days_max = models.PositiveSmallIntegerField(null=True, blank=True)
+    # When the estimate was set. The arrival dates are counted from here.
+    eta_set_at = models.DateTimeField(null=True, blank=True)
+
     objects = OrderManager()
     all_objects = models.Manager()
 
@@ -90,6 +100,54 @@ class Order(models.Model):
     @property
     def order_number(self):
         return f"LKL-{self.pk:05d}"
+
+    @property
+    def eta_display(self):
+        """'2–3 days', '1 day', or '' when no estimate was set."""
+        lo, hi = self.eta_days_min, self.eta_days_max
+        if lo is None and hi is None:
+            return ''
+        lo = lo if lo is not None else hi
+        hi = hi if hi is not None else lo
+        if lo == hi:
+            return f"{lo} day{'s' if lo != 1 else ''}"
+        return f"{lo}\u2013{hi} days"
+
+    @property
+    def eta_date_display(self):
+        """'Oct 21 – Oct 22, 2026', 'Oct 21, 2026', or '' when no estimate.
+        Counted from when the estimate was set (falls back to the order's
+        creation date for estimates saved before eta_set_at existed)."""
+        lo, hi = self.eta_days_min, self.eta_days_max
+        if lo is None and hi is None:
+            return ''
+        lo = lo if lo is not None else hi
+        hi = hi if hi is not None else lo
+        base = timezone.localtime(self.eta_set_at or self.created_at).date()
+        start = base + timedelta(days=lo)
+        end = base + timedelta(days=hi)
+        if start == end:
+            return f"{start:%b} {start.day}, {start.year}"
+        if start.year == end.year:
+            return f"{start:%b} {start.day} \u2013 {end:%b} {end.day}, {end.year}"
+        return f"{start:%b} {start.day}, {start.year} \u2013 {end:%b} {end.day}, {end.year}"
+
+    def set_eta(self, days_min, days_max):
+        """Admin action: set (or clear, with both None) the estimated delivery
+        window in days. Allowed until the order is delivered or cancelled."""
+        if self.status not in ('pending', 'processing', 'confirmed', 'shipped'):
+            raise OrderStatusError("The delivery estimate can't be changed for this order anymore.")
+        if (days_min is None) != (days_max is None):
+            raise OrderStatusError("Please fill in both the 'from' and 'to' days.")
+        if days_min is not None:
+            if not (1 <= days_min <= 60 and 1 <= days_max <= 60):
+                raise OrderStatusError("Delivery days must be between 1 and 60.")
+            if days_min > days_max:
+                raise OrderStatusError("'From' days can't be more than 'to' days.")
+        self.eta_days_min = days_min
+        self.eta_days_max = days_max
+        self.eta_set_at = timezone.now() if days_min is not None else None
+        self.save(update_fields=['eta_days_min', 'eta_days_max', 'eta_set_at', 'updated_at'])
 
     def restock_items(self):
         """Add each item's quantity back to stock. Call once, right when an

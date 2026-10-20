@@ -269,6 +269,10 @@
   .od-tl-step.current .od-tl-title { font-weight: 700; color: var(--teal); }
   body.dark-mode .od-tl-step.current .od-tl-title { color: var(--dm-teal); }
   .od-tl-sub { font-size: 11.5px; color: #b0aa9d; margin-top: 1px; }
+  .od-tl-eta { display: inline-flex; align-items: center; gap: 6px; margin-top: 5px; font-size: 11.5px; font-weight: 600; color: var(--teal); background: #eef7f5; border: 1px solid #cfe6e1; border-radius: 20px; padding: 3px 10px; }
+  .od-tl-eta i { font-size: 10.5px; }
+  .od-tl-eta strong { font-weight: 800; }
+  body.dark-mode .od-tl-eta { color: var(--dm-teal); background: rgba(79,209,197,.1); border-color: var(--dm-border); }
   body.dark-mode .od-tl-sub { color: var(--dm-text-mute); }
 
   .od-status-form { padding: 4px 24px 24px; border-top: 1px solid #f0ede8; }
@@ -282,6 +286,14 @@
   .od-task-hint { font-size: 12.5px; color: #8a8377; line-height: 1.5; margin: 12px 0 2px; }
   body.dark-mode .od-task-hint { color: var(--dm-text-mute); }
   .od-courier-form { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+  .od-eta-box { border: 1px dashed #d9d2c3; border-radius: 10px; padding: 10px 12px; background: #fcfaf5; }
+  .od-eta-label { font-size: 12px; font-weight: 700; color: #6b6b6b; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+  .od-eta-label i { color: var(--teal); }
+  .od-eta-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+  .od-eta-row input { width: 64px; text-align: center; }
+  .od-eta-row .sep { font-size: 12.5px; color: #6b6b6b; }
+  body.dark-mode .od-eta-box { background: var(--dm-surface-2); border-color: var(--dm-border); }
+  body.dark-mode .od-eta-label, body.dark-mode .od-eta-row .sep { color: var(--dm-text-dim); }
   .od-courier-badge {
     display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px;
     color: #2b6cb0; background: #e8f0fe; padding: 5px 10px; border-radius: 8px; font-weight: 600;
@@ -607,6 +619,9 @@
                 <div class="od-tl-content">
                   <div class="od-tl-title">{{ l }}</div>
                   {% if s == order.status %}<div class="od-tl-sub">Current stage</div>{% endif %}
+                  {% if s == 'processing' and order.eta_display %}{% if order.status == 'processing' or order.status == 'confirmed' or order.status == 'shipped' %}
+                  <div class="od-tl-eta"><i class="fas fa-clock"></i>Estimated delivery: <strong>{{ order.eta_display }}</strong></div>
+                  {% endif %}{% endif %}
                 </div>
               </div>
               {% endif %}
@@ -642,16 +657,47 @@
             {% if order.status == 'pending' %}
             <form method="post" action="{% url 'dashboard:order_start_processing' order.pk %}">
               {% csrf_token %}
+              <div class="od-eta-box mb-2">
+                <div class="od-eta-label"><i class="fas fa-clock"></i>Estimated delivery time (customer will see this)</div>
+                <div class="od-eta-row">
+                  <input type="number" name="eta_days_min" class="form-control form-control-sm" min="1" max="60" placeholder="2" required aria-label="From days">
+                  <span class="sep">to</span>
+                  <input type="number" name="eta_days_max" class="form-control form-control-sm" min="1" max="60" placeholder="3" required aria-label="To days">
+                  <span class="sep">days</span>
+                </div>
+              </div>
               <button type="submit" class="od-btn od-btn-primary od-btn-block"><i class="fas fa-play"></i>Start Processing</button>
             </form>
 
             {% elif order.status == 'processing' %}
+            <form method="post" action="{% url 'dashboard:order_set_eta' order.pk %}" class="od-eta-box">
+              {% csrf_token %}
+              <div class="od-eta-label"><i class="fas fa-clock"></i>Estimated delivery time{% if order.eta_display %} &middot; now <strong>{{ order.eta_display }}</strong>{% endif %}</div>
+              <div class="od-eta-row">
+                <input type="number" name="eta_days_min" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_min|default_if_none:'' }}" placeholder="2" aria-label="From days">
+                <span class="sep">to</span>
+                <input type="number" name="eta_days_max" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_max|default_if_none:'' }}" placeholder="3" aria-label="To days">
+                <span class="sep">days</span>
+                <button type="submit" class="od-btn od-btn-secondary" style="white-space:nowrap;"><i class="fas fa-floppy-disk"></i>Update</button>
+              </div>
+            </form>
             <form method="post" action="{% url 'dashboard:order_mark_ready' order.pk %}">
               {% csrf_token %}
               <button type="submit" class="od-btn od-btn-primary od-btn-block"><i class="fas fa-box-check"></i>Mark Ready for Delivery</button>
             </form>
 
             {% elif order.status == 'confirmed' %}
+            <form method="post" action="{% url 'dashboard:order_set_eta' order.pk %}" class="od-eta-box">
+              {% csrf_token %}
+              <div class="od-eta-label"><i class="fas fa-clock"></i>Estimated delivery time{% if order.eta_display %} &middot; now <strong>{{ order.eta_display }}</strong>{% endif %}</div>
+              <div class="od-eta-row">
+                <input type="number" name="eta_days_min" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_min|default_if_none:'' }}" placeholder="2" aria-label="From days">
+                <span class="sep">to</span>
+                <input type="number" name="eta_days_max" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_max|default_if_none:'' }}" placeholder="3" aria-label="To days">
+                <span class="sep">days</span>
+                <button type="submit" class="od-btn od-btn-secondary" style="white-space:nowrap;"><i class="fas fa-floppy-disk"></i>Update</button>
+              </div>
+            </form>
             <form method="post" action="{% url 'dashboard:order_assign_courier' order.pk %}" class="od-courier-form">
               {% csrf_token %}
               <select name="courier_id" class="form-select form-select-sm">
@@ -667,6 +713,7 @@
             {% endif %}
 
             {% elif order.status == 'shipped' %}
+            {% if order.eta_display %}<span class="od-courier-badge"><i class="fas fa-clock"></i>Estimated delivery: {{ order.eta_display }}</span>{% endif %}
             <div class="od-task-hint" style="margin:0;">Picked up by {{ order.assigned_courier.get_full_name|default:order.assigned_courier.username|default:"the courier" }} on {{ order.pickup_confirmed_at|date:"M d, Y \a\t H:i" }}.</div>
             {% if order.pickup_proof %}
             <img src="{{ order.pickup_proof.url }}" alt="Pickup proof" class="od-proof-thumb">

@@ -833,19 +833,78 @@ def _log_and_notify(request, order, old_status, new_status, note_message=None):
         Notification.objects.create(user=order.user, order=order, message=note_message)
 
 
+def _parse_eta(request):
+    """Read the optional 'eta_days_min' / 'eta_days_max' POST fields.
+    Blank -> None. Returns (min, max); raises OrderStatusError on junk."""
+    def to_int(raw):
+        raw = (raw or '').strip()
+        if not raw:
+            return None
+        try:
+            return int(raw)
+        except ValueError:
+            raise OrderStatusError("Delivery days must be whole numbers.")
+    return to_int(request.POST.get('eta_days_min')), to_int(request.POST.get('eta_days_max'))
+
+
 @staff_required
 @require_POST
 def order_start_processing(request, pk):
-    """Task action: 'Start Processing'. Pending -> Processing, no dropdown."""
+    """Task action: 'Start Processing'. Pending -> Processing, no dropdown.
+    The admin also enters the estimated delivery days here (e.g. 2 to 3)."""
     order = get_object_or_404(Order, pk=pk)
     old_status = order.status
     try:
+        eta_min, eta_max = _parse_eta(request)
+        if eta_min is None or eta_max is None:
+            raise OrderStatusError("Please enter the estimated delivery days (e.g. 2 to 3) before starting.")
+        if order.status != 'pending':
+            raise OrderStatusError("Only a Pending order can be moved to Processing.")
+        # Validate the estimate before changing anything, so a bad value
+        # doesn't leave the order half-updated.
+        if not (1 <= eta_min <= 60 and 1 <= eta_max <= 60):
+            raise OrderStatusError("Delivery days must be between 1 and 60.")
+        if eta_min > eta_max:
+            raise OrderStatusError("'From' days can't be more than 'to' days.")
         order.start_processing()
+        order.set_eta(eta_min, eta_max)
     except OrderStatusError as e:
         messages.error(request, str(e))
     else:
-        _log_and_notify(request, order, old_status, order.status)
-        messages.success(request, f'Order {order.order_number} is now being processed.')
+        _log_and_notify(
+            request, order, old_status, order.status,
+            note_message=f'Your order {order.order_number} is now being prepared. '
+                         f'Estimated delivery: {order.eta_display}.',
+        )
+        messages.success(request, f'Order {order.order_number} is now being processed. Customer sees: {order.eta_display}.')
+    return redirect('dashboard:order_detail', pk=pk)
+
+
+@staff_required
+@require_POST
+def order_set_eta(request, pk):
+    """Update (or clear) the estimated delivery days the customer sees."""
+    order = get_object_or_404(Order, pk=pk)
+    old_eta = order.eta_display
+    try:
+        eta_min, eta_max = _parse_eta(request)
+        order.set_eta(eta_min, eta_max)
+    except OrderStatusError as e:
+        messages.error(request, str(e))
+    else:
+        new_eta = order.eta_display
+        log_activity(
+            request, 'update',
+            f'Order {order.order_number} estimated delivery: {old_eta or "none"} → {new_eta or "none"}',
+            resource='Order', resource_label=order.order_number,
+            previous_value=old_eta, new_value=new_eta,
+        )
+        if new_eta and new_eta != old_eta and order.user:
+            Notification.objects.create(
+                user=order.user, order=order,
+                message=f'Estimated delivery for your order {order.order_number}: {new_eta}.',
+            )
+        messages.success(request, f'Estimated delivery set to {new_eta}.' if new_eta else 'Estimated delivery cleared.')
     return redirect('dashboard:order_detail', pk=pk)
 
 

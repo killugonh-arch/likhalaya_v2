@@ -9,6 +9,7 @@ urlpatterns = [
     path('orders/', views.order_list, name='order_list'),
     path('orders/<int:pk>/', views.order_detail, name='order_detail'),
     path('orders/<int:pk>/start-processing/', views.order_start_processing, name='order_start_processing'),
+    path('orders/<int:pk>/set-eta/', views.order_set_eta, name='order_set_eta'),
     path('orders/<int:pk>/mark-ready/', views.order_mark_ready, name='order_mark_ready'),
     path('orders/<int:pk>/assign-courier/', views.order_assign_courier, name='order_assign_courier'),
     path('orders/<int:pk>/cancel/', views.order_cancel, name='order_cancel'),

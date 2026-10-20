@@ -94,13 +94,23 @@ class ProductSerializer(serializers.ModelSerializer):
     price_display = serializers.CharField(read_only=True)
     in_stock = serializers.BooleanField(read_only=True)
     has_size_pricing = serializers.BooleanField(read_only=True)
+    # Size -> Design variant system (mirrors the web product page's
+    # "Choose your size and design" modal). These three were previously
+    # missing from this serializer, so the mobile app's product detail
+    # response never carried variant/design data even for products that
+    # have it configured in the admin.
+    has_variants = serializers.BooleanField(read_only=True)
+    has_designs = serializers.BooleanField(read_only=True)
+    default_variant_image = serializers.CharField(read_only=True)
+    variants = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
         fields = [
             'id', 'category', 'category_name', 'name', 'slug', 'description',
             'price_min', 'price_medium', 'price_max', 'price_display',
-            'has_size_pricing', 'stock', 'in_stock', 'image', 'extra_images',
+            'has_size_pricing', 'has_variants', 'has_designs', 'default_variant_image',
+            'variants', 'stock', 'in_stock', 'image', 'extra_images',
             'gcash_qr_code', 'is_active', 'artisan_name', 'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at']
@@ -117,6 +127,33 @@ class ProductSerializer(serializers.ModelSerializer):
                          and request.user.is_admin_user())
         if self.instance is not None and not is_admin:
             self.fields['gcash_qr_code'].read_only = True
+
+    def get_variants(self, obj):
+        """Same Size -> Design tree as Product.variant_json, but returned as
+        real JSON (a dict) instead of a pre-escaped string meant for a
+        <script> tag on the web page. Null when the product has no
+        variants configured, so the app falls back to plain size pricing."""
+        if not obj.has_variants:
+            return None
+        sizes = []
+        for size in obj.sizes.filter(is_active=True).order_by('order', 'id'):
+            designs = [
+                {
+                    'id': d.id,
+                    'title': d.title,
+                    'image': d.image.url if d.image else '',
+                    'stock': d.stock,
+                }
+                for d in size.designs.filter(is_active=True).order_by('order', 'id')
+            ]
+            sizes.append({
+                'id': size.id,
+                'code': size.code,
+                'name': size.get_name_display(),
+                'price': str(obj.get_price_for_size(size.code)),
+                'designs': designs,
+            })
+        return {'sizes': sizes}
 
 
 # ── Orders ────────────────────────────────────────────────────────
