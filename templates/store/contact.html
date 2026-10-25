@@ -7,6 +7,8 @@
 .contact-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,.07); padding: 36px; }
 .info-item { display: flex; align-items: flex-start; gap: 16px; margin-bottom: 24px; }
 .info-icon { width: 48px; height: 48px; border-radius: 12px; background: rgba(30,95,90,.1); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.info-item .fw-bold { font-size: 18px; }
+.info-item .small { font-size: 16px; }
 .form-control, .form-select { border-radius: 10px; border-color: #ddd; }
 .form-control:focus, .form-select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(30,95,90,.12); }
 .form-control[readonly] { background: #f7f6f3; color: #555; cursor: default; }
@@ -186,8 +188,8 @@
   .contact-card { padding: 22px 18px; border-radius: 14px; }
   .info-item { gap: 12px; margin-bottom: 18px; }
   .info-icon { width: 40px; height: 40px; border-radius: 10px; font-size: 14px; }
-  .info-item .fw-bold { font-size: 14px; }
-  .info-item .small { font-size: 12.5px; }
+  .info-item .fw-bold { font-size: 16px; }
+  .info-item .small { font-size: 14.5px; }
   .purpose-grid { flex-direction: row; flex-wrap: nowrap; gap: 10px; overflow-x: auto; padding-bottom: 6px; justify-content: flex-start; }
   .purpose-card { flex: 0 0 110px; max-width: 110px; padding: 16px 10px; border-radius: 14px; flex-direction: column; text-align: center; gap: 10px; align-items: center; }
   .purpose-card .purpose-icon { width: 48px; height: 48px; font-size: 18px; flex-shrink: 0; border-radius: 12px; }
@@ -270,7 +272,7 @@
   {# ===================== INFO + FORM ===================== #}
   <div class="row g-5">
     <div class="col-lg-5 order-2 order-lg-1">
-      <h5 class="fw-bold mb-4" style="color:var(--teal);">Contact Information</h5>
+      <h5 class="fw-bold mb-4" style="color:var(--teal);font-size:22px;">Contact Information</h5>
       <div class="info-item">
         <div class="info-icon"><i class="fas fa-map-marker-alt" style="color:var(--teal);"></i></div>
         <div>

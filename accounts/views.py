@@ -333,7 +333,10 @@ def profile_view(request):
     recent_orders = Order.objects.filter(user=request.user).prefetch_related('items')[:5]
     needs_contact_info = not request.user.phone or not request.user.address or not request.user.city or not request.user.province
     force_edit = request.GET.get('edit') == '1'
-    show_edit = needs_contact_info or bool(next_url) or force_edit
+    # Open the edit form only when asked to (Edit button, ?edit=1, or a
+    # redirect from checkout) or when a submit failed validation. Otherwise
+    # show the normal profile view, with a warning if details are missing.
+    show_edit = bool(next_url) or force_edit or request.method == 'POST'
     return render(request, 'accounts/profile.html', {
         'form': form,
         'recent_orders': recent_orders,

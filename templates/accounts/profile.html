@@ -218,7 +218,7 @@ body { background: #F6F8FA; }
           <i class="fas fa-exclamation-triangle mt-1"></i>
           <div>
             <strong>Phone number and complete address required.</strong>
-            We need your phone, street address, city, and province on file to ship your order — please fill them in below to continue.
+            We need your phone, street address, city, and province on file to ship your order — please click Edit Profile to add them.
           </div>
         </div>
         {% endif %}
@@ -293,7 +293,7 @@ body { background: #F6F8FA; }
               <a href="{{ next }}" class="back-pill" style="margin:0;">
                 <i class="fas fa-arrow-left"></i>Back{% if not needs_contact_info %} without editing{% endif %}
               </a>
-              {% elif not needs_contact_info %}
+              {% else %}
               <button type="button" class="back-pill" style="margin:0;" onclick="showProfileView()">Cancel</button>
               {% endif %}
             </div>
