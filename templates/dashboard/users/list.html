@@ -3,6 +3,11 @@
 {% block sb_users %}active{% endblock %}
 {% block title %}Users – Dashboard{% endblock %}
 
+{% block extra_css %}
+{{ block.super }}
+{% include 'dashboard/_filter_styles.html' %}
+{% endblock %}
+
 {% block dash_content %}
 <div class="dash-breadcrumb">
   <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
@@ -22,21 +27,24 @@
 
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-body py-3">
-    <form method="get" class="row g-2 align-items-end">
-      <div class="col-sm-5">
-        <input type="text" name="q" class="form-control form-control-sm" placeholder="Search name, username, email…" value="{{ search }}">
+    <form method="get" class="lk-filter-form">
+      <div class="lk-filter-search">
+        <label class="visually-hidden" for="user-search">Search</label>
+        <i class="fas fa-search" aria-hidden="true"></i>
+        <input id="user-search" type="text" name="q" class="lk-input" placeholder="Search name, username, email…" value="{{ search }}">
       </div>
-      <div class="col-sm-3">
-        <select name="role" class="form-select form-select-sm">
+      <div>
+        <label class="visually-hidden" for="user-role">Role</label>
+        <select id="user-role" name="role" class="lk-input">
           <option value="">All Roles</option>
           {% for r, l in role_choices %}
           <option value="{{ r }}" {% if r == role_filter %}selected{% endif %}>{{ l }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="col-sm-2 d-flex gap-2">
-        <button type="submit" class="btn btn-sm btn-teal flex-fill">Search</button>
-        <a href="{% url 'dashboard:user_list' %}" class="btn btn-sm btn-outline-secondary flex-fill">Clear</a>
+      <div class="lk-filter-actions">
+        <button type="submit" class="lk-btn lk-btn-primary"><i class="fas fa-search"></i>Search</button>
+        <a href="{% url 'dashboard:user_list' %}" class="lk-btn lk-btn-ghost"><i class="fas fa-rotate-right"></i>Clear</a>
       </div>
     </form>
   </div>

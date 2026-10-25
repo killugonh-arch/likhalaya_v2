@@ -12,6 +12,7 @@ from store.models import Category, Product, ContactMessage, MessageReply
 from store.views import _customer_reply_cooldown_remaining
 from orders.models import Order, OrderItem, Notification
 from orders.validators import validate_payment_proof
+from orders.shipping import get_shipping_quote
 
 from .serializers import (
     CustomTokenObtainPairSerializer, UserSerializer, RegisterSerializer,
@@ -123,8 +124,6 @@ class ProductViewSet(viewsets.ModelViewSet):
 
 # ── Orders ────────────────────────────────────────────────────────
 
-SHIPPING_FEE_THRESHOLD = Decimal('500')
-SHIPPING_FEE = Decimal('80')  # adjust to match your actual store logic
 
 
 class OrderViewSet(viewsets.ModelViewSet):
@@ -159,7 +158,11 @@ class OrderViewSet(viewsets.ModelViewSet):
             subtotal += price * qty
             resolved_items.append((product, size, qty, price))
 
-        shipping_fee = Decimal('0') if subtotal >= SHIPPING_FEE_THRESHOLD else SHIPPING_FEE
+        ship_province = request.data.get('province', request.user.province)
+        ship_city = request.data.get('city', request.user.city)
+        shipping_fee = get_shipping_quote(
+            sum(q for _, _, q, _ in resolved_items), ship_province, ship_city,
+        )['fee']
         order = Order.objects.create(
             user=request.user,
             payment_method=request.data.get('payment_method', 'cod'),

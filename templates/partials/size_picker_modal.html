@@ -1,5 +1,5 @@
 <!-- Product Configurator Modal (shared) -->
-<form id="sizeModalForm" method="post" style="display:none;">
+<form id="sizeModalForm" method="post" style="display:none;"{% if not request.user.is_authenticated %} data-guest="1"{% endif %}>
   {% csrf_token %}
   <input type="hidden" name="quantity" id="sizeModalQtyInput" value="1">
   <input type="hidden" name="size" id="sizeModalSizeInput" value="">
@@ -1184,6 +1184,9 @@
       form.action = btn.dataset.url;
       var isBuyNow = btn.dataset.mode === 'buy_now';
       buyNowInput.value = isBuyNow ? '1' : '';
+      // Guests: skip the picker, go straight to login. The server remembers
+      // the product + page and reopens this picker after they sign in.
+      if (form.dataset.guest === '1') { form.submit(); return; }
       // Update confirm button style and label based on mode
       var confirmBtn2 = document.getElementById('sizePickerConfirmBtn');
       var nextBtn2 = document.getElementById('spmNextBtn');
@@ -1305,17 +1308,18 @@
   // -----------------------------------------------------------------
   (function reopenFromCheckout() {
     var params = new URLSearchParams(window.location.search);
-    var pid = params.get('reopen_buy_now');
+    var pid = params.get('reopen_buy_now') || params.get('reopen_cart');
     if (!pid) return;
+    var reopenMode = params.get('reopen_buy_now') ? 'buy_now' : 'cart';
     var size = params.get('bn_size');
     var design = params.get('bn_design');
     var qty = parseInt(params.get('bn_qty'), 10);
-    ['reopen_buy_now', 'bn_size', 'bn_design', 'bn_qty'].forEach(function(k) { params.delete(k); });
+    ['reopen_buy_now', 'reopen_cart', 'bn_size', 'bn_design', 'bn_qty'].forEach(function(k) { params.delete(k); });
     var rest = params.toString();
     history.replaceState(null, '', window.location.pathname + (rest ? '?' + rest : '') + window.location.hash);
 
     var btn = Array.prototype.find.call(
-      document.querySelectorAll('.js-open-size-modal[data-mode="buy_now"]'),
+      document.querySelectorAll('.js-open-size-modal[data-mode="' + reopenMode + '"]'),
       function(b) { return (b.dataset.url || '').indexOf('/cart/add/' + pid + '/') !== -1; }
     );
     if (!btn) return;

@@ -95,8 +95,6 @@ class ChatConversationsView(APIView):
 
 class ChatMessagesView(APIView):
     """
-    GET  /api/chat/messages/?after=<id> -> {"messages": [...]}  (customer's own thread)
-    POST /api/chat/messages/ {"body": "..."}                    (customer sends)
     Auto-creates the customer's conversation on first use.
     """
     permission_classes = [permissions.IsAuthenticated]
@@ -133,8 +131,6 @@ class ChatMessagesView(APIView):
 
 class ChatConversationMessagesView(APIView):
     """
-    GET  /api/chat/conversations/{id}/messages/?after=<id> -> {"messages": [...]}
-    POST /api/chat/conversations/{id}/messages/ {"body": "..."}
     Staff-only: reply to a specific customer's thread.
     """
     permission_classes = [IsStaffRole]

@@ -6,15 +6,6 @@ from store.models import Product, ProductDesign
 BUY_NOW_SESSION_ID = 'buy_now_item'
 
 
-def calculate_shipping_fee(subtotal):
-    """Free shipping under 500, else 50."""
-    subtotal = Decimal(subtotal)
-    if subtotal < Decimal('500'):
-        return Decimal('0')
-    else:
-        return Decimal('50')
-
-
 def _max_purchasable(product, design):
     """Returns actual purchasable stock for a product/design combo."""
     if design:

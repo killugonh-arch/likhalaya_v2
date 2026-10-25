@@ -16,6 +16,7 @@ from django.core.cache import cache
 from .forms import RegisterForm, LoginForm, ProfileUpdateForm, OTPVerifyForm, NoReuseSetPasswordForm, NoReusePasswordChangeForm
 from .models import CustomUser, EmailOTP
 from likhalaya_project.rate_limit import get_client_ip, check_hourly_limit
+from orders.pending import apply_pending_action
 
 # Minimum time a user must wait between "Resend Code" clicks. Without this,
 # resend is an email-bombing vector: anyone can register using someone
@@ -167,6 +168,9 @@ def verify_email_view(request):
                 del request.session['pending_verification_user_id']
                 request.session.pop('pending_verification_next', None)
                 messages.success(request, f'Welcome to Likhalaya, {user.first_name or user.username}! Your email is verified.')
+                pending_url = apply_pending_action(request)
+                if pending_url:
+                    return redirect(pending_url)
                 if next_url and url_has_allowed_host_and_scheme(
                     url=next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
                 ):
@@ -270,6 +274,9 @@ def login_view(request):
             from axes.utils import reset as axes_reset_user
             axes_reset_user(username=attempted)
             messages.success(request, f'Welcome back, {user.get_full_name() or user.username}!')
+            pending_url = apply_pending_action(request)
+            if pending_url:
+                return redirect(pending_url)
             next_url = request.GET.get('next', '')
             if next_url and url_has_allowed_host_and_scheme(
                 url=next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()

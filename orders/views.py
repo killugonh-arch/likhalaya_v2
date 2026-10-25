@@ -10,7 +10,9 @@ from urllib.parse import urlsplit, urlunsplit, urlencode, parse_qsl
 from django.core.cache import cache
 from django.db import transaction
 from store.models import Product, ProductDesign
-from .cart import Cart, calculate_shipping_fee, _max_purchasable, BUY_NOW_SESSION_ID
+from .cart import Cart, _max_purchasable, BUY_NOW_SESSION_ID
+from .pending import stash_pending_action
+from .shipping import get_shipping_quote
 from .forms import CheckoutForm
 from .models import Order, OrderItem, GCashQRCode
 from .gcash_qr_gen import generate_gcash_qr_png
@@ -84,7 +86,10 @@ def _create_order(request, items, payment_method, form_data, extra=None, finaliz
         _assert_stock_available(items)
 
     subtotal = sum(item['price'] * item['quantity'] for item in items)
-    shipping_fee = calculate_shipping_fee(subtotal)
+    quantity = sum(item['quantity'] for item in items)
+    shipping_fee = get_shipping_quote(
+        quantity, form_data.get('province', ''), form_data.get('city', ''),
+    )['fee']
     with transaction.atomic():
         order = Order.all_objects.create(
             user=request.user if request.user.is_authenticated else None,
@@ -195,10 +200,33 @@ def cart_add(request, product_id):
     product = get_object_or_404(Product, id=product_id, is_active=True)
     buy_now = bool(request.POST.get('buy_now'))
 
-    if buy_now and not request.user.is_authenticated:
-        messages.info(request, 'Please create an account to use Buy Now.')
-        register_url = reverse('accounts:register')
-        return redirect(f'{register_url}?next={product.get_absolute_url()}')
+    if not request.user.is_authenticated:
+        # Remember what they wanted, send them to login, and apply it
+        # (see orders/pending.py) as soon as they're signed in.
+        try:
+            pending_qty = int(request.POST.get('quantity', 1))
+        except (TypeError, ValueError):
+            pending_qty = 1
+        pending_size = request.POST.get('size', '').upper()
+        if pending_size not in dict(Product.SIZE_CHOICES):
+            pending_size = None
+        pending_design = None
+        pending_design_id = request.POST.get('design_id')
+        if pending_design_id:
+            pending_design = ProductDesign.objects.filter(
+                id=pending_design_id, product_size__product=product, is_active=True
+            ).first()
+            if pending_design and not pending_size:
+                pending_size = pending_design.product_size.name
+        origin = ''
+        ref = request.META.get('HTTP_REFERER', '')
+        if ref and url_has_allowed_host_and_scheme(ref, allowed_hosts={request.get_host()}):
+            ref_parts = urlsplit(ref)
+            origin = ref_parts.path + (('?' + ref_parts.query) if ref_parts.query else '')
+        stash_pending_action(request, product, pending_qty, pending_size, pending_design, buy_now, origin)
+        messages.info(request, 'Please log in to continue. Your item will be added right after.')
+        login_url = reverse('accounts:login')
+        return redirect(login_url)
 
     if buy_now and request.user.is_authenticated and (not request.user.phone or not request.user.address or not request.user.city or not request.user.province):
         messages.warning(request, 'Please add your phone number and complete address to your profile before checking out.')
@@ -282,14 +310,20 @@ def cart_remove(request, item_key):
 def cart_detail(request):
     cart = Cart(request)
     cart_total = cart.get_total_price()
-    shipping_fee = calculate_shipping_fee(cart_total)
-    amount_for_free_shipping = max(0, 500 - cart_total)
+    user = request.user
+    has_location = user.is_authenticated and bool(user.province)
+    quote = get_shipping_quote(
+        len(cart),
+        user.province if has_location else '',
+        user.city if has_location else '',
+    )
     return render(request, 'orders/cart.html', {
         'cart': cart,
         'cart_items': list(cart),
         'cart_total': cart_total,
-        'shipping_fee': shipping_fee,
-        'amount_for_free_shipping': amount_for_free_shipping,
+        'shipping_fee': quote['fee'],
+        'shipping_quote': quote,
+        'shipping_has_location': has_location,
     })
 
 
@@ -302,9 +336,9 @@ def checkout_select(request):
         return redirect('orders:cart_detail')
 
     if not request.user.is_authenticated:
-        messages.info(request, 'Please create an account to checkout.')
-        register_url = reverse('accounts:register')
-        return redirect(f'{register_url}?next={reverse("orders:cart_detail")}')
+        messages.info(request, 'Please log in to checkout.')
+        login_url = reverse('accounts:login')
+        return redirect(login_url)
 
     request.session['checkout_selected_ids'] = selected_ids
     request.session['checkout_source'] = 'cart'
@@ -325,9 +359,9 @@ def checkout(request):
         return redirect('store:shop')
 
     if not request.user.is_authenticated:
-        messages.info(request, 'Please create an account to checkout.')
-        register_url = reverse('accounts:register')
-        return redirect(f'{register_url}?next={reverse("orders:cart_detail")}')
+        messages.info(request, 'Please log in to checkout.')
+        login_url = reverse('accounts:login')
+        return redirect(login_url)
 
     all_ids = [str(pid) for pid in cart.cart.keys()]
     raw_selected_ids = request.session.get('checkout_selected_ids') or all_ids
@@ -377,11 +411,14 @@ def checkout(request):
         return redirect('orders:order_confirmation', pk=order.pk)
 
     cart_total = cart.total_price_for(selected_ids)
-    shipping_fee = calculate_shipping_fee(cart_total)
+    selected_qty = sum(cart.get_quantity(k) for k in selected_ids)
+    quote = get_shipping_quote(selected_qty, request.user.province, request.user.city)
+    shipping_fee = quote['fee']
     return render(request, 'orders/checkout.html', {
         'cart': cart.iter_selected(selected_ids),
         'cart_total': cart_total,
         'shipping_fee': shipping_fee,
+        'shipping_quote': quote,
         'grand_total': cart_total + shipping_fee,
         'checkout_source': checkout_source,
     })
@@ -398,9 +435,9 @@ def _checkout_buy_now(request, cart):
         return redirect('store:shop')
 
     if not request.user.is_authenticated:
-        messages.info(request, 'Please create an account to use Buy Now.')
-        register_url = reverse('accounts:register')
-        return redirect(f'{register_url}?next={buy_now_item["product"].get_absolute_url()}')
+        messages.info(request, 'Please log in to use Buy Now.')
+        login_url = reverse('accounts:login')
+        return redirect(f'{login_url}?next={buy_now_item["product"].get_absolute_url()}')
 
     if not request.user.phone or not request.user.address or not request.user.city or not request.user.province:
         messages.warning(request, 'Please add your phone number and complete address to your profile before checking out.')
@@ -442,11 +479,13 @@ def _checkout_buy_now(request, cart):
         return redirect('orders:order_confirmation', pk=order.pk)
 
     cart_total = buy_now_item['total']
-    shipping_fee = calculate_shipping_fee(cart_total)
+    quote = get_shipping_quote(buy_now_item['quantity'], request.user.province, request.user.city)
+    shipping_fee = quote['fee']
     return render(request, 'orders/checkout.html', {
         'cart': [buy_now_item],
         'cart_total': cart_total,
         'shipping_fee': shipping_fee,
+        'shipping_quote': quote,
         'grand_total': cart_total + shipping_fee,
         'checkout_source': 'buy_now',
     })
@@ -541,12 +580,17 @@ def checkout_review(request):
     request.session.modified = True
 
     cart_total = sum(item['price'] * item['quantity'] for item in items)
-    shipping_fee = calculate_shipping_fee(cart_total)
+    quote = get_shipping_quote(
+        sum(item['quantity'] for item in items),
+        draft['form_data'].get('province', ''), draft['form_data'].get('city', ''),
+    )
+    shipping_fee = quote['fee']
 
     return render(request, 'orders/checkout_review.html', {
         'cart': items,
         'cart_total': cart_total,
         'shipping_fee': shipping_fee,
+        'shipping_quote': quote,
         'grand_total': cart_total + shipping_fee,
         'form_data': draft['form_data'],
     })
@@ -590,7 +634,10 @@ def gcash_payment_pending(request):
     request.session.modified = True
 
     cart_total = sum(item['price'] * item['quantity'] for item in items)
-    shipping_fee = calculate_shipping_fee(cart_total)
+    shipping_fee = get_shipping_quote(
+        sum(item['quantity'] for item in items),
+        draft['form_data'].get('province', ''), draft['form_data'].get('city', ''),
+    )['fee']
     draft_total = cart_total + shipping_fee
 
     if request.method == 'POST':
@@ -870,7 +917,11 @@ def gcash_qr_image_pending(request):
         return HttpResponse(status=404)
 
     cart_total = sum(item['price'] * item['quantity'] for item in items)
-    shipping_fee = calculate_shipping_fee(cart_total)
+    form_data = _sync_form_data_from_profile(request, draft['form_data'])
+    shipping_fee = get_shipping_quote(
+        sum(item['quantity'] for item in items),
+        form_data.get('province', ''), form_data.get('city', ''),
+    )['fee']
     amount = cart_total + shipping_fee
 
     reference = request.session.get(

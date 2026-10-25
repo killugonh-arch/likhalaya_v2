@@ -6,6 +6,7 @@
 
 {% block extra_css %}
 {{ block.super }}
+{% include 'dashboard/_filter_styles.html' %}
 <style>
 /* =========================================================
    Reuses the approved Likhalaya design-system tokens and
@@ -143,32 +144,33 @@
 <!-- Filters: reuses ds-input across all three fields, single search action per approved spec -->
 <div class="dash-panel mb-4">
   <div class="orders-filter-bar">
-    <form method="get" class="row g-2 align-items-end">
-      <div class="col-sm-4">
-        <label class="ds-label visually-hidden" for="order-search">Search orders</label>
-        <input id="order-search" type="text" name="q" class="ds-input" placeholder="Search name, email, order #…" value="{{ search }}">
+    <form method="get" class="lk-filter-form">
+      <div class="lk-filter-search">
+        <label class="visually-hidden" for="order-search">Search</label>
+        <i class="fas fa-search" aria-hidden="true"></i>
+        <input id="order-search" type="text" name="q" class="lk-input" placeholder="Search name, email, order #…" value="{{ search }}">
       </div>
-      <div class="col-sm-3">
-        <label class="ds-label visually-hidden" for="order-status">Status</label>
-        <select id="order-status" name="status" class="ds-input">
+      <div>
+        <label class="visually-hidden" for="order-status">Status</label>
+        <select id="order-status" name="status" class="lk-input">
           <option value="">All Statuses</option>
           {% for s, l in status_choices %}
           <option value="{{ s }}" {% if s == status_filter %}selected{% endif %}>{{ l }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="col-sm-3">
-        <label class="ds-label visually-hidden" for="order-payment">Payment method</label>
-        <select id="order-payment" name="payment" class="ds-input">
+      <div>
+        <label class="visually-hidden" for="order-payment">Payment method</label>
+        <select id="order-payment" name="payment" class="lk-input">
           <option value="">All Payments</option>
           {% for s, l in payment_choices %}
           <option value="{{ s }}" {% if s == payment_filter %}selected{% endif %}>{{ l }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="col-sm-2 d-flex gap-2">
-        <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm flex-fill">Search</button>
-        <a href="{% url 'dashboard:order_list' %}" class="ds-btn ds-btn-secondary ds-btn-sm flex-fill">Clear</a>
+      <div class="lk-filter-actions">
+        <button type="submit" class="lk-btn lk-btn-primary"><i class="fas fa-search"></i>Search</button>
+        <a href="{% url 'dashboard:order_list' %}" class="lk-btn lk-btn-ghost"><i class="fas fa-rotate-right"></i>Clear</a>
       </div>
     </form>
   </div>

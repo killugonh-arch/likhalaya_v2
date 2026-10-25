@@ -5,7 +5,7 @@ from store.models import Category, Product, ProductImage, ContactMessage, Messag
 from orders.models import Order, OrderItem, Notification
 
 
-# ── Auth ──────────────────────────────────────────────────────────
+# ── Auth ────────────────────────────────────────────────────────
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
     """Adds role + basic profile info directly into the JWT payload so the
@@ -74,7 +74,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         return user
 
 
-# ── Store ─────────────────────────────────────────────────────────
+# ── Store ───────────────────────────────────────────────────────
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:

@@ -73,9 +73,11 @@
         <div class="d-flex justify-content-between mb-2"><span class="text-muted fw-bold small">Subtotal</span><span class="fw-bold small">₱{{ cart_total|floatformat:0|intcomma }}</span></div>
         <div class="d-flex justify-content-between mb-2">
           <span class="text-muted fw-bold small">Shipping</span>
-          <span class="fw-bold small {% if shipping_fee == 0 %}text-success{% endif %}">
-            {% if shipping_fee == 0 %}FREE{% else %}₱{{ shipping_fee|floatformat:0 }}{% endif %}
-          </span>
+          <span class="fw-bold small {% if shipping_fee == 0 %}text-success{% endif %}">{% if shipping_fee == 0 %}FREE{% else %}₱{{ shipping_fee|floatformat:0 }}{% endif %}</span>
+        </div>
+        <div class="text-muted mb-2" style="font-size:11px;">
+          {{ shipping_quote.zone }}{% if shipping_quote.distance_km %} (~{{ shipping_quote.distance_km }} km){% endif %}
+          {% if not shipping_quote.free %}&middot; ₱{{ shipping_quote.base_fee|floatformat:0 }} delivery{% endif %}{% if shipping_quote.item_fee %} + ₱{{ shipping_quote.item_fee|floatformat:0 }} for extra items{% endif %}
         </div>
         <hr>
         <div class="d-flex justify-content-between fw-bold mb-3">

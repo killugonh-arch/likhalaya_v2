@@ -221,9 +221,9 @@
           {% for item in cart_items %}
           <div class="cart-line">
             {% if cart_items|length > 1 %}
-            <input type="checkbox" class="form-check-input cart-item-checkbox cart-line-checkbox" data-item-key="{{ item.key }}" data-price="{{ item.total }}" checked>
+            <input type="checkbox" class="form-check-input cart-item-checkbox cart-line-checkbox" data-item-key="{{ item.key }}" data-price="{{ item.total }}" data-qty="{{ item.quantity }}" checked>
             {% else %}
-            <input type="checkbox" class="cart-item-checkbox d-none" data-item-key="{{ item.key }}" data-price="{{ item.total }}" checked>
+            <input type="checkbox" class="cart-item-checkbox d-none" data-item-key="{{ item.key }}" data-price="{{ item.total }}" data-qty="{{ item.quantity }}" checked>
             {% endif %}
 
             {% if item.design.image %}
@@ -295,13 +295,22 @@
               </div>
               <div class="summary-row">
                 <span class="label">Shipping</span>
-                <span class="value {% if shipping_fee == 0 %}shipping-free{% endif %}" id="summaryShipping">
-                  {% if shipping_fee == 0 %}FREE{% else %}₱{{ shipping_fee|floatformat:0 }}.00{% endif %}
+                <span class="value {% if shipping_fee == 0 %}shipping-free{% endif %}" id="summaryShipping"
+                      data-base="{{ shipping_quote.base_fee|floatformat:0 }}"
+                      data-per-item="{{ shipping_quote.per_item|floatformat:0 }}"
+                      data-max-item="{{ shipping_quote.max_item_fee|floatformat:0 }}">
+                  {% if shipping_fee == 0 %}FREE{% else %}₱{{ shipping_fee|floatformat:0 }}{% endif %}
                 </span>
               </div>
 
-              <div class="alert free-shipping-alert py-2 mb-2 {% if cart_total < 500 %}d-none{% endif %}" id="freeShippingAlert">
-                <i class="fas fa-info-circle me-1"></i><span id="freeShippingText">Orders of ₱500 or more have a ₱50 shipping fee.</span>
+              <div class="alert free-shipping-alert py-2 mb-2" id="freeShippingAlert">
+                <i class="fas fa-info-circle me-1"></i><span id="freeShippingText">
+                  {% if shipping_has_location %}
+                    Based on your address ({{ shipping_quote.zone }}{% if shipping_quote.distance_km %}, ~{{ shipping_quote.distance_km }} km{% endif %}) and number of items.
+                  {% else %}
+                    Shipping depends on your delivery location and number of items. Estimated here; final fee is set at checkout.
+                  {% endif %}
+                </span>
               </div>
 
               <hr class="summary-divider">
@@ -370,18 +379,23 @@
   function recalc() {
     let subtotal = 0;
     let selectedCount = 0;
+    let totalQty = 0;
     checkboxes.forEach(function (cb) {
       if (cb.checked) {
         subtotal += parseFloat(cb.dataset.price || '0');
+        totalQty += parseInt(cb.dataset.qty || '1', 10);
         selectedCount += 1;
       }
     });
 
-    const shipping = subtotal >= 500 ? 50 : 0;
+    const base = parseFloat(shippingEl.dataset.base || '0');
+    const perItem = parseFloat(shippingEl.dataset.perItem || '0');
+    const maxItem = parseFloat(shippingEl.dataset.maxItem || '0');
+    const shipping = selectedCount === 0 ? 0 : base + Math.min(Math.max(0, totalQty - 1) * perItem, maxItem);
     const grandTotal = subtotal + shipping;
 
     subtotalEl.textContent = peso(subtotal);
-    if (shipping === 0) {
+    if (selectedCount > 0 && shipping === 0) {
       shippingEl.textContent = 'FREE';
       shippingEl.classList.add('shipping-free');
     } else {
@@ -390,13 +404,6 @@
     }
     grandTotalEl.textContent = peso(grandTotal);
     if (stickyTotalEl) stickyTotalEl.textContent = peso(grandTotal);
-
-    if (subtotal >= 500) {
-      freeShippingAlert.classList.remove('d-none');
-      freeShippingText.textContent = 'Orders of ₱500 or more have a ₱50 shipping fee.';
-    } else {
-      freeShippingAlert.classList.add('d-none');
-    }
 
     if (selectedCountEl) selectedCountEl.textContent = selectedCount;
     checkoutBtn.disabled = selectedCount === 0;

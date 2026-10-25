@@ -3,6 +3,11 @@
 {% block sb_activity %}active{% endblock %}
 {% block title %}Activity Log – Dashboard{% endblock %}
 
+{% block extra_css %}
+{{ block.super }}
+{% include 'dashboard/_filter_styles.html' %}
+{% endblock %}
+
 {% block dash_content %}
 <style>
 .session-card { border-radius: 12px; overflow: hidden; }
@@ -81,31 +86,26 @@ body.dark-mode .session-username-link { color: #6fd6c9; }
 <!-- Filters -->
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-body py-3">
-    <form method="get" class="row g-2 align-items-end">
-      <div class="col-sm-3">
-        <label class="form-label small text-muted mb-1">Search</label>
-        <input type="text" name="q" class="form-control form-control-sm" placeholder="Username, description, IP…" value="{{ search }}">
+    <form method="get" class="lk-filter-form">
+      <div class="lk-filter-search">
+        <label class="visually-hidden" for="al-search">Search</label>
+        <i class="fas fa-search" aria-hidden="true"></i>
+        <input id="al-search" type="text" name="q" class="lk-input" placeholder="Username, description, IP…" value="{{ search }}">
       </div>
-      <div class="col-sm-3">
-        <label class="form-label small text-muted mb-1">Staff</label>
-        <select name="staff" class="form-select form-select-sm">
+      <div>
+        <label class="visually-hidden" for="al-staff">Staff</label>
+        <select id="al-staff" name="staff" class="lk-input">
           <option value="">All Staff</option>
           {% for u in staff_choices %}
           <option value="{{ u }}" {% if u == staff_filter %}selected{% endif %}>{{ u }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="col-sm-2">
-        <label class="form-label small text-muted mb-1">From</label>
-        <input type="date" name="from" class="form-control form-control-sm" value="{{ date_from }}">
-      </div>
-      <div class="col-sm-2">
-        <label class="form-label small text-muted mb-1">To</label>
-        <input type="date" name="to" class="form-control form-control-sm" value="{{ date_to }}">
-      </div>
-      <div class="col-sm-2 d-flex gap-2">
-        <button type="submit" class="btn btn-sm btn-teal flex-fill">Filter</button>
-        <a href="{% url 'dashboard:activity_log' %}" class="btn btn-sm btn-outline-secondary flex-fill">Clear</a>
+      <label class="lk-filter-date"><span>From</span><input type="date" name="from" value="{{ date_from }}"></label>
+      <label class="lk-filter-date"><span>To</span><input type="date" name="to" value="{{ date_to }}"></label>
+      <div class="lk-filter-actions">
+        <button type="submit" class="lk-btn lk-btn-primary"><i class="fas fa-filter"></i>Filter</button>
+        <a href="{% url 'dashboard:activity_log' %}" class="lk-btn lk-btn-ghost"><i class="fas fa-rotate-right"></i>Clear</a>
       </div>
     </form>
   </div>

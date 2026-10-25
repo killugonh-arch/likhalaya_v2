@@ -4,6 +4,11 @@
 {% block sb_products %}active{% endblock %}
 {% block title %}Products – Likhalaya Dashboard{% endblock %}
 
+{% block extra_css %}
+{{ block.super }}
+{% include 'dashboard/_filter_styles.html' %}
+{% endblock %}
+
 {% block dash_content %}
 <div class="dash-breadcrumb">
   <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
@@ -23,29 +28,33 @@
 <!-- Filters -->
 <div class="card border-0 shadow-sm mb-4">
   <div class="card-body py-3">
-    <form method="get" class="row g-2 align-items-end">
-      <div class="col-sm-4">
-        <input type="text" name="q" class="form-control form-control-sm" placeholder="Search name or artisan…" value="{{ q }}">
+    <form method="get" class="lk-filter-form">
+      <div class="lk-filter-search">
+        <label class="visually-hidden" for="prod-search">Search</label>
+        <i class="fas fa-search" aria-hidden="true"></i>
+        <input id="prod-search" type="text" name="q" class="lk-input" placeholder="Search name or artisan…" value="{{ q }}">
       </div>
-      <div class="col-sm-3">
-        <select name="category" class="form-select form-select-sm">
+      <div>
+        <label class="visually-hidden" for="prod-category">Category</label>
+        <select id="prod-category" name="category" class="lk-input">
           <option value="">All Categories</option>
           {% for cat in categories %}
           <option value="{{ cat.pk }}" {% if cat.pk|stringformat:'s' == cat_filter %}selected{% endif %}>{{ cat.name }}</option>
           {% endfor %}
         </select>
       </div>
-      <div class="col-sm-3">
-        <select name="status" class="form-select form-select-sm">
+      <div>
+        <label class="visually-hidden" for="prod-status">Status</label>
+        <select id="prod-status" name="status" class="lk-input">
           <option value="">All Status</option>
           <option value="active" {% if status_filter == 'active' %}selected{% endif %}>Active</option>
           <option value="inactive" {% if status_filter == 'inactive' %}selected{% endif %}>Inactive</option>
           <option value="low_stock" {% if status_filter == 'low_stock' %}selected{% endif %}>Low Stock</option>
         </select>
       </div>
-      <div class="col-sm-2 d-flex gap-2">
-        <button type="submit" class="btn btn-sm btn-teal flex-fill">Search</button>
-        <a href="{% url 'dashboard:product_list' %}" class="btn btn-sm btn-outline-secondary flex-fill">Clear</a>
+      <div class="lk-filter-actions">
+        <button type="submit" class="lk-btn lk-btn-primary"><i class="fas fa-search"></i>Search</button>
+        <a href="{% url 'dashboard:product_list' %}" class="lk-btn lk-btn-ghost"><i class="fas fa-rotate-right"></i>Clear</a>
       </div>
     </form>
   </div>

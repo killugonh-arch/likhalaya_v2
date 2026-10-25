@@ -5,6 +5,7 @@
 
 {% block extra_css %}
 {{ block.super }}
+{% include 'dashboard/_filter_styles.html' %}
 <style>
 .rv-page { --g: #0F6B4F; --g-hover: #0C5940; --g-light: #E6F4EF; --surface: #fff; --subtle: #F9FAF9; --bd: #E4E7E4; --tx: #1A1D1B; --tx2: #5B615D; --mut: #9AA09C; --danger: #C0362C; --danger-bg: #FBEAE8; --star: #E0A82E; }
 .rv-page .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
@@ -13,11 +14,6 @@
 .rv-page .stat .l { font-size: 12px; color: var(--mut); margin-top: 2px; }
 .rv-page .stat .n .fa-star { color: var(--star); font-size: 18px; }
 .rv-page .toolbar { background: var(--surface); border: 1px solid var(--bd); border-radius: 12px; padding: 14px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(16,24,20,.06); }
-.rv-page .toolbar form { display: flex; gap: 8px; flex-wrap: wrap; }
-.rv-page .toolbar input[type=text], .rv-page .toolbar select { padding: 9px 12px; border: 1px solid var(--bd); border-radius: 6px; font-size: 13px; background: var(--subtle); }
-.rv-page .toolbar input[type=text] { flex: 1 1 220px; }
-.rv-page .toolbar select { flex: 0 1 170px; }
-.rv-page .toolbar input:focus, .rv-page .toolbar select:focus { outline: none; border-color: var(--g); background: #fff; }
 .rv-page .btn-g { background: var(--g); color: #fff; border: none; border-radius: 6px; padding: 9px 16px; font-size: 13px; font-weight: 600; }
 .rv-page .btn-g:hover { background: var(--g-hover); color: #fff; }
 .rv-page .btn-o { background: #fff; color: var(--tx); border: 1px solid var(--bd); border-radius: 6px; padding: 9px 14px; font-size: 13px; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; }
@@ -49,14 +45,12 @@
 body.dark-mode .rv-page { --surface: var(--dm-surface); --subtle: var(--dm-surface-2); --bd: var(--dm-border); --tx: var(--dm-text); --tx2: var(--dm-text-dim); --mut: var(--dm-text-mute); --g: var(--dm-teal); --g-light: rgba(79,209,197,.12); --danger-bg: rgba(255,107,107,.12); --danger: var(--dm-danger); }
 body.dark-mode .rv-page .row-item.is-hidden { background: var(--dm-surface-2); }
 body.dark-mode .rv-page .btn-g { color: #0e1420; }
-body.dark-mode .rv-page .toolbar input:focus, body.dark-mode .rv-page .toolbar select:focus { background: var(--dm-surface-3); }
 body.dark-mode .rv-page .act, body.dark-mode .rv-page .btn-o { background: var(--dm-surface); }
 
 @media (max-width: 767.98px) {
   .rv-page .stat-grid { grid-template-columns: repeat(2, 1fr); }
   .rv-page .row-item { flex-wrap: wrap; padding: 14px; }
   .rv-page .actions { width: 100%; justify-content: flex-end; }
-  .rv-page .toolbar select { flex: 1 1 140px; }
 }
 </style>
 {% endblock %}
@@ -82,25 +76,39 @@ body.dark-mode .rv-page .act, body.dark-mode .rv-page .btn-o { background: var(-
   </div>
 
   <div class="toolbar">
-    <form method="get">
-      <input type="text" name="q" value="{{ search }}" placeholder="Search product, customer, or comment…">
-      <select name="product" aria-label="Product">
-        <option value="">All products</option>
-        {% for p in products %}<option value="{{ p.pk }}" {% if product_filter == p.pk|stringformat:'s' %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
-      </select>
-      <select name="rating" aria-label="Rating">
-        <option value="">All ratings</option>
-        {% for n in '54321' %}<option value="{{ n }}" {% if rating_filter == n %}selected{% endif %}>{{ n }} star{% if n != '1' %}s{% endif %}</option>{% endfor %}
-      </select>
-      <select name="status" aria-label="Status">
-        <option value="">All status</option>
-        <option value="visible" {% if status_filter == 'visible' %}selected{% endif %}>Visible</option>
-        <option value="hidden" {% if status_filter == 'hidden' %}selected{% endif %}>Hidden</option>
-        <option value="unreplied" {% if status_filter == 'unreplied' %}selected{% endif %}>No reply yet</option>
-        <option value="verified" {% if status_filter == 'verified' %}selected{% endif %}>Verified purchase</option>
-      </select>
-      <button type="submit" class="btn-g"><i class="fas fa-filter me-1"></i>Filter</button>
-      {% if search or rating_filter or status_filter or product_filter %}<a href="{% url 'reviews:dashboard_list' %}" class="btn-o">Clear</a>{% endif %}
+    <form method="get" class="lk-filter-form">
+      <div class="lk-filter-search">
+        <label class="visually-hidden" for="rv-search">Search</label>
+        <i class="fas fa-search" aria-hidden="true"></i>
+        <input id="rv-search" type="text" name="q" class="lk-input" placeholder="Search product, customer, or comment…" value="{{ search }}">
+      </div>
+      <div>
+        <select name="product" class="lk-input" aria-label="Product">
+          <option value="">All products</option>
+          {% for p in products %}<option value="{{ p.pk }}" {% if product_filter == p.pk|stringformat:'s' %}selected{% endif %}>{{ p.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <select name="rating" class="lk-input" aria-label="Rating">
+          <option value="">All ratings</option>
+          {% for n in '54321' %}<option value="{{ n }}" {% if rating_filter == n %}selected{% endif %}>{{ n }} star{% if n != '1' %}s{% endif %}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <select name="status" class="lk-input" aria-label="Status">
+          <option value="">All status</option>
+          <option value="visible" {% if status_filter == 'visible' %}selected{% endif %}>Visible</option>
+          <option value="hidden" {% if status_filter == 'hidden' %}selected{% endif %}>Hidden</option>
+          <option value="unreplied" {% if status_filter == 'unreplied' %}selected{% endif %}>No reply yet</option>
+          <option value="verified" {% if status_filter == 'verified' %}selected{% endif %}>Verified purchase</option>
+        </select>
+      </div>
+      <div class="lk-filter-actions">
+        <button type="submit" class="lk-btn lk-btn-primary"><i class="fas fa-filter"></i>Filter</button>
+        {% if search or rating_filter or status_filter or product_filter %}
+        <a href="{% url 'reviews:dashboard_list' %}" class="lk-btn lk-btn-ghost"><i class="fas fa-rotate-right"></i>Clear</a>
+        {% endif %}
+      </div>
     </form>
   </div>
 
