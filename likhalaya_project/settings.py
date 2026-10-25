@@ -166,13 +166,16 @@ AUTHENTICATION_BACKENDS = [
     'django.contrib.auth.backends.ModelBackend',
 ]
 
-# 5 failed logins locks account+ip for 1 hour
+# 5 failed logins locks account+ip for AXES_COOLOFF_MINUTES (default 5)
 AXES_ENABLED = True
 AXES_FAILURE_LIMIT = 5
-AXES_COOLOFF_TIME = timedelta(hours=1)
+AXES_COOLOFF_TIME = timedelta(minutes=int(os.environ.get('AXES_COOLOFF_MINUTES', '5')))
 AXES_RESET_ON_SUCCESS = True
 AXES_LOCKOUT_PARAMETERS = [['username', 'ip_address']]
 AXES_USERNAME_CALLABLE = 'accounts.axes_utils.get_username'
+# Accounts that are never locked out by failed-login tracking (matched by email).
+AXES_EXEMPT_LOGINS = ['admin@likhalaya.com']
+AXES_WHITELIST_CALLABLE = 'accounts.axes_utils.axes_whitelist'
 AXES_HTTP_RESPONSE_CODE = 429
 AXES_LOCKOUT_TEMPLATE = 'accounts/locked.html'
 

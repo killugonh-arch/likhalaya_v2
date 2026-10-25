@@ -17,6 +17,7 @@ from .forms import RegisterForm, LoginForm, ProfileUpdateForm, OTPVerifyForm, No
 from .models import CustomUser, EmailOTP
 from likhalaya_project.rate_limit import get_client_ip, check_hourly_limit
 from orders.pending import apply_pending_action
+from .axes_utils import is_exempt_login
 
 # Minimum time a user must wait between "Resend Code" clicks. Without this,
 # resend is an email-bombing vector: anyone can register using someone
@@ -287,7 +288,7 @@ def login_view(request):
             if user.is_courier_user():
                 return redirect('dashboard:courier_order_list')
             return redirect('store:home')
-        elif attempted:
+        elif attempted and not is_exempt_login(attempted):
             # Failed login: increment this account's counter in the IP dict.
             fail_counts[attempted] = fail_counts.get(attempted, 0) + 1
             _set_fail_counts(ip, fail_counts)
