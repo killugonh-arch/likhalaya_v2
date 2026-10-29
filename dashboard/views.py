@@ -376,7 +376,18 @@ def message_list(request):
         messages_qs = messages_qs.filter(is_read=(read_filter == 'true'))
     if search:
         messages_qs = messages_qs.filter(Q(name__icontains=search) | Q(subject__icontains=search) | Q(email__icontains=search))
-    paginator = Paginator(messages_qs, 15)
+    # Combine messages from the same sender (matched by email) into one row.
+    # The row shows the newest message; counts cover the whole group.
+    groups = {}
+    for m in messages_qs:
+        key = (m.email or '').strip().lower() or f'id-{m.pk}'
+        g = groups.get(key)
+        if g is None:
+            g = groups[key] = {'msg': m, 'count': 0, 'unread': 0}
+        g['count'] += 1
+        if not m.is_read:
+            g['unread'] += 1
+    paginator = Paginator(list(groups.values()), 15)
     page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'dashboard/messages/list.html', {
         'messages_list': page_obj,
@@ -404,20 +415,27 @@ def message_detail(request, pk):
     if request.method == 'POST':
         if request.POST.get('form') == 'reply':
             body = request.POST.get('reply_body', '').strip()
+            # Staff can pick which of this customer's inquiries the reply goes on
+            # (the "Reply" button on a message). Only the same customer's own
+            # inquiries are allowed; anything else falls back to the opened one.
+            target = msg
+            reply_to = request.POST.get('reply_to', '').strip()
+            if reply_to.isdigit() and msg.customer_id:
+                target = ContactMessage.objects.filter(pk=int(reply_to), customer_id=msg.customer_id).first() or msg
             if body:
                 MessageReply.objects.create(
-                    thread=msg,
+                    thread=target,
                     staff=request.user,
                     is_staff_reply=True,
                     body=body,
                     is_read_by_staff=True,
                     is_read_by_customer=False,
                 )
-                if msg.customer_id:
+                if target.customer_id:
                     Notification.objects.create(
-                        user=msg.customer,
-                        contact_message=msg,
-                        message=f'You have a new reply to your inquiry: "{msg.subject}"',
+                        user=target.customer,
+                        contact_message=target,
+                        message=f'You have a new reply to your inquiry: "{target.subject}"',
                     )
                 messages.success(request, 'Reply sent.')
             return redirect('dashboard:message_detail', pk=pk)
@@ -456,6 +474,7 @@ def message_detail(request, pk):
             'body': thread.message,
             'created_at': thread.created_at,
             'subject': thread.subject,
+            'thread_pk': thread.pk,
             'is_current': thread.pk == msg.pk,
         })
         for reply in thread.replies.all():
@@ -469,10 +488,35 @@ def message_detail(request, pk):
                 'body': reply.body,
                 'created_at': reply.created_at,
                 'subject': thread.subject,
+                'thread_pk': thread.pk,
                 'is_current': thread.pk == msg.pk,
                 'is_read_by_customer': reply.is_read_by_customer,
             })
     timeline.sort(key=lambda e: e['created_at'])
+    # Group back-to-back messages from the same sender when they were sent
+    # within 5 minutes of the previous one: the name is shown once and only the
+    # last message of the group shows the time. A new header starts when the
+    # sender changes or the gap is longer than 5 minutes.
+    prev = None
+    for e in timeline:
+        e['is_continuation'] = bool(
+            prev
+            and prev['is_staff_reply'] == e['is_staff_reply']
+            and prev['sender_name'] == e['sender_name']
+            and (e['created_at'] - prev['created_at']).total_seconds() <= 300
+        )
+        # Avatar: show it only when the sender changes (any time gap), so the
+        # same person's profile picture isn't repeated down the conversation.
+        e['hide_avatar'] = bool(
+            prev
+            and prev['is_staff_reply'] == e['is_staff_reply']
+            and prev['sender_name'] == e['sender_name']
+        )
+        e['subject_changed'] = bool(e['is_continuation'] and prev.get('subject') != e.get('subject'))
+        prev = e
+    for i, e in enumerate(timeline):
+        nxt = timeline[i + 1] if i + 1 < len(timeline) else None
+        e['show_time'] = not (nxt and nxt['is_continuation'])
 
     last_staff_reply = msg.replies.filter(is_staff_reply=True).order_by('-created_at').first()
     handled_by = last_staff_reply.staff if last_staff_reply and last_staff_reply.staff else None
@@ -592,13 +636,15 @@ def product_detail(request, pk):
         s.stock_total = sum(d.stock for d in designs)
         total_designs += s.design_count
         total_stock += s.stock_total
+    # Sizes with no designs are still listed, but not counted in the Sizes total
+    sizes_with_designs = sum(1 for s in size_rows if s.design_count > 0)
 
     return render(request, 'dashboard/products/detail.html', {
         'product': product,
         'gallery_by_size': gallery_by_size,
         'size_rows': size_rows,
         'variant_summary': {
-            'size_count': len(size_rows),
+            'size_count': sizes_with_designs,
             'design_count': total_designs,
             'total_stock': total_stock,
         },
@@ -1348,6 +1394,8 @@ def archive(request):
     staff = CustomUser.all_objects.filter(is_deleted=True).exclude(role='customer').select_related('deleted_by').order_by('-deleted_at')
     videos = LivelihoodVideo.all_objects.filter(is_deleted=True).select_related('deleted_by').order_by('-deleted_at')
     contact_messages = ContactMessage.all_objects.filter(is_deleted=True).select_related('deleted_by').order_by('-deleted_at')
+    from reviews.models import Review
+    hidden_reviews = Review.all_objects.filter(is_deleted=True).select_related('product', 'user', 'deleted_by').order_by('-deleted_at')
     return render(request, 'dashboard/archive/list.html', {
         'tab': tab,
         'products': products,
@@ -1356,6 +1404,7 @@ def archive(request):
         'staff': staff,
         'videos': videos,
         'contact_messages': contact_messages,
+        'hidden_reviews': hidden_reviews,
         'counts': {
             'products': products.count(),
             'categories': categories.count(),
@@ -1363,6 +1412,7 @@ def archive(request):
             'staff': staff.count(),
             'videos': videos.count(),
             'messages': contact_messages.count(),
+            'reviews': hidden_reviews.count(),
         },
     })
 

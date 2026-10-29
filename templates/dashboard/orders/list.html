@@ -125,16 +125,10 @@
 {% endblock %}
 
 {% block dash_content %}
-<nav class="ds-breadcrumb" aria-label="Breadcrumb">
-  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
-  <span class="sep">/</span><span class="current" aria-current="page">Orders</span>
-</nav>
-
 <!-- Header: title (identity) left, single primary action right -->
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
   <div>
-    <h1 class="dash-greeting-title">Orders Management</h1>
-    <p class="dash-greeting-sub mb-0">{{ page_obj.paginator.count }} total orders</p>
+    <h1 class="dash-greeting-title" style="font-size:25px;">Orders Management</h1>
   </div>
   <a href="{% url 'dashboard:order_export_csv' %}" class="ds-btn ds-btn-primary ds-btn-sm">
     <i class="fas fa-file-excel me-2"></i>Export Excel

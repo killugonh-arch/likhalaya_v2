@@ -131,6 +131,13 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
 .pe-chip b { color: var(--pe-text); margin-left: 4px; }
 .pe-chip.auto b { font-style: italic; color: var(--pe-mute); font-weight: 500; }
 .pe-readonly { background: var(--pe-soft) !important; color: var(--pe-dim) !important; }
+#priceRange { text-align: center; }
+#id_category.is-empty { color: var(--pe-mute); }
+#id_category option { color: var(--pe-text); }
+#priceRange, .pe-chip { cursor: pointer; }
+.pe-chip:hover { border-color: var(--pe-acc); }
+.pe-size.flash { animation: pe-flash 1.2s ease; }
+@keyframes pe-flash { 0%,60% { box-shadow: 0 0 0 .25rem var(--pe-acc-soft); border-color: var(--pe-acc); } 100% { box-shadow: none; } }
 .pe-count { text-align: right; font-size: 11.5px; color: var(--pe-mute); margin-top: 4px; }
 
 /* ── Sizes list ── */
@@ -176,7 +183,8 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
 .pe-del:hover { background: var(--pe-bad-bg); }
 .pe-dbody { display: flex; flex-direction: column; gap: 5px; padding: 0 1px 1px; }
 .pe-dbody .form-control { height: 28px; font-size: 12px; padding: 2px 8px; border-radius: 8px; }
-.pe-dbody .pe-dname { font-weight: 700; font-size: 12.5px; }
+.pe-dbody .form-control { text-align: center; }
+.pe-dbody .pe-dname { font-weight: 400; font-size: 12.5px; text-align: center; }
 .pe-avail { display: flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 700; }
 .pe-avail i { width: 6px; height: 6px; border-radius: 50%; background: var(--pe-ok); }
 .pe-avail.in { color: var(--pe-ok); }
@@ -186,6 +194,9 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
 .pe-stepper { display: inline-flex; align-items: center; border: 1px solid var(--pe-line); border-radius: 8px; overflow: hidden; background: var(--pe-surface); width: 100%; }
 .pe-stepper button { width: 26px; height: 28px; border: 0; background: var(--pe-surface); color: var(--pe-dim); font-size: 16px; cursor: pointer; flex-shrink: 0; }
 .pe-stepper button:hover { background: var(--pe-soft); color: var(--pe-acc); }
+.pe-stepper input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+.pe-stepper input[type=number]::-webkit-outer-spin-button, .pe-stepper input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.pe-stepper input.out { color: var(--pe-bad); }
 .pe-stepper input { flex: 1; min-width: 0; height: 28px; font-size: 12px; border: 0 !important; border-radius: 0 !important; text-align: center; font-weight: 700; box-shadow: none !important; padding: 0; }
 .pe .form-check-input:checked { background-color: var(--pe-acc); border-color: var(--pe-acc); }
 .pe .form-check-input:focus { box-shadow: 0 0 0 .2rem var(--pe-acc-soft); border-color: var(--pe-acc); }
@@ -224,21 +235,24 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
   background: #1f2a2a; color: #fff; padding: 11px 16px; border-radius: 12px; font-size: 13px; display: flex; gap: 14px; align-items: center; transition: all .2s; max-width: 92vw;
 }
 .pe-toast.show { opacity: 1; transform: translateX(-50%); pointer-events: auto; }
+.pe-toast.error { background: #c0392b; }
+.pe-toast.error button { color: #fff; }
+
+/* ── Validation ── */
+.pe .is-invalid-field { border-color: var(--pe-bad) !important; box-shadow: 0 0 0 .2rem rgba(192,57,43,.15) !important; background-color: var(--pe-bad-bg) !important; }
+.pe .err i { margin-right: 4px; }
+.pe-alert { scroll-margin-top: 90px; display: none; gap: 12px; align-items: flex-start; background: var(--pe-bad-bg); border: 1.5px solid var(--pe-bad); color: var(--pe-bad); border-radius: 12px; padding: 12px 16px; margin-bottom: 18px; font-size: 13.5px; }
+.pe-alert.show { display: flex; }
+.pe-alert i.lead { margin-top: 3px; font-size: 16px; }
+.pe-alert b { display: block; margin-bottom: 4px; }
+.pe-alert ul { margin: 0; padding-left: 18px; }
+.pe-alert li { margin: 2px 0; }
+@keyframes pe-shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+.pe-alert.shake { animation: pe-shake .3s ease; }
 .pe-toast button { border: 0; background: none; color: #ffd27a; font-weight: 700; cursor: pointer; padding: 0; }
 </style>
 
 <div class="pe">
-
-<div class="dash-breadcrumb">
-  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
-  <span class="sep">/</span><a href="{% url 'dashboard:product_list' %}">Products</a>
-  {% if product %}
-  <span class="sep">/</span><a href="{% url 'dashboard:product_detail' product.pk %}">{{ product.name }}</a>
-  <span class="sep">/</span><span class="current">Edit</span>
-  {% else %}
-  <span class="sep">/</span><span class="current">Add Product</span>
-  {% endif %}
-</div>
 
 <a href="{% url 'dashboard:product_list' %}" class="pd-back-link"><i class="fas fa-arrow-left"></i> Back to Products</a>
 
@@ -255,8 +269,15 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
   </div>
 </div>
 
-<form method="post" enctype="multipart/form-data" id="productForm">
+<form method="post" enctype="multipart/form-data" id="productForm" novalidate>
   {% csrf_token %}
+  <div class="pe-alert{% if form.errors or image_formset.non_form_errors %} show{% endif %}" id="errBanner" role="alert">
+    <i class="fas fa-circle-exclamation lead"></i>
+    <div>
+      <b id="errTitle">Please fix the highlighted fields below.</b>
+      <ul id="errList"></ul>
+    </div>
+  </div>
   {{ image_formset.management_form }}
 
   <!-- Hidden storage for gallery photos (managed by the Product Images card) -->
@@ -278,7 +299,7 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
       <div class="pe-card" id="imagesCard">
         <div class="pe-card-h">
           <div class="pe-ico"><i class="fas fa-images"></i></div>
-          <div class="grow"><h6>Product Images</h6><div class="sub">Add as many photos as you need for each size</div></div>
+          <div class="grow"><h6>Product Images</h6></div>
           <span class="pe-pill" id="imgTotalPill">0 photos</span>
         </div>
         <div class="pe-card-b">
@@ -288,12 +309,11 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
             <button type="button" class="pe-tab" role="tab" data-tab="M">Medium <span class="pe-tab-n">0</span></button>
             <button type="button" class="pe-tab" role="tab" data-tab="L">Large <span class="pe-tab-n">0</span></button>
           </div>
-          <p class="pe-tab-help" id="tabHelp"></p>
 
           <div class="pe-stage" id="stage">
             <img id="stageImg" alt="" hidden>
             <button type="button" class="pe-stage-empty" id="stageEmpty">
-              <i class="fas fa-cloud-arrow-up"></i><b>Click or drag photos here</b><span>You can select many photos at once · JPG, PNG, WebP · max 5 MB each</span>
+              <i class="fas fa-cloud-arrow-up"></i><b>Click or drag photos here</b><span>Max 5MB each</span>
             </button>
             <span class="pe-cover-chip" id="coverChip" hidden><i class="fas fa-star me-1"></i>Cover photo</span>
             <div class="pe-stage-tools">
@@ -310,18 +330,12 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
 
           <div class="pe-thumbs" id="thumbs"></div>
           <input type="file" id="pickFiles" accept="image/*" multiple hidden>
-
-          <div class="pe-img-foot">
-            <i class="fas fa-circle-info"></i>
-            <span id="capText">Up to 10 photos per tab.</span>
-            <span>Photos in <b>All sizes</b> show for every size; a size tab adds photos for that size only.</span>
-          </div>
         </div>
       </div>
 
       <!-- BASIC INFORMATION -->
       <div class="pe-card">
-        <div class="pe-card-h"><div class="pe-ico"><i class="fas fa-box-open"></i></div><div class="grow"><h6>Basic Information</h6><div class="sub">The basics buyers see first</div></div></div>
+        <div class="pe-card-h"><div class="pe-ico"><i class="fas fa-box-open"></i></div><div class="grow"><h6>Basic Information</h6></div></div>
         <div class="pe-card-b">
           <div class="pe-row2 pe-field">
             <div>
@@ -330,7 +344,7 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
               {% if form.name.errors %}<div class="err">{{ form.name.errors.0 }}</div>{% endif %}
             </div>
             <div>
-              <label class="pe-lbl" for="{{ form.category.id_for_label }}">Category</label>
+              <label class="pe-lbl" for="{{ form.category.id_for_label }}">Category<span class="req">*</span></label>
               {{ form.category }}
               {% if form.category.errors %}<div class="err">{{ form.category.errors.0 }}</div>{% endif %}
             </div>
@@ -338,8 +352,8 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
 
           <div class="pe-row2 pe-field">
             <div>
-              <label class="pe-lbl">Price Range <span class="hint" style="margin:0">(from the size prices)</span></label>
-              <input type="text" class="form-control pe-readonly" id="priceRange" value="—" readonly tabindex="-1">
+              <label class="pe-lbl">Price Range</label>
+              <input type="text" class="form-control pe-readonly" id="priceRange" value="" readonly tabindex="-1">
             </div>
             <div>
               <label class="pe-lbl">Sizes &amp; Pricing</label>
@@ -350,7 +364,6 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
               </div>
             </div>
           </div>
-          <div class="hint" style="margin:-6px 0 14px">Set each size's price in <b>Sizes, Prices &amp; Stock</b> on the right.</div>
 
           {% if product %}
           <div class="pe-row2 pe-field">
@@ -367,7 +380,6 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
           <div class="pe-field">
             <label class="pe-lbl" for="{{ form.description.id_for_label }}">Description</label>
             {{ form.description }}
-            <div class="pe-count"><span id="descCount">0</span> characters</div>
             {% if form.description.errors %}<div class="err">{{ form.description.errors.0 }}</div>{% endif %}
           </div>
         </div>
@@ -381,7 +393,7 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
       <div class="pe-card">
         <div class="pe-card-h">
           <div class="pe-ico"><i class="fas fa-layer-group"></i></div>
-          <div class="grow"><h6>Sizes, Prices &amp; Stock</h6><div class="sub">Type a price for each size. Tap a size to manage its designs and quantities.</div></div>
+          <div class="grow"><h6>Sizes, Prices &amp; Stock</h6></div>
         </div>
         <div class="pe-card-b">
           <div id="sizeList">
@@ -393,7 +405,6 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
                 <div class="pe-size-thumb" data-size-thumb><i class="fas fa-image"></i></div>
                 <div class="pe-size-main">
                   <div class="pe-size-title">{{ panel.label }} <span class="pe-badge out" data-size-badge>Out of stock</span></div>
-                  <div class="pe-size-sub"><span data-size-stock>0 units</span> · <span data-size-designs>0 designs</span> · <span data-size-photos>0 photos</span></div>
                 </div>
                 <div class="pe-price" data-stop>
                   <span>₱</span>
@@ -408,7 +419,6 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
               <div class="pe-size-body">
                 <div class="pe-size-tools">
                   <label class="pe-sw"><span class="form-check form-switch"><input type="checkbox" class="form-check-input size-active" name="size-{{ si }}-is_active" {% if not panel.size or panel.size.is_active %}checked{% endif %}></span>Offer this size</label>
-                  <button type="button" class="pe-link" data-open-tab="{{ panel.code }}"><i class="fas fa-images me-1"></i>Manage {{ panel.label }} photos</button>
                 </div>
                 <div class="pe-design-list" id="designGrid{{ si }}">
                   {% if panel.size %}{% for d in panel.size.designs.all %}
@@ -424,24 +434,21 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
                       <input type="text" class="form-control pe-dname" placeholder="Design name" name="design-{{ si }}-{{ forloop.counter0 }}-title" value="{{ d.title }}" required>
                       <input type="text" class="form-control" placeholder="Color (optional)" name="design-{{ si }}-{{ forloop.counter0 }}-color" value="{{ d.color }}">
                       <div class="pe-qty"><span class="pe-stepper"><button type="button" data-step="-1" aria-label="Less">−</button><input type="number" min="0" step="1" class="form-control design-qty" name="design-{{ si }}-{{ forloop.counter0 }}-stock" value="{{ d.stock|default:0 }}"><button type="button" data-step="1" aria-label="More">+</button></span></div>
-                      <div class="pe-avail out" data-design-avail><i></i><span>0 available</span></div>
                     </div>
                   </div>
                   {% endfor %}{% endif %}
                 </div>
-                <div class="pe-empty-note" data-empty-note hidden><i class="fas fa-lightbulb me-1"></i>Add a design (for example a color) to set how many are in stock for this size.</div>
                 <button type="button" class="pe-add-design" data-add-design="{{ si }}"><i class="fas fa-plus me-1"></i>Add design / color</button>
               </div>
             </div>
           {% endwith %}{% endfor %}
           </div>
-          <div class="hint" style="margin-top:12px">Leave <b>Medium</b> blank to auto-fill between Small and Large. Leave <b>Large</b> blank to sell at a single price.</div>
         </div>
       </div>
 
       <!-- STOCK -->
       <div class="pe-card">
-        <div class="pe-card-h"><div class="pe-ico"><i class="fas fa-boxes-stacked"></i></div><div class="grow"><h6>Stock Management</h6><div class="sub">Calculated from your designs — nothing to type here</div></div></div>
+        <div class="pe-card-h"><div class="pe-ico"><i class="fas fa-boxes-stacked"></i></div><div class="grow"><h6>Stock Management</h6></div></div>
         <div class="pe-card-b">
           <div class="pe-stock-total"><b id="stockTotal">0</b><span>units in stock</span></div>
           {% for panel in size_panels %}
@@ -452,10 +459,10 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
 
       <!-- STATUS -->
       <div class="pe-card">
-        <div class="pe-card-h"><div class="pe-ico"><i class="fas fa-eye"></i></div><div class="grow"><h6>Status &amp; Visibility</h6><div class="sub">Control where this product appears</div></div></div>
+        <div class="pe-card-h"><div class="pe-ico"><i class="fas fa-eye"></i></div><div class="grow"><h6>Status &amp; Visibility</h6></div></div>
         <div class="pe-card-b">
           <label class="pe-switch-row" for="{{ form.is_active.id_for_label }}">
-            <span><b>Visible in shop</b><small>Turn off to hide it from customers</small></span>
+            <span><b>Visible in shop</b></span>
             <span class="form-check form-switch">{{ form.is_active }}</span>
           </label>
         </div>
@@ -483,10 +490,6 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
   var CAP = 10, MAX_BYTES = 5 * 1024 * 1024;
   var CODES = ['S', 'M', 'L'], TABS = ['', 'S', 'M', 'L'];
   var NAME = { S: 'Small', M: 'Medium', L: 'Large' };
-  var TAB_HELP = {
-    '': 'Shown for every size. The first photo here is the cover photo buyers see in the shop.',
-    S: 'Shown when a buyer picks Small.', M: 'Shown when a buyer picks Medium.', L: 'Shown when a buyer picks Large.'
-  };
   var $ = function (s, c) { return (c || document).querySelector(s); };
   var $$ = function (s, c) { return Array.prototype.slice.call((c || document).querySelectorAll(s)); };
 
@@ -497,8 +500,9 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
 
   /* ───────── helpers ───────── */
   var toastTimer;
-  function toast(msg, undo) {
+  function toast(msg, undo, isError) {
     var t = $('#toast'), u = $('#toastUndo');
+    t.classList.toggle('error', !!isError);
     $('#toastMsg').textContent = msg;
     u.hidden = !undo;
     u.onclick = function () { undo(); t.classList.remove('show'); };
@@ -553,7 +557,7 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
     if (tooBig) bits.push(plural(tooBig, 'file') + ' over 5 MB skipped');
     if (notImg) bits.push(plural(notImg, 'file') + ' not an image');
     if (full) bits.push(plural(full, 'photo') + ' skipped (max ' + CAP + ' per tab)');
-    if (bits.length && (tooBig || notImg || full)) toast(bits.join(' · '));
+    if (bits.length && (tooBig || notImg || full)) toast(bits.join(' · '), null, true);
     if (added) markDirty();
     render();
   }
@@ -577,7 +581,6 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
     });
     var total = TABS.reduce(function (n, k) { return n + items(k).length; }, 0);
     $('#imgTotalPill').textContent = plural(total, 'photo');
-    $('#tabHelp').textContent = TAB_HELP[tab];
 
     var list = items(tab);
     if (sel[tab] >= list.length) sel[tab] = list.length - 1;
@@ -608,7 +611,6 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
     add.disabled = list.length >= CAP;
     add.onclick = function () { $('#pickFiles').click(); };
     thumbs.appendChild(add);
-    $('#capText').textContent = list.length + ' of ' + CAP + ' photos in ' + (tab ? NAME[tab] : 'All sizes') + '.';
 
     renderSizes();
   }
@@ -623,7 +625,7 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
   coverInput.addEventListener('change', function () {
     var f = coverInput.files[0];
     if (!f) return;
-    if (f.size > MAX_BYTES || !/^image\//.test(f.type)) { coverInput.value = ''; toast('Please choose an image under 5 MB.'); return; }
+    if (f.size > MAX_BYTES || !/^image\//.test(f.type)) { coverInput.value = ''; toast('Image is too big. Maximum is 5MB.', null, true); return; }
     coverUrl = URL.createObjectURL(f); sel[''] = 0; markDirty(); render();
   });
   $('#captionInput').addEventListener('input', function (e) {
@@ -650,15 +652,11 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
       ds.forEach(function (d) {
         var active = $('.design-active', d).checked, q = qty(d);
         if (active) units += q;
-        var av = $('[data-design-avail]', d); av.className = 'pe-avail ' + (q > 0 ? 'in' : 'out'); $('span', av).textContent = q > 0 ? q + ' available' : 'Out of stock';
+        $('.design-qty', d).classList.toggle('out', q <= 0);
       });
       totals[c] = units; grand += units;
-      $('[data-size-stock]', block).textContent = plural(units, 'unit');
-      $('[data-size-designs]', block).textContent = plural(ds.length, 'design');
-      $('[data-size-photos]', block).textContent = plural(items(c).length, 'photo');
       setBadge($('[data-size-badge]', block), units > 0);
       block.classList.toggle('off', !$('.size-active', block).checked);
-      $('[data-empty-note]', block).hidden = ds.length > 0;
       var own = items(c)[0] || items('')[0], th = $('[data-size-thumb]', block);
       th.innerHTML = own ? '<img alt="" src="' + own.url + '">' : '<i class="fas fa-image"></i>';
     });
@@ -682,7 +680,7 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
     });
     var vals = [s, mShown, l].filter(function (v) { return v !== null; });
     var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals);
-    $('#priceRange').value = !vals.length ? '—' : (lo === hi ? money(lo) : money(lo) + ' – ' + money(hi));
+    $('#priceRange').value = !vals.length ? '' : (lo === hi ? money(lo) : money(lo) + ' – ' + money(hi));
   }
 
   function addDesign(si) {
@@ -701,7 +699,6 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
         '<div class="pe-qty"><span class="pe-stepper"><button type="button" data-step="-1" aria-label="Less">−</button>' +
           '<input type="number" min="0" step="1" class="form-control design-qty" name="' + p + 'stock" value="0">' +
           '<button type="button" data-step="1" aria-label="More">+</button></span></div>' +
-        '<div class="pe-avail out" data-design-avail><i></i><span>0 available</span></div>' +
       '</div>';
     grid.appendChild(d);
     var block = grid.closest('.pe-size'); block.classList.add('open');
@@ -728,8 +725,6 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
       inp.value = Math.max(0, (parseInt(inp.value, 10) || 0) + parseInt(st.dataset.step, 10));
       markDirty(); renderSizes(); return;
     }
-    var open = t.closest('[data-open-tab]');
-    if (open) { tab = open.dataset.openTab; render(); $('#imagesCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     var head = t.closest('[data-toggle]');
     if (head && !t.closest('[data-stop]')) {
       var block = head.closest('.pe-size'), isOpen = block.classList.toggle('open');
@@ -738,6 +733,11 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
   });
   sizeList.addEventListener('change', function (e) {
     var f = e.target;
+    if (f.matches('[data-design-file]') && f.files[0] && f.files[0].size > MAX_BYTES) {
+      f.value = '';
+      toast('Design photo is too big. Maximum is 5MB.', null, true);
+      return;
+    }
     if (f.matches('[data-design-file]') && f.files[0]) {
       var th = f.closest('.pe-design-thumb'), r = new FileReader();
       r.onload = function (ev) {
@@ -751,14 +751,12 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
   sizeList.addEventListener('input', function () { renderSizes(); });
 
   /* ───────── prices, description, misc ───────── */
-  var ph = { S: '0.00', M: 'Auto', L: 'Optional' };
+  var ph = { S: '0.00', M: '0.00', L: '0.00' };
   CODES.forEach(function (c) {
     var el = priceInput(c);
-    if (el) { el.placeholder = ph[c]; el.min = '0'; el.addEventListener('input', renderPrices); }
+    if (el) { el.placeholder = ph[c]; el.min = '0'; el.step = '1'; el.addEventListener('input', renderPrices); }
   });
   var desc = $('#id_description');
-  function countDesc() { $('#descCount').textContent = desc ? desc.value.length : 0; }
-  if (desc) desc.addEventListener('input', countDesc);
 
   form.addEventListener('input', markDirty);
   form.addEventListener('change', markDirty);
@@ -767,7 +765,96 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
     var b = e.target.closest('.pe-size'); if (b) b.classList.add('open');
   }, true);
 
-  form.addEventListener('submit', function () {
+  /* ───────── validation ───────── */
+  function clearErrors() {
+    $$('.js-err', form).forEach(function (n) { n.remove(); });
+    $$('.is-invalid-field', form).forEach(function (n) { n.classList.remove('is-invalid-field'); });
+  }
+  function flag(el, msg, list, host) {
+    if (!el) return;
+    el.classList.add('is-invalid-field');
+    var d = document.createElement('div');
+    d.className = 'err js-err' + (host ? ' w-100' : '');
+    d.innerHTML = '<i class="fas fa-circle-exclamation"></i>';
+    d.appendChild(document.createTextNode(msg));
+    if (host) host.appendChild(d); else el.parentNode.appendChild(d);
+    list.push({ el: el, msg: msg });
+  }
+  function validate() {
+    clearErrors();
+    var errs = [];
+    var name = $('#id_name'), cat = $('#id_category');
+    if (name && !name.value.trim()) flag(name, 'Product name is required.', errs);
+    if (cat && !cat.value) flag(cat, 'Please choose a category.', errs);
+
+    var s = priceInput('S'), m = priceInput('M'), l = priceInput('L');
+    var sHead = $('.pe-size[data-code="S"] .pe-size-head'), mHead = $('.pe-size[data-code="M"] .pe-size-head'), lHead = $('.pe-size[data-code="L"] .pe-size-head');
+    var sv = num(s), mv = num(m), lv = num(l);
+    if (sv === null) flag(s, 'Small price is required.', errs, sHead);
+    else if (sv <= 0) flag(s, 'Small price must be more than ₱0.', errs, sHead);
+    else if (sv % 1 !== 0) flag(s, 'Small price must be a whole number.', errs, sHead);
+    if (m && m.value.trim() !== '' && (mv === null || mv < 0 || mv % 1 !== 0)) flag(m, 'Medium price must be a whole number.', errs, mHead);
+    if (l && l.value.trim() !== '' && (lv === null || lv < 0 || lv % 1 !== 0)) flag(l, 'Large price must be a whole number.', errs, lHead);
+
+    CODES.forEach(function (c) {
+      var block = $('.pe-size[data-code="' + c + '"]');
+      liveDesigns(block).forEach(function (d) {
+        var t = $('.pe-dname', d);
+        if (t && !t.value.trim()) flag(t, NAME[c] + ': design name is required.', errs, t.parentNode);
+        var q = $('.design-qty', d);
+        if (q && q.value.trim() !== '' && (!/^\d+$/.test(q.value.trim()))) flag(q, NAME[c] + ': quantity must be a whole number.', errs, q.closest('.pe-dbody'));
+      });
+    });
+
+    var banner = $('#errBanner'), list = $('#errList');
+    list.innerHTML = '';
+    if (!errs.length) { banner.classList.remove('show'); return true; }
+
+    errs.forEach(function (x) { var li = document.createElement('li'); li.textContent = x.msg; list.appendChild(li); });
+    $('#errTitle').textContent = errs.length === 1 ? 'Fix this before saving:' : 'Fix these ' + errs.length + ' things before saving:';
+    banner.classList.add('show'); banner.classList.remove('shake'); void banner.offsetWidth; banner.classList.add('shake');
+    toast(errs[0].msg + (errs.length > 1 ? ' (+' + (errs.length - 1) + ' more)' : ''), null, true);
+
+    // open any collapsed size panel holding an error, then jump to the first one
+    errs.forEach(function (x) { var b = x.el.closest('.pe-size'); if (b) b.classList.add('open'); });
+    var first = errs[0].el;
+    banner.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    try { first.focus({ preventScroll: true }); } catch (e) { first.focus(); }
+    return false;
+  }
+  // clear a field's red state as soon as it is fixed
+  form.addEventListener('input', function (e) {
+    var el = e.target;
+    if (el.classList && el.classList.contains('is-invalid-field')) {
+      el.classList.remove('is-invalid-field');
+      var n = el.nextElementSibling;
+      if (n && n.classList.contains('js-err')) n.remove();
+      else { var host = el.closest('.pe-size-head, .pe-dbody, div'); var j = host && $('.js-err', host); if (j) j.remove(); }
+    }
+  });
+  form.addEventListener('change', function (e) {
+    var el = e.target;
+    if (el.classList && el.classList.contains('is-invalid-field')) { el.classList.remove('is-invalid-field'); var n = el.nextElementSibling; if (n && n.classList.contains('js-err')) n.remove(); }
+  });
+
+  // server-side errors (after a failed save): mark the fields red and jump to the first one
+  var serverErrs = $$('.pe .err:not(.js-err)');
+  if (serverErrs.length) {
+    serverErrs.forEach(function (e) {
+      var host = e.closest('.pe-size-head') || e.parentNode;
+      var inp = host.querySelector('input:not([type=hidden]), select, textarea');
+      if (inp) inp.classList.add('is-invalid-field');
+      var b = e.closest('.pe-size'); if (b) b.classList.add('open');
+      e.insertAdjacentHTML('afterbegin', '<i class="fas fa-circle-exclamation"></i>');
+    });
+    $('#errList').innerHTML = '';
+    serverErrs.forEach(function (e) { var li = document.createElement('li'); li.textContent = e.textContent.trim(); $('#errList').appendChild(li); });
+    toast(serverErrs[0].textContent.trim(), null, true);
+    setTimeout(function () { $('#errBanner').scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 200);
+  }
+
+  form.addEventListener('submit', function (e) {
+    if (!validate()) { e.preventDefault(); return; }
     dirty = false;
     var initial = parseInt($('#id_images-INITIAL_FORMS').value, 10) || 0, n = initial, order = 0;
     $$('.img-row', rowsWrap).forEach(function (r) {
@@ -782,7 +869,23 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
   });
   window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
 
-  countDesc(); renderPrices(); render();
+  function goToPrice(code) {
+    var block = $('.pe-size[data-code="' + code + '"]'), inp = priceInput(code);
+    if (!block || !inp) return;
+    block.classList.add('open'); $('.pe-chev', block).setAttribute('aria-expanded', 'true');
+    block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    block.classList.remove('flash'); void block.offsetWidth; block.classList.add('flash');
+    setTimeout(function () { inp.focus({ preventScroll: true }); inp.select(); }, 350);
+  }
+  $('#priceRange').addEventListener('click', function () { goToPrice('S'); });
+  $$('[data-chip]').forEach(function (c) { c.addEventListener('click', function () { goToPrice(c.dataset.chip); }); });
+  // hide the empty placeholder option from the dropdown list (it still shows in the closed box until a category is picked)
+  var emptyCat = $('#id_category option[value=""]'); if (emptyCat) emptyCat.hidden = true;
+  var catSel = $('#id_category');
+  function catTone() { if (catSel) catSel.classList.toggle('is-empty', !catSel.value); }
+  if (catSel) catSel.addEventListener('change', catTone);
+  catTone();
+  renderPrices(); render();
   dirty = false; $('#saveBar').classList.remove('show');
 })();
 </script>

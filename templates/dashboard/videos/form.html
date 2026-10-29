@@ -5,6 +5,8 @@
 
 {% block dash_content %}
 <style>
+.form-control::placeholder { color: #a8a396; opacity: 1; }
+body.dark-mode .form-control::placeholder { color: var(--dm-text-mute, #7a8699); opacity: 1; }
 .pform-header {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
   margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #e8e3db;
@@ -147,7 +149,6 @@
           <div class="icon-badge"><i class="fas fa-video"></i></div>
           <div>
             <h6>Video Details</h6>
-            <div class="subtitle">Title and short description of the video</div>
           </div>
         </div>
         <div class="pform-card-body">
@@ -169,7 +170,6 @@
           <div class="icon-badge"><i class="fas fa-link"></i></div>
           <div>
             <h6>Video Source</h6>
-            <div class="subtitle">Provide either a link or upload a file</div>
           </div>
         </div>
         <div class="pform-card-body">
@@ -181,20 +181,13 @@
           <div class="pform-source-pane active" data-pane="link">
             <label class="form-label">Video Link (YouTube / Facebook)</label>
             {{ form.video_url }}
-            <div class="pform-help">Paste the full URL from YouTube or Facebook.</div>
             {% if form.video_url.errors %}<div class="invalid-feedback d-block">{{ form.video_url.errors.0 }}</div>{% endif %}
           </div>
 
           <div class="pform-source-pane" data-pane="upload">
             <label class="form-label">Upload Video File</label>
             {{ form.video_file }}
-            <div class="pform-help">Only needed if you don't have a link. Keep files under ~50MB.</div>
             {% if form.video_file.errors %}<div class="invalid-feedback d-block">{{ form.video_file.errors.0 }}</div>{% endif %}
-          </div>
-
-          <div class="pform-note">
-            <i class="fas fa-circle-info"></i>
-            <span>Recommended: YouTube or Facebook link. Maximum file size for uploaded videos: 50MB.</span>
           </div>
 
           <div class="mt-3">
@@ -210,14 +203,12 @@
           <div class="icon-badge"><i class="fas fa-eye"></i></div>
           <div>
             <h6>Display</h6>
-            <div class="subtitle">Order and visibility on the About page</div>
           </div>
         </div>
         <div class="pform-card-body">
           <div class="mb-3">
             <label class="form-label">Order</label>
             {{ form.order }}
-            <div class="pform-help">Lower numbers show first.</div>
           </div>
           <label class="pform-toggle" for="{{ form.is_active.id_for_label }}">
             <span>
@@ -235,9 +226,6 @@
             </span>
             {{ form.show_on_home }}
           </label>
-          {% if home_count >= 2 %}
-            <div class="pform-help mt-2" style="color:#c0392b;">2 videos are already featured on Home. Turn one off there first to feature this one.</div>
-          {% endif %}
         </div>
       </div>
 
@@ -250,7 +238,6 @@
     <div class="col-lg-4">
       <div class="pform-side-card pform-preview-card">
         <h6><i class="fas fa-photo-film"></i> Video Preview</h6>
-        <div class="subtitle">How this looks on the About page</div>
         <div class="pform-preview-box" id="preview-box">
           <div class="pform-preview-empty" id="preview-empty" {% if video.video_url or video.video_file or video.thumbnail %}style="display:none;"{% endif %}>
             <i class="fas fa-photo-film"></i>
@@ -261,7 +248,7 @@
           <img id="preview-img" alt="" style="display:none;" {% if video.thumbnail %}src="{{ video.thumbnail.url }}"{% endif %}>
         </div>
         <div class="pform-preview-title" id="preview-title">{{ video.title|default:"Video title" }}</div>
-        <div class="pform-preview-desc" id="preview-desc">{{ video.description|default:"Description will appear here." }}</div>
+        <div class="pform-preview-desc" id="preview-desc">{{ video.description|default:"" }}</div>
       </div>
 
       <div class="pform-side-card pform-tips mt-4">
@@ -305,7 +292,7 @@
   }
   if (descInput) {
     descInput.addEventListener('input', function() {
-      previewDesc.textContent = descInput.value || 'Description will appear here.';
+      previewDesc.textContent = descInput.value || '';
     });
   }
 
@@ -368,6 +355,33 @@
     }
     previewEmpty.style.display = 'flex';
   }
+
+  // ---- File size guard: warn and clear the file when it is too big ----
+  var sizeToast, sizeTimer;
+  function sizeWarn(msg) {
+    if (!sizeToast) {
+      sizeToast = document.createElement('div');
+      sizeToast.setAttribute('role', 'alert');
+      sizeToast.style.cssText = 'position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:2000;background:#c0392b;color:#fff;padding:11px 18px;border-radius:12px;font-size:13px;font-weight:600;box-shadow:0 8px 28px rgba(0,0,0,.25);max-width:92vw;transition:opacity .2s;';
+      document.body.appendChild(sizeToast);
+    }
+    sizeToast.textContent = msg; sizeToast.style.opacity = '1'; sizeToast.style.display = 'block';
+    clearTimeout(sizeTimer);
+    sizeTimer = setTimeout(function () { sizeToast.style.display = 'none'; }, 5000);
+  }
+  function guardSize(id, maxMB, label) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.addEventListener('change', function () {
+      var f = el.files && el.files[0];
+      if (f && f.size > maxMB * 1024 * 1024) {
+        el.value = '';
+        sizeWarn(label + ' is too big (' + (f.size / 1048576).toFixed(1) + ' MB). Maximum is ' + maxMB + 'MB.');
+      }
+    });
+  }
+  guardSize('{{ form.video_file.id_for_label }}', 50, 'Video file');
+  guardSize('{{ form.thumbnail.id_for_label }}', 5, 'Thumbnail');
 
   var thumbInput = document.getElementById('{{ form.thumbnail.id_for_label }}');
   if (thumbInput) {

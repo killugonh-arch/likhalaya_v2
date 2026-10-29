@@ -6,6 +6,8 @@
 {% block extra_css %}
 {{ block.super }}
 <style>
+.form-control::placeholder { color: #a8a396; opacity: 1; }
+body.dark-mode .form-control::placeholder { color: var(--dm-text-mute, #7a8699); opacity: 1; }
 /* =========================================================
    Reuses the approved Likhalaya design-system tokens and
    components (dash-panel, ds-input, ds-btn, ds-breadcrumb) —
@@ -142,7 +144,6 @@ input.form-control { height: 50px; }
           <div class="icon-badge"><i class="fas fa-tag"></i></div>
           <div>
             <h6>Category Details</h6>
-            <div class="subtitle">Update the category information below.</div>
           </div>
         </div>
         <div class="dash-panel-body">
@@ -167,7 +168,7 @@ input.form-control { height: 50px; }
               {% if form.description.errors %}
                 <div class="ds-error-text">{{ form.description.errors.0 }}</div>
               {% else %}
-                <div class="ds-helper-text">Optional. Shown to customers browsing this category.</div>
+                <span></span>
               {% endif %}
               <div class="ds-char-count"><span id="desc-count">{{ form.description.value|default:""|length }}</span>/500</div>
             </div>

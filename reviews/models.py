@@ -2,6 +2,9 @@ from django.conf import settings
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.db.models import Avg, Count, Q
+from django.utils import timezone
+
+from store.models import ActiveManager
 
 
 def star_list(average):
@@ -56,7 +59,20 @@ class Review(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Archive (soft delete) — archived reviews are hidden everywhere and
+    # listed in Dashboard > Archive > Reviews, where they can be restored.
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+    deleted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL,
+        null=True, blank=True, related_name='deleted_reviews'
+    )
+
+    objects = ActiveManager()
+    all_objects = models.Manager()
+
     class Meta:
+        base_manager_name = 'all_objects'
         ordering = ['-created_at']
         constraints = [
             models.UniqueConstraint(
@@ -68,6 +84,18 @@ class Review(models.Model):
         indexes = [
             models.Index(fields=['product', 'is_visible', '-created_at']),
         ]
+
+    def archive(self, by_user=None):
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.deleted_by = by_user
+        self.save(update_fields=['is_deleted', 'deleted_at', 'deleted_by'])
+
+    def restore(self):
+        self.is_deleted = False
+        self.deleted_at = None
+        self.deleted_by = None
+        self.save(update_fields=['is_deleted', 'deleted_at', 'deleted_by'])
 
     def __str__(self):
         return f"{self.rating}★ on {self.product} by {self.reviewer_name or 'Customer'}"

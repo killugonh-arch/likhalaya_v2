@@ -20,7 +20,7 @@
 .ds-breadcrumb .current { color: var(--text-primary); font-weight: 600; }
 .ds-breadcrumb .sep { color: var(--border); }
 .ds-page-header { padding-bottom: var(--space-4); margin-bottom: var(--space-4); border-bottom: 1px solid var(--border); }
-.ds-page-header h1 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0; }
+.ds-page-header h1 { font-size: 23px; font-weight: 700; color: var(--text-primary); margin: 0; }
 .ds-page-header p { font-size: 13px; color: var(--text-muted); margin: 4px 0 0; }
 .ds-btn { font-size: 13px; font-weight: 600; border-radius: var(--radius-sm); padding: 8px 14px; border: none; cursor: pointer; display: inline-flex; align-items: center; text-decoration: none; }
 .ds-btn-primary { background: var(--brand-green); color: #fff; }
@@ -61,14 +61,8 @@ body.dark-mode .dash-table tbody tr { border-color: var(--dm-border); }
 {% endblock %}
 
 {% block dash_content %}
-<nav class="ds-breadcrumb" aria-label="Breadcrumb">
-  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
-  <span class="sep">/</span><span class="current">GCash QR Code Management</span>
-</nav>
-
 <div class="ds-page-header">
   <h1>GCash QR Code Management</h1>
-  <p>Full authority over the GCash QR code — view, replace, remove, and review Staff requests.</p>
 </div>
 
 <div class="row">

@@ -13,4 +13,6 @@ urlpatterns = [
     path('dashboard/reviews/<int:pk>/toggle/', dashboard_views.review_toggle_visible, name='dashboard_toggle'),
     path('dashboard/reviews/<int:pk>/reply/', dashboard_views.review_reply, name='dashboard_reply'),
     path('dashboard/reviews/<int:pk>/delete/', dashboard_views.review_delete, name='dashboard_delete'),
+    path('dashboard/reviews/<int:pk>/restore/', dashboard_views.review_restore, name='dashboard_restore'),
+    path('dashboard/reviews/<int:pk>/delete-permanent/', dashboard_views.review_delete_permanent, name='dashboard_delete_permanent'),
 ]

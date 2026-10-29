@@ -10,10 +10,14 @@
 </div>
 
 <div class="mb-4">
-  <h4 class="fw-bold mb-0" style="color:var(--teal);">Archive</h4>
-  <p class="text-muted small mb-0">Archived items are hidden from the store and dashboard lists. Restore anything below to bring it back.</p>
+  <div class="pd-header-titles"><h1 style="font-size:25px;">Archive</h1></div>
 </div>
 
+<style>
+.dash-page .nav-pills .nav-link { color: var(--teal); }
+.dash-page .nav-pills .nav-link:hover { background: rgba(26,107,98,.08); }
+.dash-page .nav-pills .nav-link.active, .dash-page .nav-pills .show > .nav-link { background-color: var(--teal); color: #fff; }
+</style>
 <ul class="nav nav-pills mb-4 gap-2">
   <li class="nav-item">
     <a class="nav-link {% if tab == 'products' %}active{% endif %}" href="?tab=products">
@@ -43,6 +47,11 @@
   <li class="nav-item">
     <a class="nav-link {% if tab == 'messages' %}active{% endif %}" href="?tab=messages">
       <i class="fas fa-envelope me-1"></i>Messages <span class="badge bg-light text-dark border ms-1">{{ counts.messages }}</span>
+    </a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link {% if tab == 'reviews' %}active{% endif %}" href="?tab=reviews">
+      <i class="fas fa-star me-1"></i>Reviews <span class="badge bg-light text-dark border ms-1">{{ counts.reviews }}</span>
     </a>
   </li>
 </ul>
@@ -230,6 +239,40 @@
         </tr>
         {% empty %}
         <tr><td colspan="4" class="text-center py-5 text-muted">No archived videos.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% elif tab == 'reviews' %}
+<div class="card border-0 shadow-sm">
+  <div class="table-responsive">
+    <table class="table dash-table mb-0">
+      <thead><tr><th>Review</th><th>Customer</th><th>Rating</th><th>Archived</th><th>Archived By</th><th class="text-end">Actions</th></tr></thead>
+      <tbody>
+        {% for r in hidden_reviews %}
+        <tr>
+          <td>
+            <div class="fw-semibold" style="font-size:13px;">{{ r.product.name }}</div>
+            <div class="text-muted" style="font-size:11px;">{{ r.comment|default:"No comment — rating only."|truncatechars:80 }}</div>
+          </td>
+          <td class="text-muted small">{{ r.display_name }}</td>
+          <td class="small">{{ r.rating }} <i class="fas fa-star" style="color:var(--gold);"></i></td>
+          <td class="text-muted small">{{ r.deleted_at|date:"M d, Y · g:i A" }}</td>
+          <td class="text-muted small">{{ r.deleted_by.username|default:"—" }}</td>
+          <td class="text-end">
+            <form method="post" action="{% url 'reviews:dashboard_restore' r.pk %}" class="d-inline">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-teal"><i class="fas fa-rotate-left me-1"></i>Restore</button>
+            </form>
+            <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#permaDeleteModal"
+              data-delete-url="{% url 'reviews:dashboard_delete_permanent' r.pk %}"
+              data-item-name="{{ r.display_name }}'s review of {{ r.product.name }}"><i class="fas fa-trash me-1"></i>Delete</button>
+          </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center py-5 text-muted">No archived reviews.</td></tr>
         {% endfor %}
       </tbody>
     </table>

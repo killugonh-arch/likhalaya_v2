@@ -307,7 +307,7 @@
    ========================================================= */
 
 /* Greeting header */
-.dash-greeting-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+.dash-greeting-title { font-size: 28px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
 .dash-greeting-sub { font-size: 13px; color: var(--text-muted); }
 
 /* KPI icon squares — replaces inline background/color styles per stat card.
@@ -367,8 +367,10 @@
 /* Responsive: KPI row goes from 4-col to 2-col at tablet, stays 2-col on mobile (2x2 grid
    reads better than a 1-col stack for 4 short numeric cards) */
 @media (max-width: 991px) {
-  .dash-greeting-title { font-size: 18px; }
+  .dash-greeting-title { font-size: 26px; }
 }
+
+.ds-table-center th, .ds-table-center td { text-align: center !important; vertical-align: middle; }
 
 .ds-datetime-badge {
   display: flex;
@@ -439,7 +441,7 @@ a.dash-list-row:focus-visible { outline: 2px solid var(--brand-green); outline-o
 .ds-datetime-badge { max-width: 100%; }
 @media (max-width: 575.98px) {
   .ds-datetime-badge { width: 100%; justify-content: center; }
-  .dash-greeting-title { font-size: 17px; }
+  .dash-greeting-title { font-size: 25px; }
 }
 
 /* Dark mode: the light chips / badges above must not stay white */
@@ -455,17 +457,10 @@ body.dark-mode .ds-kpi-link:hover .ds-kpi-card { border-color: var(--dm-teal); }
 {% endblock %}
 
 {% block dash_content %}
-<!-- Breadcrumb: quiet metadata row, current page marked for a11y -->
-<nav class="ds-breadcrumb" aria-label="Breadcrumb">
-  <i class="fas fa-home"></i>
-  <span class="sep">/</span>
-  <span class="current" aria-current="page">Dashboard</span>
-</nav>
-
 <!-- Header: greeting (identity) left, single secondary action right -->
-<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3" style="margin-bottom:27px;">
   <div>
-    <h1 class="dash-greeting-title">Good {% now "G" as hr %}{% if hr|add:"0" < 12 %}Morning{% elif hr|add:"0" < 18 %}Afternoon{% else %}Evening{% endif %}, {{ user.first_name|default:user.username }} 👋</h1>
+    <h1 class="dash-greeting-title">Good {% now "G" as hr %}{% if hr|add:"0" < 12 %}Morning{% elif hr|add:"0" < 18 %}Afternoon{% else %}Evening{% endif %}, {{ user.first_name|default:user.username }} !!</h1>
     <p class="dash-greeting-sub mb-0">Here's what's happening with your store today.</p>
   </div>
   <div class="d-flex gap-2 flex-wrap">
@@ -485,16 +480,7 @@ body.dark-mode .ds-kpi-link:hover .ds-kpi-card { border-color: var(--dm-teal); }
       <div class="d-flex justify-content-between align-items-start">
         <div>
           <div class="kpi-label">Total Revenue</div>
-          <div class="kpi-value">₱{{ stats.total_revenue|floatformat:0|intcomma }}</div>
-          <div class="dash-kpi-delta ok">
-            ₱{{ stats.monthly_revenue|floatformat:0|intcomma }} this month
-            {% if stats.revenue_change_pct is not None %}
-            <span class="{% if stats.revenue_change_pct >= 0 %}trend-up{% else %}trend-down{% endif %}">
-              {% if stats.revenue_change_pct >= 0 %}▲{% else %}▼{% endif %} {{ stats.revenue_change_pct|floatformat:"-1" }}%
-            </span> vs last month
-            {% endif %}
-          </div>
-        </div>
+          <div class="kpi-value">₱{{ stats.total_revenue|floatformat:0|intcomma }}</div>        </div>
         <div class="dash-kpi-icon icon-revenue"><i class="fas fa-peso-sign"></i></div>
       </div>
     </div>
@@ -507,7 +493,6 @@ body.dark-mode .ds-kpi-link:hover .ds-kpi-card { border-color: var(--dm-teal); }
         <div>
           <div class="kpi-label">Total Orders</div>
           <div class="kpi-value">{{ stats.total_orders|intcomma }}</div>
-          <div class="dash-kpi-delta ok">{{ stats.orders_today }} new today</div>
         </div>
         <div class="dash-kpi-icon icon-orders"><i class="fas fa-shopping-bag"></i></div>
       </div>
@@ -521,9 +506,6 @@ body.dark-mode .ds-kpi-link:hover .ds-kpi-card { border-color: var(--dm-teal); }
         <div>
           <div class="kpi-label">Pending Orders</div>
           <div class="kpi-value">{{ stats.pending_orders|intcomma }}</div>
-          <div class="dash-kpi-delta {% if stats.pending_orders %}attention{% else %}ok{% endif %}">
-            {% if stats.pending_orders %}Needs action →{% else %}All caught up{% endif %}
-          </div>
         </div>
         <div class="dash-kpi-icon icon-pending"><i class="fas fa-clock"></i></div>
       </div>
@@ -537,21 +519,12 @@ body.dark-mode .ds-kpi-link:hover .ds-kpi-card { border-color: var(--dm-teal); }
         <div>
           <div class="kpi-label">Low Stock Items</div>
           <div class="kpi-value">{{ stats.low_stock|intcomma }}</div>
-          <div class="dash-kpi-delta {% if stats.low_stock %}attention{% else %}ok{% endif %}">
-            {% if stats.low_stock %}{% if stats.out_of_stock %}{{ stats.out_of_stock }} out of stock →{% else %}Running low →{% endif %}{% else %}Stock is healthy{% endif %}
-          </div>
         </div>
         <div class="dash-kpi-icon icon-stock"><i class="fas fa-box-open"></i></div>
       </div>
     </div>
     </a>
   </div>
-</div>
-
-<!-- Secondary numbers: intentionally small/quiet, not competing with KPI cards -->
-<div class="dash-secondary-strip">
-  <span><i class="fas fa-users icon"></i><strong>{{ stats.total_customers }}</strong> customers <span class="text-muted">(+{{ stats.new_customers }} this month)</span></span>
-  <span><i class="fas fa-envelope icon"></i><strong>{{ stats.unread_messages }}</strong> unread messages <span class="text-muted">of {{ stats.total_messages }}</span></span>
 </div>
 
 <!-- CHARTS ROW: trend (wide, primary) + status breakdown (narrow, secondary) -->
@@ -566,7 +539,6 @@ body.dark-mode .ds-kpi-link:hover .ds-kpi-card { border-color: var(--dm-teal); }
         <span class="text-muted fw-semibold" style="font-size:17px;" id="wsLabel">This week</span>
         <div class="fw-bold" style="font-size:40px;line-height:1.1;" id="wsValue">0</div>
         <div class="text-muted" style="font-size:12.5px;" id="wsRange"></div>
-        <div class="mt-1"><span id="wsChange" class="ds-badge ds-badge-neutral"></span></div>
       </div>
       <div class="dash-panel-body dash-chart-body" style="position:relative;">
         <canvas id="chartWeeklyOrders"></canvas>
@@ -599,10 +571,9 @@ body.dark-mode .ds-kpi-link:hover .ds-kpi-card { border-color: var(--dm-teal); }
     <div class="dash-panel">
       <div class="dash-panel-header">
         <h6>Recent Orders</h6>
-        <a href="{% url 'dashboard:order_list' %}" class="dash-panel-link">View all <i class="fas fa-arrow-right fa-xs"></i></a>
       </div>
       <div class="table-responsive">
-        <table class="ds-table mb-0">
+        <table class="ds-table ds-table-center mb-0">
           <thead><tr>
             <th>Order #</th>
             <th>Customer</th>
@@ -745,24 +716,6 @@ function showWeek(i) {
   document.getElementById('wsValue').textContent = n;
   document.getElementById('wsRange').textContent = chartData.weekly_labels[i] + (i === lastIdx ? ' (still ongoing)' : '');
 
-  const chg = document.getElementById('wsChange');
-  if (i === 0) {
-    chg.textContent = 'First week shown';
-    chg.className = 'ds-badge ds-badge-neutral';
-  } else {
-    const diff = n - weeklyCounts[i - 1];
-    const prev = i - 1 === lastIdx - 1 ? 'last week' : 'the week before';
-    if (diff > 0) {
-      chg.textContent = '▲ ' + diff + ' more than ' + prev;
-      chg.className = 'ds-badge ds-badge-success';
-    } else if (diff < 0) {
-      chg.textContent = '▼ ' + Math.abs(diff) + ' fewer than ' + prev;
-      chg.className = 'ds-badge ds-badge-danger';
-    } else {
-      chg.textContent = 'Same as ' + prev;
-      chg.className = 'ds-badge ds-badge-neutral';
-    }
-  }
 }
 showWeek(lastIdx);
 if (totalOrders === 0) document.getElementById('weeklyEmptyMsg').style.display = 'flex';
@@ -831,8 +784,7 @@ new Chart(document.getElementById('chartWeeklyOrders'), {
       y: {
         beginAtZero: true,
         suggestedMax: 5,
-        ticks: { stepSize: 1, precision: 0 },
-        title: { display: true, text: 'Number of orders' }
+        ticks: { stepSize: 1, precision: 0 }
       }
     }
   },
@@ -936,17 +888,17 @@ if (statusEl && chartData.status_data.length) {
 
 }  // end Chart.js available
 
-// Live-updating date/time badge — minute precision (a ticking seconds counter is just visual noise)
+// Live-updating date/time badge — ticks every second
 function updateDashDateTime() {
   const el = document.getElementById('dashDateTimeText');
   if (!el) return;
   const now = new Date();
   const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
   const dateStr = now.toLocaleDateString(undefined, options);
-  const timeStr = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+  const timeStr = now.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   el.textContent = `${dateStr} • ${timeStr}`;
 }
 updateDashDateTime();
-setInterval(updateDashDateTime, 30000);
+setInterval(updateDashDateTime, 1000);
 </script>
 {% endblock %}

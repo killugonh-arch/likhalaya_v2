@@ -63,8 +63,7 @@ body.dark-mode .rv-page .act, body.dark-mode .rv-page .btn-o { background: var(-
   </div>
   <div class="pd-header-top">
     <div class="pd-header-titles">
-      <h1>Product Reviews</h1>
-      <p>Ratings and comments left by customers. Hidden reviews disappear from the shop and from the product's average rating.</p>
+      <h1 style="font-size:25px;">Product Reviews</h1>
     </div>
   </div>
 
@@ -104,10 +103,8 @@ body.dark-mode .rv-page .act, body.dark-mode .rv-page .btn-o { background: var(-
         </select>
       </div>
       <div class="lk-filter-actions">
-        <button type="submit" class="lk-btn lk-btn-primary"><i class="fas fa-filter"></i>Filter</button>
-        {% if search or rating_filter or status_filter or product_filter %}
+        <button type="submit" class="lk-btn lk-btn-primary"><i class="fas fa-search"></i>Search</button>
         <a href="{% url 'reviews:dashboard_list' %}" class="lk-btn lk-btn-ghost"><i class="fas fa-rotate-right"></i>Clear</a>
-        {% endif %}
       </div>
     </form>
   </div>

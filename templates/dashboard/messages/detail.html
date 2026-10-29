@@ -89,6 +89,7 @@
 
 .chat-messages { max-height: 460px; min-height: 220px; overflow-y: auto; padding: 18px var(--space-4); display: flex; flex-direction: column; gap: 12px; background: var(--surface-subtle); }
 .chat-row { display: flex; gap: 10px; max-width: 78%; }
+.chat-row.is-continuation { margin-top: -6px; }
 .chat-row.from-staff { align-self: flex-end; flex-direction: row-reverse; }
 .chat-row.from-customer { align-self: flex-start; }
 .chat-avatar { width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; color: #fff; }
@@ -103,7 +104,17 @@
 .chat-meta { font-size: 10.5px; color: var(--text-muted); margin-top: 3px; padding: 0 4px; display: flex; gap: 5px; align-items: center; }
 .chat-row.from-staff .chat-meta { justify-content: flex-end; }
 .chat-empty { text-align: center; color: var(--text-muted); font-size: 13px; margin: auto; }
-.chat-inquiry-badge { display: inline-block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; background: var(--surface-subtle); color: var(--text-muted); border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
+.chat-reply-preview { display: flex; align-items: flex-start; gap: 10px; text-align: left; background: var(--brand-green-light); border-left: 4px solid var(--brand-green); border-radius: 8px; padding: 8px 12px; }
+.chat-reply-preview .rp-text { flex: 1; min-width: 0; }
+.chat-reply-preview .rp-title { font-size: 12px; font-weight: 700; color: var(--brand-green); }
+.chat-reply-preview .rp-body { font-size: 12.5px; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-reply-preview .rp-close { border: 0; background: transparent; font-size: 28px; line-height: 1; color: var(--text-muted); cursor: pointer; padding: 0 6px; }
+.chat-reply-preview .rp-close:hover { color: var(--text-primary); }
+.chat-bubble-row { display: flex; align-items: center; gap: 10px; }
+.chat-bubble-row .chat-bubble { min-width: 0; }
+.chat-reply-link { flex-shrink: 0; margin-left: 0; font-size: 11px; font-weight: 600; color: var(--brand-green); text-decoration: none; }
+.chat-reply-link:hover { text-decoration: underline; }
+.chat-inquiry-badge { display: inline-block; font-size: 9.5px; font-weight: 700; text-transform: uppercase; background: var(--brand-green-light); color: var(--brand-green); border-radius: 999px; padding: 1px 8px; margin-left: 6px; vertical-align: middle; }
 .chat-inquiry-badge.is-current { background: var(--brand-green-light); color: var(--brand-green); }
 .chat-reply-target-note { font-size: 11.5px; color: var(--text-muted); text-align: center; padding: 6px 16px 0; }
 
@@ -166,77 +177,10 @@ body.dark-mode .chat-input-bar { background: var(--dm-surface); }
   <i class="fas fa-comments icon"></i>
   <div>
     <h1>Messages</h1>
-    <p>View and manage all system messages, inquiries, and notifications.</p>
   </div>
 </div>
 
 <div class="msgs-split">
-  <!-- Inbox -->
-  <div class="dash-panel msgs-inbox">
-    <form method="get" class="inbox-search">
-      <div class="inbox-search-wrap">
-        <i class="fas fa-search"></i>
-        <input type="text" name="q" placeholder="Search name, email, subject or message…" value="{{ search }}">
-      </div>
-      <div class="inbox-filter">
-        <select name="read" onchange="this.form.submit()">
-          <option value="">All Messages</option>
-          <option value="false" {% if read_filter == 'false' %}selected{% endif %}>Unread</option>
-          <option value="true" {% if read_filter == 'true' %}selected{% endif %}>Read</option>
-        </select>
-      </div>
-    </form>
-    <div class="inbox-list">
-      {% for c in chat_rows %}
-      <a href="{% url 'dashboard:chat_detail' c.pk %}" class="inbox-row">
-        <div class="inbox-avatar" style="background:var(--brand-green);">{{ c.display_name|first|upper }}</div>
-        <div class="inbox-row-body">
-          <div class="inbox-row-top">
-            <span class="inbox-name">{{ c.display_name }}</span>
-            <span class="inbox-badge" style="background:var(--brand-green-light);color:var(--brand-green);">App Chat</span>
-          </div>
-          <div class="inbox-snippet">{{ c.last_msg.body|truncatechars:60 }}</div>
-          <div class="inbox-date">{{ c.last_at|date:"M d, H:i" }}</div>
-        </div>
-        <div class="inbox-row-end">
-          {% if c.unread %}<span class="inbox-count" style="background:var(--brand-green);color:#fff;">{{ c.unread }}</span>{% endif %}
-          <i class="fas fa-chevron-right chevron"></i>
-        </div>
-      </a>
-      {% endfor %}
-      {% for row in inbox_messages %}
-      <a href="{% url 'dashboard:message_detail' row.pk %}?{% if search %}q={{ search }}&{% endif %}{% if read_filter %}read={{ read_filter }}{% endif %}"
-         class="inbox-row {% if row.pk == message.pk %}is-active{% endif %}">
-        <div class="inbox-avatar" style="background:{% cycle '#5FBF9F' '#8B8FD9' '#E0A85B' '#6FA8DC' '#D98594' '#4FBFBF' as inbox_avatar_color %};">
-          {{ row.name|first|upper }}
-        </div>
-        <div class="inbox-row-body">
-          <div class="inbox-row-top">
-            <span class="inbox-name">{{ row.name }}</span>
-            {% if row.inquiry_type == 'bulk_order' %}
-              <span class="inbox-badge" style="background:#e6f0fd;color:#2563eb;">{{ row.get_inquiry_type_display }}</span>
-            {% elif row.inquiry_type == 'donate_materials' %}
-              <span class="inbox-badge" style="background:#f1ecfd;color:#7c3aed;">{{ row.get_inquiry_type_display }}</span>
-            {% elif row.status == 'closed' or row.subject|slice:':5' == 'Order' %}
-              <span class="inbox-badge" style="background:var(--danger-bg);color:var(--danger);">{{ row.get_inquiry_type_display }}</span>
-            {% else %}
-              <span class="inbox-badge" style="background:var(--brand-green-light);color:var(--brand-green);">{{ row.get_inquiry_type_display }}</span>
-            {% endif %}
-          </div>
-          <div class="inbox-snippet">{{ row.message|truncatechars:60 }}</div>
-          <div class="inbox-date">{{ row.created_at|date:"M d, H:i" }}</div>
-        </div>
-        <div class="inbox-row-end">
-          <span class="inbox-count">{{ row.replies.count|add:1 }}</span>
-          <i class="fas fa-chevron-right chevron"></i>
-        </div>
-      </a>
-      {% empty %}
-      <div class="inbox-empty"><i class="fas fa-envelope-open fa-2x mb-3 d-block opacity-25"></i>No messages found.</div>
-      {% endfor %}
-    </div>
-  </div>
-
   {% if convo %}
   <div class="dash-panel msgs-thread">
     <div class="thread-header">
@@ -308,22 +252,34 @@ body.dark-mode .chat-input-bar { background: var(--dm-surface); }
 
     <div class="chat-messages" id="chatMessages">
       {% for entry in timeline %}
-      <div class="chat-row {% if entry.is_staff_reply %}from-staff{% else %}from-customer{% endif %}">
-        <div class="chat-avatar">{{ entry.sender_name|default:"S"|first|upper }}</div>
+      <div class="chat-row {% if entry.is_staff_reply %}from-staff{% else %}from-customer{% endif %}{% if entry.is_continuation %} is-continuation{% endif %}">
+        <div class="chat-avatar"{% if entry.hide_avatar %} style="visibility:hidden;"{% endif %}>{{ entry.sender_name|default:"S"|first|upper }}</div>
         <div class="chat-bubble-wrap">
+          {% if not entry.is_continuation %}
           <div class="chat-sender-label">
             {{ entry.sender_name }}
             {% if account_thread_count > 1 %}
               <span class="chat-inquiry-badge {% if entry.is_current %}is-current{% endif %}">{{ entry.subject }}</span>
             {% endif %}
           </div>
-          <div class="chat-bubble">{{ entry.body }}</div>
+          {% endif %}
+          {% if entry.subject_changed and account_thread_count > 1 %}
+          <div class="chat-sender-label"><span class="chat-inquiry-badge {% if entry.is_current %}is-current{% endif %}" style="margin-left:0;">{{ entry.subject }}</span></div>
+          {% endif %}
+          <div class="chat-bubble-row">
+            <div class="chat-bubble">{{ entry.body }}</div>
+            {% if not entry.is_staff_reply and account_thread_count > 1 and message.customer %}
+              <a href="#" class="chat-reply-link" data-thread="{{ entry.thread_pk }}" data-subject="{{ entry.subject }}" data-body="{{ entry.body }}" title="Reply to this message"><i class="fas fa-reply"></i> Reply</a>
+            {% endif %}
+          </div>
+          {% if entry.show_time %}
           <div class="chat-meta">
             <span>{{ entry.created_at|date:"M d, H:i" }}</span>
             {% if entry.is_staff_reply %}
               {% if entry.is_read_by_customer %}<i class="fas fa-check-double" style="color:#4fa9e8;"></i>{% else %}<i class="fas fa-check"></i>{% endif %}
             {% endif %}
           </div>
+          {% endif %}
         </div>
       </div>
       {% empty %}
@@ -332,13 +288,14 @@ body.dark-mode .chat-input-bar { background: var(--dm-surface); }
     </div>
 
     {% if account_thread_count > 1 %}
-    <div class="chat-reply-target-note">Your reply below will be sent on the <strong>{{ message.subject }}</strong> inquiry (the one you opened).</div>
+    <div class="chat-reply-target-note" id="replyTargetNote">Your reply below will be sent on the <strong>{{ message.subject }}</strong> inquiry.</div>
     {% endif %}
 
     {% if message.customer %}
     <form method="post" class="chat-input-bar">
       {% csrf_token %}
       <input type="hidden" name="form" value="reply">
+      <input type="hidden" name="reply_to" id="replyToInput" value="">
       <button type="button" class="chat-icon-btn" title="Attach file"><i class="fas fa-paperclip"></i></button>
       <button type="button" class="chat-icon-btn" title="Emoji"><i class="far fa-smile"></i></button>
       <textarea name="reply_body" rows="1" placeholder="Type your reply…" required
@@ -349,124 +306,39 @@ body.dark-mode .chat-input-bar { background: var(--dm-surface); }
     <div class="chat-no-account">This request has no linked customer account, so it can't receive in-site replies.</div>
     {% endif %}
 
-    <!-- Full request details (collapsible) -->
-    <div class="req-toggle" onclick="var d=document.getElementById('reqDetails'); d.classList.toggle('open'); this.querySelector('i').classList.toggle('fa-chevron-down'); this.querySelector('i').classList.toggle('fa-chevron-up');">
-      <i class="fas fa-chevron-down"></i> View full request details
-    </div>
-    <div class="req-details-body" id="reqDetails">
-      <div style="white-space:pre-wrap;">{{ message.message }}</div>
-
-      {% if message.product or message.order or message.order_number_ref %}
-      <hr><h6>Product / Order Reference</h6>
-      {% if message.product %}<div><strong>Product:</strong> {{ message.product.name }}</div>{% endif %}
-      {% if message.order %}<div><strong>Order:</strong> {{ message.order.order_number }}</div>
-      {% elif message.order_number_ref %}<div><strong>Order Number (as entered):</strong> {{ message.order_number_ref }}</div>{% endif %}
-      {% endif %}
-
-      {% if message.item_name or message.quantity %}
-      <hr><h6>Item Details</h6>
-      {% if message.item_name %}<div><strong>Item Name:</strong> {{ message.item_name }}</div>{% endif %}
-      {% if message.quantity %}<div><strong>Quantity:</strong> {{ message.quantity }}</div>{% endif %}
-      {% endif %}
-
-      {% if message.materials_condition %}
-      <hr><h6>Donation Details</h6>
-      <div><strong>Materials Condition:</strong> {{ message.get_materials_condition_display }}</div>
-      {% endif %}
-
-      {% if message.feedback_type or message.related_product %}
-      <hr><h6>Feedback</h6>
-      {% if message.feedback_type %}<div><strong>Feedback Type:</strong> {{ message.get_feedback_type_display }}</div>{% endif %}
-      {% if message.related_product %}<div><strong>Related Product:</strong> {{ message.related_product }}</div>{% endif %}
-      {% endif %}
-
-      {% if message.concern_type %}
-      <hr><h6>Concern</h6>
-      <div><strong>Concern Type:</strong> {{ message.get_concern_type_display }}</div>
-      {% endif %}
-
-      {% if message.additional_details %}
-      <hr><h6>Additional Details</h6>
-      <div style="white-space:pre-wrap;">{{ message.additional_details }}</div>
-      {% endif %}
-
-      <hr>
-      <div class="status-form-row">
-        <form method="post" style="display:flex;gap:10px;flex:1;flex-wrap:wrap;align-items:flex-end;">
-          {% csrf_token %}
-          <div class="field">
-            <label>Status</label>
-            <select name="status">
-              {% for value, label in message.STATUS_CHOICES %}
-              <option value="{{ value }}" {% if message.status == value %}selected{% endif %}>{{ label }}</option>
-              {% endfor %}
-            </select>
-          </div>
-          <div class="field">
-            <label>Staff Notes (internal only)</label>
-            <input type="text" name="staff_notes" value="{{ message.staff_notes }}">
-          </div>
-          <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm">Save</button>
-        </form>
-      </div>
-    </div>
   </div>
   {% endif %}
 </div>
-
-{% if convo %}
-<div class="conv-details">
-  <div class="conv-details-title"><i class="fas fa-circle-info"></i>Conversation Details</div>
-  <div class="conv-details-grid">
-    <div class="conv-details-item"><div class="label">Type</div><div class="value">App Chat</div></div>
-    <div class="conv-details-item"><div class="label">Customer</div><div class="value">{{ convo.customer.get_full_name|default:convo.customer.username }}</div></div>
-    <div class="conv-details-item"><div class="label">Last Message</div><div class="value">{{ last_activity_at|date:"M d, Y · H:i" }}</div></div>
-    <div class="conv-details-item"><div class="label">Chat #</div><div class="value">{{ convo.pk }}</div></div>
-  </div>
-</div>
-{% else %}
-<!-- Conversation details summary -->
-<div class="conv-details">
-  <div class="conv-details-title"><i class="fas fa-circle-info"></i>Conversation Details</div>
-  <div class="conv-details-grid">
-    <div class="conv-details-item">
-      <div class="label">Status</div>
-      <div class="value">
-        {% if message.status == 'resolved' %}<span class="conv-status-pill st-resolved"><span class="dot"></span>{{ message.get_status_display }}</span>
-        {% elif message.status == 'closed' %}<span class="conv-status-pill st-closed"><span class="dot"></span>{{ message.get_status_display }}</span>
-        {% elif message.status == 'in_progress' or message.status == 'under_review' %}<span class="conv-status-pill st-progress"><span class="dot"></span>{{ message.get_status_display }}</span>
-        {% else %}<span class="conv-status-pill st-new"><span class="dot"></span>{{ message.get_status_display }}</span>
-        {% endif %}
-      </div>
-    </div>
-    <div class="conv-details-item">
-      <div class="label">Handled By</div>
-      <div class="value">
-        {% if handled_by %}<span class="conv-mini-avatar">{{ handled_by.get_full_name|default:handled_by.username|first|upper }}</span> {{ handled_by.get_full_name|default:handled_by.username }}
-        {% else %}<span class="text-muted" style="font-weight:600;">Unassigned</span>{% endif %}
-      </div>
-    </div>
-    <div class="conv-details-item">
-      <div class="label">Last Message</div>
-      <div class="value">{{ last_activity_at|date:"M d, Y · H:i" }}</div>
-    </div>
-    <div class="conv-details-item">
-      <div class="label">Request #</div>
-      <div class="value">{{ message.pk }}</div>
-    </div>
-  </div>
-  {% if message.status != 'resolved' %}
-  <form method="post">
-    {% csrf_token %}
-    <input type="hidden" name="status" value="resolved">
-    <button type="submit" class="ds-btn ds-btn-primary"><i class="fas fa-check"></i>Mark as Resolved</button>
-  </form>
-  {% endif %}
-</div>
-
-{% endif %}
 
 <script>
+(function () {
+  var input = document.getElementById('replyToInput');
+  var note = document.getElementById('replyTargetNote');
+  if (!input || !note) return;
+  var defaultHtml = note.innerHTML;
+  function resetTarget() {
+    input.value = '';
+    note.innerHTML = defaultHtml;
+  }
+  document.querySelectorAll('.chat-reply-link').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      input.value = a.dataset.thread;
+      var body = a.dataset.body || '';
+      note.textContent = '';
+      var box = document.createElement('div'); box.className = 'chat-reply-preview';
+      var txt = document.createElement('div'); txt.className = 'rp-text';
+      var title = document.createElement('div'); title.className = 'rp-title'; title.textContent = 'Replying to ' + a.dataset.subject;
+      var snip = document.createElement('div'); snip.className = 'rp-body'; snip.textContent = body;
+      var x = document.createElement('button'); x.type = 'button'; x.className = 'rp-close'; x.setAttribute('aria-label', 'Cancel reply'); x.innerHTML = '&times;';
+      x.addEventListener('click', resetTarget);
+      txt.appendChild(title); txt.appendChild(snip); box.appendChild(txt); box.appendChild(x);
+      note.appendChild(box);
+      var ta = document.querySelector('.chat-input-bar textarea');
+      if (ta) ta.focus();
+    });
+  });
+})();
 var chatBox = document.getElementById('chatMessages');
 if (chatBox) { chatBox.scrollTop = chatBox.scrollHeight; }
 

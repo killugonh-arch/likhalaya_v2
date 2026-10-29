@@ -38,6 +38,10 @@ def submit_review(request, slug):
     name = public_name_for(request.user)
 
     existing = Review.objects.filter(product=product, user=request.user).first()
+    # Only customers with a delivered order for this product can post a new review.
+    if not existing and not user_has_purchased(request.user, product):
+        messages.error(request, 'Only customers who received this product can review it.')
+        return _back_to_product(product)
     if existing:
         existing.rating = rating
         existing.comment = comment

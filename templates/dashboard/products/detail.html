@@ -121,7 +121,6 @@
 <div class="pd-header-top">
   <div class="pd-header-titles">
     <h1>Product Details</h1>
-    <p>Manage product information, variants, pricing, and inventory.</p>
   </div>
   <div class="pd-header-actions">
     <a href="{{ product.get_absolute_url }}" class="pd-btn pd-btn-outline" target="_blank" rel="noopener">
@@ -207,6 +206,28 @@
         {% endif %}
       </div>
     </div>
+
+{% if gallery_by_size.General or gallery_by_size.Small or gallery_by_size.Medium or gallery_by_size.Large %}
+<div class="pd-card mt-4">
+  <div class="pd-card-body">
+    <div class="pd-card-title">Photos by Size</div>
+    <div class="row g-3">
+      {% for label, imgs in gallery_by_size.items %}
+      {% if imgs %}
+      <div class="col-6">
+        <div class="text-muted small mb-2">{{ label }}{% if label == 'General' %} (all sizes){% endif %}</div>
+        <div class="d-flex flex-wrap gap-2">
+          {% for img in imgs %}
+          <img src="{{ img.image.url }}" alt="{{ img.caption }}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #eee;">
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
   </div>
 
   <!-- RIGHT COLUMN -->
@@ -261,7 +282,6 @@
       <div class="pd-variants-header">
         <div>
           <h2>Variants</h2>
-          <p class="subtitle">Sizes, prices, designs, colors, and stock</p>
         </div>
         {% if product.has_variants %}
         <div class="pd-variant-chips">
@@ -280,7 +300,6 @@
               <div class="pd-size-left">
                 <span class="pd-size-name">{{ size.get_name_display }}</span>
                 <span class="pd-size-price">₱{{ size.price|floatformat:0 }}</span>
-                <span class="pd-size-meta">{{ size.design_count }} Design{{ size.design_count|pluralize }} · Stock: {{ size.stock_total }}</span>
               </div>
             </div>
             <div class="pd-size-body">
@@ -294,7 +313,7 @@
                   {% endif %}
                   <div class="pd-design-info">
                     <div class="pd-design-title">{{ d.title|default:"Untitled Design" }}</div>
-                    <div class="pd-design-tags">{{ d.color|default:"—" }}</div>
+                    {% if d.color %}<div class="pd-design-tags">{{ d.color }}</div>{% endif %}
                   </div>
                   <div class="pd-design-stats">
                     <span class="pd-stock-badge {% if d.stock == 0 %}out{% elif d.stock <= 5 %}low{% endif %}">Stock: {{ d.stock }}</span>
@@ -323,27 +342,6 @@
   </div>
 </div>
 
-{% if gallery_by_size.General or gallery_by_size.Small or gallery_by_size.Medium or gallery_by_size.Large %}
-<div class="pd-card mt-4">
-  <div class="pd-card-body">
-    <div class="pd-card-title">Photos by Size</div>
-    <div class="row g-3">
-      {% for label, imgs in gallery_by_size.items %}
-      {% if imgs %}
-      <div class="col-sm-6 col-md-3">
-        <div class="text-muted small mb-2">{{ label }}{% if label == 'General' %} (all sizes){% endif %}</div>
-        <div class="d-flex flex-wrap gap-2">
-          {% for img in imgs %}
-          <img src="{{ img.image.url }}" alt="{{ img.caption }}" style="width:56px;height:56px;object-fit:cover;border-radius:8px;border:1px solid #eee;">
-          {% endfor %}
-        </div>
-      </div>
-      {% endif %}
-      {% endfor %}
-    </div>
-  </div>
-</div>
-{% endif %}
 
 <!-- Delete/Archive Confirmation Modal -->
 <div class="modal fade" id="deleteProductModal" tabindex="-1" aria-hidden="true">

@@ -29,7 +29,7 @@
 .ds-breadcrumb .sep { color: var(--border); }
 
 .ds-page-header { display: flex; align-items: flex-start; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-4); }
-.ds-page-header h1 { font-size: 24px; font-weight: 800; color: #10131e; margin: 0; }
+.ds-page-header h1 { font-size: 27px; font-weight: 800; color: #10131e; margin: 0; }
 .ds-page-header p { font-size: 13px; color: var(--text-muted); margin: 4px 0 0; }
 .ds-page-header-actions { display: flex; gap: var(--space-2); flex-wrap: wrap; }
 
@@ -87,15 +87,9 @@ body.dark-mode .msg-row:hover, body.dark-mode .msg-row.is-unread { background: v
 {% endblock %}
 
 {% block dash_content %}
-<nav class="ds-breadcrumb" aria-label="Breadcrumb">
-  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
-  <span class="sep">/</span><span class="current">Messages</span>
-</nav>
-
 <div class="ds-page-header">
   <div>
     <h1>Messages</h1>
-    <p>View and manage all system messages, inquiries, and notifications.</p>
   </div>
   <div class="ds-page-header-actions">
     <form method="post" action="{% url 'dashboard:message_mark_all_read' %}">
@@ -131,7 +125,7 @@ body.dark-mode .msg-row:hover, body.dark-mode .msg-row.is-unread { background: v
 
 <div class="dash-panel">
   <div class="msg-list-header">
-    <span class="count ms-auto">{% if chat_rows %}{{ chat_rows|length }} chat{{ chat_rows|length|pluralize }}{% if page_obj.paginator.count %} · {% endif %}{% endif %}{% if page_obj.paginator.count or not chat_rows %}Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} messages{% endif %}</span>
+    <span class="count ms-auto">{% if chat_rows %}{{ chat_rows|length }} chat{{ chat_rows|length|pluralize }}{% if page_obj.paginator.count %} · {% endif %}{% endif %}{% if page_obj.paginator.count or not chat_rows %}Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} customer{{ page_obj.paginator.count|pluralize }}{% endif %}</span>
   </div>
 
   {% for c in chat_rows %}
@@ -157,9 +151,10 @@ body.dark-mode .msg-row:hover, body.dark-mode .msg-row.is-unread { background: v
   </div>
   {% endfor %}
 
-  {% for msg in messages_list %}
+  {% for g in messages_list %}
+  {% with msg=g.msg %}
   {% url 'dashboard:message_detail' msg.pk as msg_detail_url %}
-  <div class="msg-row {% if not msg.is_read %}is-unread{% endif %}" data-href="{{ msg_detail_url }}">
+  <div class="msg-row {% if g.unread %}is-unread{% endif %}" data-href="{{ msg_detail_url }}">
     <div class="msg-avatar" style="background:{% cycle '#5FBF9F' '#8B8FD9' '#E0A85B' '#6FA8DC' '#D98594' as avatar_color %};">
       {{ msg.name|first|upper }}
     </div>
@@ -168,6 +163,7 @@ body.dark-mode .msg-row:hover, body.dark-mode .msg-row.is-unread { background: v
         <div>
           <div class="msg-name-line">
             <span class="msg-name">{{ msg.name }}</span>
+            {% if g.count > 1 %}<span class="msg-badge" style="background:#eef0f4;color:#4b5563;">{{ g.count }} messages</span>{% endif %}
             {% if msg.inquiry_type == 'bulk_order' %}
               <span class="msg-badge" style="background:#e6f0fd;color:#2563eb;">{{ msg.get_inquiry_type_display }}</span>
             {% elif msg.inquiry_type == 'donate_materials' %}
@@ -183,14 +179,14 @@ body.dark-mode .msg-row:hover, body.dark-mode .msg-row.is-unread { background: v
           <div class="msg-snippet">{{ msg.message|truncatechars:80 }}</div>
         </div>
         <div class="msg-meta">
-          {% if not msg.is_read %}
-            <span class="msg-status is-unread"><span class="dot"></span>Unread</span>
+          {% if g.unread %}
+            <span class="msg-status is-unread"><span class="dot"></span>{% if g.count > 1 %}{{ g.unread }} unread{% else %}Unread{% endif %}</span>
           {% else %}
             <span class="msg-status is-read"><span class="dot"></span>Read</span>
           {% endif %}
           <div class="msg-date">{{ msg.created_at|date:"M d, Y H:i" }}</div>
           <div class="msg-actions">
-            {% if request.user.is_admin_user %}
+            {% if request.user.is_admin_user and g.count == 1 %}
             <button type="button" class="btn-icon-action btn-icon-delete" title="Delete" onclick="event.stopPropagation();"
                     data-bs-toggle="modal" data-bs-target="#deleteMsgModal"
                     data-delete-url="{% url 'dashboard:message_delete' msg.pk %}"
@@ -203,6 +199,7 @@ body.dark-mode .msg-row:hover, body.dark-mode .msg-row.is-unread { background: v
       </div>
     </div>
   </div>
+  {% endwith %}
   {% empty %}
   {% if not chat_rows %}
   <div class="text-center py-5 text-muted">

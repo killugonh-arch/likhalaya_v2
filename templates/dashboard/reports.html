@@ -46,7 +46,7 @@
 .ds-breadcrumb .current { color: var(--text-primary); font-weight: 600; }
 .ds-breadcrumb .sep { color: var(--border); }
 
-.dash-greeting-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+.dash-greeting-title { font-size: 23px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
 .dash-greeting-sub { font-size: 13px; color: var(--text-muted); }
 
 .ds-btn { font-size: 14px; font-weight: 600; border-radius: var(--radius-sm); padding: 10px 16px; border: none; transition: background var(--transition), box-shadow var(--transition); cursor: pointer; display: inline-flex; align-items: center; }
@@ -313,7 +313,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
 }
 
 @media (max-width: 991px) {
-  .dash-greeting-title { font-size: 18px; }
+  .dash-greeting-title { font-size: 21px; }
   .reports-toolbar { flex-direction: column; align-items: stretch; }
   .reports-actions { justify-content: flex-start; }
   .reports-filter-form { flex-wrap: wrap; }
@@ -352,15 +352,10 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
   </tbody>
 </table>
 
-<nav class="ds-breadcrumb" aria-label="Breadcrumb">
-  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
-  <span class="sep">/</span><span class="current" aria-current="page">Reports</span>
-</nav>
 
 <div class="reports-toolbar">
   <div>
     <h1 class="dash-greeting-title">Financial Reports</h1>
-    <p class="dash-greeting-sub mb-0">{{ period_label }}</p>
   </div>
   <div class="reports-actions">
     <form method="get" class="reports-filter-form" id="periodFilterForm">
@@ -407,14 +402,12 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
 <div class="rpt-section-head first">
   <h5>Full year</h5>
   <span class="ds-badge ds-badge-neutral">{{ selected_year }}</span>
-  <p>Delivered orders only, month by month. Click a month to open it in the section below.</p>
 </div>
 
 <!-- Monthly History -->
 <div class="dash-panel mb-4">
   <div class="dash-panel-header">
-    <h6>Monthly History — {{ selected_year }}</h6>
-    <span class="ds-badge ds-badge-neutral">Full year</span>
+    <h6>Monthly History</h6>
   </div>
   <div class="mh-best" id="mhBest" hidden>
     <i class="fas fa-trophy"></i>
@@ -430,7 +423,6 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
 <div class="rpt-section-head">
   <h5>Selected month</h5>
   <span class="ds-badge ds-badge-neutral">{{ period_label }}</span>
-  <p>Sales, income by payment method, expenses and month-end closing for the month chosen above.</p>
 </div>
 
 {% if awaiting_count %}
@@ -458,7 +450,6 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         <div class="dash-kpi-icon icon-product"><i class="fas fa-box"></i></div>
       </div>
       <div class="kpi-value">₱{{ financials.product_income|floatformat:2|intcomma }}</div>
-      <div class="kpi-delta">PDL basis</div>
     </div>
   </div>
   <div class="col-6 col-lg-4 col-xl">
@@ -468,7 +459,6 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         <div class="dash-kpi-icon icon-shipping"><i class="fas fa-truck"></i></div>
       </div>
       <div class="kpi-value">₱{{ financials.shipping_income|floatformat:2|intcomma }}</div>
-      <div class="kpi-delta">excluded from PDL</div>
     </div>
   </div>
   <div class="col-6 col-lg-4 col-xl">
@@ -478,7 +468,6 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         <div class="dash-kpi-icon icon-gcash"><i class="fas fa-mobile-screen-button"></i></div>
       </div>
       <div class="kpi-value">₱{{ gcash_product_income|default:0|floatformat:2|intcomma }}</div>
-      <div class="kpi-delta">product income</div>
     </div>
   </div>
   <div class="col-6 col-lg-4 col-xl">
@@ -488,7 +477,6 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         <div class="dash-kpi-icon icon-cod"><i class="fas fa-hand-holding-dollar"></i></div>
       </div>
       <div class="kpi-value">₱{{ cod_product_income|default:0|floatformat:2|intcomma }}</div>
-      <div class="kpi-delta">product income</div>
     </div>
   </div>
   <div class="col-12 col-lg-4 col-xl">
@@ -498,7 +486,6 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         <div class="dash-kpi-icon icon-orders"><i class="fas fa-shopping-bag"></i></div>
       </div>
       <div class="kpi-value">{{ financials.order_count }}</div>
-      <div class="kpi-delta">delivered, {{ period_label }}</div>
     </div>
   </div>
 </div>
@@ -509,7 +496,6 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
     <div class="dash-panel h-100">
       <div class="dash-panel-header">
         <h6>Monthly Financial Summary</h6>
-        <span class="ds-badge ds-badge-neutral">{{ period_label }}</span>
       </div>
       <div class="dash-panel-body">
         <div class="financial-row">
@@ -533,9 +519,6 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
           <span class="fr-label">Net Product Income</span>
           <span class="fr-value">₱{{ pdl.net_product_income|floatformat:2|intcomma }}</span>
         </div>
-        <p class="dash-panel-empty mb-0 mt-2" style="padding:8px 0; text-align:left;">
-          <i class="fas fa-circle-info"></i>PDL sharing is decided and distributed by the coordinator outside this system.
-        </p>
       </div>
     </div>
   </div>
@@ -681,8 +664,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
             <tr><td colspan="5">
               <div class="ds-empty-state">
                 <i class="fas fa-file-invoice-dollar icon"></i>
-                <div class="title">No expenses recorded</div>
-                <div class="desc">Product Income has no deductions yet for {{ period_label }}.</div>
+                <div class="title">No expenses recorded for {{ period_label }}</div>
               </div>
             </td></tr>
             {% endfor %}
@@ -705,7 +687,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
       <thead>
         <tr>
           <th>Month</th><th>Product Income</th><th>Shipping Fees</th><th>GCash</th><th>COD</th>
-          <th>Expenses</th><th>Net Product Income</th><th>Status</th>
+          <th>Expenses</th><th>Net Product Income</th><th>Finalized</th>
         </tr>
       </thead>
       <tbody>
@@ -726,7 +708,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
             {% if row.is_finalized %}
             <span class="ds-badge ds-badge-success">Finalized</span>
             {% else %}
-            <span class="ds-badge ds-badge-info">Open</span>
+            <span class="text-muted">—</span>
             {% endif %}
           </td>
         </tr>
@@ -741,7 +723,6 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
 <div class="rpt-section-head first">
   <h5>Selected month</h5>
   <span class="ds-badge ds-badge-neutral">{{ period_label }}</span>
-  <p>Where this month's orders stand and what is selling.</p>
 </div>
 
 <div class="row g-4 mb-4">
@@ -749,7 +730,6 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
     <div class="dash-panel h-100">
       <div class="dash-panel-header">
         <h6>Orders by Status</h6>
-        <span class="ds-badge ds-badge-neutral">{{ period_label }}</span>
       </div>
       <div class="dash-panel-body d-flex align-items-center justify-content-center">
         {% if sales_total_orders %}
@@ -767,8 +747,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
   <div class="col-lg-7">
     <div class="dash-panel h-100">
       <div class="dash-panel-header">
-        <h6>Orders by Status — Detail</h6>
-        <span class="ds-badge ds-badge-neutral">Order value incl. shipping</span>
+        <h6>Orders by Status in Details</h6>
       </div>
       <div class="table-responsive">
         <table class="ds-table no-stack mb-0">
@@ -809,7 +788,6 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
 <div class="dash-panel mb-4">
   <div class="dash-panel-header">
     <h6>Top Products by Units Sold</h6>
-    <span class="ds-badge ds-badge-neutral">{{ period_label }} · excl. cancelled</span>
   </div>
   <div class="table-responsive">
     <table class="ds-table no-stack mb-0">
@@ -820,7 +798,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
           <td class="fw-semibold" style="font-size:13px;">
             {{ p.product_name|truncatechars:40 }}
             {% if p.product_deleted %}
-            <span class="ds-badge ds-badge-danger ms-1" style="font-size:10px;" title="{% if p.product_deleted_permanent %}Permanently deleted{% else %}Deleted (in Archive, can be restored){% endif %}">Deleted</span>
+            <span class="ds-badge ds-badge-danger ms-1" style="font-size:10px;" title="{% if p.product_deleted_permanent %}Permanently removed{% else %}Removed (in Archive, can be restored){% endif %}">Removed</span>
             {% endif %}
             {% if p.category_deleted %}
             <span class="ds-badge ds-badge-warning ms-1" style="font-size:10px;" title="This product's category was deleted (in Archive)">Category deleted</span>
@@ -1038,7 +1016,7 @@ if (typeof Chart === 'undefined') {
         },
         scales: {
           x: { grid: { display: false } },
-          y: { beginAtZero: true, grace: '10%', ticks: { callback: (v) => peso(v) }, title: { display: true, text: 'Amount (₱)' } }
+          y: { beginAtZero: true, grace: '10%', ticks: { callback: (v) => peso(v) } }
         },
         onClick(evt, _els, chart) {
           const pts = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, true);
@@ -1143,10 +1121,9 @@ if (typeof Chart === 'undefined') {
   const money = (n) => '₱' + Number(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const ranked = mhData.overall.map((v, i) => ({ v, i })).filter(r => r.v > 0).sort((a, b) => b.v - a.v);
   if (!ranked.length) return;
-  const best = ranked[0], next = ranked[1];
+  const best = ranked[0];
   let html = '<strong>Best month: ' + mhFull[best.i] + ' ' + mhYear + '</strong> — ' + money(best.v) +
              ' overall income (' + money(mhData.product[best.i]) + ' product + ' + money(mhData.shipping[best.i]) + ' shipping).';
-  if (next) html += ' Next best: ' + mhFull[next.i] + ' (' + money(next.v) + ').';
   document.getElementById('mhBestText').innerHTML = html;
   document.getElementById('mhBest').hidden = false;
   const row = document.querySelectorAll('#mhTable tbody tr')[best.i];

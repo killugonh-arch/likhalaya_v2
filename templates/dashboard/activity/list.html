@@ -49,7 +49,7 @@ body.dark-mode .session-username-link { color: #6fd6c9; }
 </div>
 
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
-  <h4 class="fw-bold mb-0" style="color:var(--teal);">Staff Activity Log</h4>
+  <div class="pd-header-titles"><h1 style="font-size:25px;">Staff Activity Log</h1></div>
   <a href="{% url 'dashboard:activity_log_export_csv' %}?q={{ search }}&staff={{ staff_filter }}&from={{ date_from }}&to={{ date_to }}" class="btn btn-sm btn-outline-success">
     <i class="fas fa-file-csv me-1"></i>Export CSV
   </a>
@@ -104,7 +104,7 @@ body.dark-mode .session-username-link { color: #6fd6c9; }
       <label class="lk-filter-date"><span>From</span><input type="date" name="from" value="{{ date_from }}"></label>
       <label class="lk-filter-date"><span>To</span><input type="date" name="to" value="{{ date_to }}"></label>
       <div class="lk-filter-actions">
-        <button type="submit" class="lk-btn lk-btn-primary"><i class="fas fa-filter"></i>Filter</button>
+        <button type="submit" class="lk-btn lk-btn-primary"><i class="fas fa-search"></i>Search</button>
         <a href="{% url 'dashboard:activity_log' %}" class="lk-btn lk-btn-ghost"><i class="fas fa-rotate-right"></i>Clear</a>
       </div>
     </form>

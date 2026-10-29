@@ -295,17 +295,11 @@ class ProductForm(forms.ModelForm):
             'materials_used': 'Materials Used',
         }
         widgets = {
-            'materials_used': forms.Textarea(attrs={
-                'rows': 3,
-                'placeholder': 'e.g. Acrylic paint, canvas, wooden frame'
-            }),
-            'description': forms.Textarea(attrs={
-                'rows': 5,
-                'placeholder': 'Other info about the product (size, production time, care tips, etc.)'
-            }),
-            'price_min': forms.NumberInput(attrs={'step': '0.01', 'placeholder': 'Small (lowest price)'}),
-            'price_medium': forms.NumberInput(attrs={'step': '0.01', 'placeholder': 'Medium (optional)'}),
-            'price_max': forms.NumberInput(attrs={'step': '0.01', 'placeholder': 'Large (optional)'}),
+            'materials_used': forms.Textarea(attrs={'rows': 3}),
+            'description': forms.Textarea(attrs={'rows': 5}),
+            'price_min': forms.NumberInput(attrs={'step': '1', 'min': '0', 'placeholder': 'Small (lowest price)'}),
+            'price_medium': forms.NumberInput(attrs={'step': '1', 'min': '0', 'placeholder': 'Medium (optional)'}),
+            'price_max': forms.NumberInput(attrs={'step': '1', 'min': '0', 'placeholder': 'Large (optional)'}),
             'image': ProductImageWidget(),
             'gcash_qr_code': ProductImageWidget(),
         }
@@ -324,6 +318,7 @@ class ProductForm(forms.ModelForm):
         if editing_existing and not is_admin:
             self.fields.pop('gcash_qr_code', None)
 
+        self.fields['category'].empty_label = 'Select a category'
         self.fields['price_medium'].required = False
         self.fields['price_medium'].help_text = (
             "Leave blank to auto-set as the midpoint between Small and Large."

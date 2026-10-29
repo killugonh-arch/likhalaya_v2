@@ -164,7 +164,7 @@
     border: 1px solid #ece7dd;
   }
   body.dark-mode .od-thumb-placeholder { background: var(--dm-surface-3); border-color: var(--dm-border); color: var(--dm-text-mute); }
-  .od-item-name { font-weight: 600; font-size: 14px; color: #1a1a1a; }
+  .od-item-name { font-weight: 600; font-size: 18px; color: #1a1a1a; }
   body.dark-mode .od-item-name { color: var(--dm-text); }
   .od-item-sub { font-size: 12px; color: #9a9488; margin-top: 2px; }
   body.dark-mode .od-item-sub { color: var(--dm-text-mute); }
@@ -433,8 +433,6 @@
       </div>
       <div class="od-meta">
         <span><i class="far fa-calendar-alt"></i> Placed on {{ order.created_at|date:"M d, Y" }} at {{ order.created_at|date:"g:i A" }}</span>
-        <span class="dot"></span>
-        <span><i class="fas fa-money-bill-wave"></i> {{ order.get_payment_method_display }}</span>
       </div>
     </div>
     <div class="od-actions no-print">
@@ -484,7 +482,6 @@
                     {% endif %}
                     <div>
                       <div class="od-item-name">{{ item.product_name }}</div>
-                      {% if item.product %}<div class="od-item-sub">SKU: {{ item.product.pk }}</div>{% endif %}
                       {% if item.size_display or item.design_name %}
                       <div class="od-chip-row">
                         {% if item.size_display %}<span class="od-size-badge">{{ item.size_display }}</span>{% endif %}
@@ -561,32 +558,6 @@
         {% endif %}
       </div>
 
-      <!-- Order Timeline -->
-      <div class="od-card">
-        <div class="od-card-header">
-          <div class="od-card-header-title">
-            <span class="ico"><i class="fas fa-clock"></i></span>
-            <h6>Order Timeline</h6>
-          </div>
-        </div>
-        <div class="od-hl">
-          <div class="od-hl-item od-hl-done">
-            <div class="od-hl-dot"><i class="fas fa-check"></i></div>
-            <div>
-              <div class="od-hl-title">Order Placed</div>
-              <div class="od-hl-sub">{{ order.created_at|date:"M d, Y" }} · {{ order.created_at|date:"g:i A" }}</div>
-            </div>
-          </div>
-          <div class="od-hl-line"></div>
-          <div class="od-hl-item od-hl-now st-{{ order.status }}">
-            <div class="od-hl-dot"></div>
-            <div>
-              <div class="od-hl-title">Current Status</div>
-              <div class="od-hl-sub">{{ order.get_status_display }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
 
     <!-- ═══════════ SIDEBAR ═══════════ -->
@@ -641,18 +612,6 @@
           </div>
           {% endif %}
 
-          <div class="od-note no-print">
-            <i class="fas fa-circle-info"></i>
-            <span>
-              {% if order.status == 'pending' %}This order is waiting to be prepared.
-              {% elif order.status == 'processing' %}This order is being prepared. Mark it ready once it is packed.
-              {% elif order.status == 'confirmed' %}Ready for delivery. Assign a courier below.
-              {% elif order.status == 'shipped' %}On its way. It becomes Delivered once the courier confirms delivery with a photo.
-              {% elif order.status == 'delivered' %}This order is complete.
-              {% else %}This order was cancelled.{% endif %}
-            </span>
-          </div>
-
           <div class="od-actions-col no-print">
             {% if order.status == 'pending' %}
             <form method="post" action="{% url 'dashboard:order_start_processing' order.pk %}">
@@ -672,7 +631,7 @@
             {% elif order.status == 'processing' %}
             <form method="post" action="{% url 'dashboard:order_set_eta' order.pk %}" class="od-eta-box">
               {% csrf_token %}
-              <div class="od-eta-label"><i class="fas fa-clock"></i>Estimated delivery time{% if order.eta_display %} &middot; now <strong>{{ order.eta_display }}</strong>{% endif %}</div>
+              <div class="od-eta-label"><i class="fas fa-clock"></i>Estimated delivery time</div>
               <div class="od-eta-row">
                 <input type="number" name="eta_days_min" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_min|default_if_none:'' }}" placeholder="2" aria-label="From days">
                 <span class="sep">to</span>
@@ -689,7 +648,7 @@
             {% elif order.status == 'confirmed' %}
             <form method="post" action="{% url 'dashboard:order_set_eta' order.pk %}" class="od-eta-box">
               {% csrf_token %}
-              <div class="od-eta-label"><i class="fas fa-clock"></i>Estimated delivery time{% if order.eta_display %} &middot; now <strong>{{ order.eta_display }}</strong>{% endif %}</div>
+              <div class="od-eta-label"><i class="fas fa-clock"></i>Estimated delivery time</div>
               <div class="od-eta-row">
                 <input type="number" name="eta_days_min" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_min|default_if_none:'' }}" placeholder="2" aria-label="From days">
                 <span class="sep">to</span>
@@ -734,30 +693,6 @@
             <div class="od-task-hint" style="margin:0;">Cancelled by mistake? Restoring puts this order back to <strong>{{ order.get_previous_status_display|default:"Pending" }}</strong> and takes its items out of stock again.</div>
             <button type="button" class="od-btn od-btn-primary od-btn-block" data-bs-toggle="modal" data-bs-target="#undoCancelModal"><i class="fas fa-rotate-left"></i>Undo Cancel</button>
             {% endif %}
-          </div>
-        </div>
-
-        <!-- Quick Information -->
-        <div class="od-card">
-          <div class="od-card-header">
-            <div class="od-card-header-title">
-              <span class="ico"><i class="fas fa-plus"></i></span>
-              <h6>Quick Information</h6>
-            </div>
-          </div>
-          <div class="od-qi">
-            <div class="od-qi-item">
-              <div class="od-qi-ico"><i class="fas fa-wallet"></i></div>
-              <div><div class="od-qi-label">Payment</div><div class="od-qi-value">{{ order.get_payment_method_display }}</div></div>
-            </div>
-            <div class="od-qi-item">
-              <div class="od-qi-ico"><i class="fas fa-peso-sign"></i></div>
-              <div><div class="od-qi-label">Total</div><div class="od-qi-value">₱{{ order.total|floatformat:2|intcomma }}</div></div>
-            </div>
-            <div class="od-qi-item">
-              <div class="od-qi-ico"><i class="fas fa-user"></i></div>
-              <div><div class="od-qi-label">Customer</div><div class="od-qi-value">{% if order.user %}<a href="{% url 'dashboard:user_detail' order.user.pk %}" style="color:inherit;">{{ order.user.get_full_name|default:order.user.username }}</a>{% else %}Guest{% endif %}</div></div>
-            </div>
           </div>
         </div>
 

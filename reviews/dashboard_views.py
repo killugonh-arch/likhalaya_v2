@@ -119,11 +119,37 @@ def review_reply(request, pk):
 @admin_required
 @require_POST
 def review_delete(request, pk):
+    """Moves the review to the Archive (soft delete)."""
     review = get_object_or_404(Review.objects.select_related('product'), pk=pk)
     label = f'{review.display_name} – {review.product.name}'
     product_name = review.product.name
-    review.delete()
-    log_activity(request, 'delete', f'Deleted review on "{product_name}"',
+    review.archive(by_user=request.user)
+    log_activity(request, 'delete', f'Archived review on "{product_name}"',
                  resource='Review', resource_label=label)
-    messages.success(request, 'Review deleted.')
+    messages.success(request, 'Review moved to the Archive.')
     return redirect(_safe_next(request, request.POST.get('next'), 'reviews:dashboard_list'))
+
+
+@admin_required
+@require_POST
+def review_restore(request, pk):
+    review = get_object_or_404(Review.all_objects.select_related('product'), pk=pk, is_deleted=True)
+    label = f'{review.display_name} – {review.product.name}'
+    review.restore()
+    log_activity(request, 'restore', f'Restored review on "{review.product.name}"',
+                 resource='Review', resource_label=label)
+    messages.success(request, 'Review restored.')
+    return redirect('dashboard:archive')
+
+
+@admin_required
+@require_POST
+def review_delete_permanent(request, pk):
+    review = get_object_or_404(Review.all_objects.select_related('product'), pk=pk, is_deleted=True)
+    label = f'{review.display_name} – {review.product.name}'
+    product_name = review.product.name
+    review.delete()
+    log_activity(request, 'delete', f'Permanently deleted review on "{product_name}"',
+                 resource='Review', resource_label=label)
+    messages.success(request, 'Review permanently deleted.')
+    return redirect('dashboard:archive')
