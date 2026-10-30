@@ -312,8 +312,7 @@
       </div>
 
       <div class="contact-card d-none" id="contact-form-section">
-        <h5 class="fw-bold mb-1" style="color:var(--teal);">Send Us a Message</h5>
-        <p class="text-muted small mb-3">Fields marked <span class="text-danger">*</span> are required.</p>
+        <h5 class="fw-bold mb-1" style="color:#000; font-size:22px;">Send Us a Message</h5>
 
         <div class="help-tips-card mb-4">
           <h6><i class="fas fa-lightbulb me-2"></i>Before You Send a Request</h6>
@@ -783,8 +782,8 @@
       .then(({ status, data }) => {
         if (status === 200 && data.ok) {
           // Stage 2: Success
-          openToast('success', 'Message Sent!', data.message || 'Your request has been submitted successfully.');
-          autoHideTimer = window.setTimeout(closeToast, 5000);
+          // Success popup removed: just close the 'Sending…' toast; the Thank You panel below confirms it.
+          closeToast();
           form.reset();
           cards.forEach(c => c.classList.remove('active'));
           subtypeWraps.forEach(w => w.classList.remove('is-visible'));

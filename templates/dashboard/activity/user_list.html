@@ -86,13 +86,61 @@
 .ds-badge-role-coordinator { background: var(--warning-bg); color: var(--warning); }
 
 /* KPI cards */
-.ds-kpi-card { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3); box-shadow: var(--shadow-sm); height: 100%; }
-.ds-kpi-card .kpi-label { font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
-.ds-kpi-card .kpi-value { font-size: 20px; font-weight: 700; color: var(--text-primary); line-height: 1.15; margin-top: 3px; }
+.ds-kpi-card {
+  background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md);
+  padding: 18px 24px; box-shadow: var(--shadow-sm); height: 100%;
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  transition: box-shadow var(--transition);
+}
+.ds-kpi-card:hover { box-shadow: var(--shadow-md); }
+.ds-kpi-card .kpi-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 600; }
+.ds-kpi-card .kpi-value { font-size: 28px; font-weight: 800; color: var(--text-primary); line-height: 1.1; margin-top: 4px; }
+.kpi-icon {
+  width: 50px; height: 50px; border-radius: var(--radius-sm); flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.kpi-icon.icon-total { background: var(--info-bg); color: var(--info); }
+.kpi-icon.icon-success { background: var(--brand-green-light); color: var(--brand-green); }
+.kpi-icon.icon-failed { background: var(--danger-bg); color: var(--danger); }
+.kpi-icon.icon-logins { background: var(--brand-green-light); color: var(--brand-green); }
+.kpi-icon.icon-updates { background: var(--warning-bg); color: var(--warning); }
+.kpi-icon.icon-orders { background: var(--info-bg); color: var(--info); }
 
 /* Filters */
 .dash-panel { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
 .al-filter-bar { padding: var(--space-3) var(--space-4); }
+
+/* Filter grid: row 1 = search / activity type, row 2 = from / to / buttons */
+.lk-filter-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: center; }
+.lk-filter-form > :nth-child(1) { grid-column: 1 / -1; }
+.lk-filter-form > :nth-child(2) { grid-column: 1 / -1; }
+.lk-filter-form > :nth-child(5) { grid-column: 1 / -1; display: flex; gap: 8px; }
+.lk-filter-form select,
+.lk-filter-form .lk-input { width: 100%; min-width: 0; }
+.lk-filter-form .lk-filter-date { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0; }
+.lk-filter-form .lk-filter-date input { flex: 1; min-width: 0; }
+@media (min-width: 768px) {
+  .lk-filter-form { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .lk-filter-form > :nth-child(1) { grid-column: 1 / span 2; grid-row: 1; }
+  .lk-filter-form > :nth-child(2) { grid-column: 3 / span 2; grid-row: 1; }
+  .lk-filter-form > :nth-child(3) { grid-column: 1; grid-row: 2; }
+  .lk-filter-form > :nth-child(4) { grid-column: 2; grid-row: 2; }
+  .lk-filter-form > :nth-child(5) { grid-column: 3 / span 2; grid-row: 2; justify-content: flex-end; }
+}
+/* Wide screens: everything on a single line */
+@media (min-width: 1100px) {
+  .lk-filter-form { grid-template-columns: minmax(170px, 2fr) minmax(150px, 1.3fr) minmax(165px, 1fr) minmax(165px, 1fr) auto; }
+  .lk-filter-form > :nth-child(1),
+  .lk-filter-form > :nth-child(2),
+  .lk-filter-form > :nth-child(3),
+  .lk-filter-form > :nth-child(4),
+  .lk-filter-form > :nth-child(5) { grid-row: 1; }
+  .lk-filter-form > :nth-child(1) { grid-column: 1; }
+  .lk-filter-form > :nth-child(2) { grid-column: 2; }
+  .lk-filter-form > :nth-child(3) { grid-column: 3; }
+  .lk-filter-form > :nth-child(4) { grid-column: 4; }
+  .lk-filter-form > :nth-child(5) { grid-column: 5; justify-content: flex-start; }
+}
 
 /* Timeline */
 .al-timeline-group { margin-bottom: var(--space-4); }
@@ -125,6 +173,9 @@
   padding: var(--space-3) var(--space-4); display: flex; align-items: center; justify-content: space-between;
   gap: var(--space-3); cursor: pointer; transition: box-shadow var(--transition), border-color var(--transition);
 }
+/* the whole row is a link — keep it from looking like underlined link text */
+.al-card, .al-card:hover, .al-card:focus, .al-card:visited { text-decoration: none; color: inherit; }
+.al-card * { text-decoration: none; }
 .al-card:hover { box-shadow: var(--shadow-md); border-color: var(--brand-green-light); }
 .al-card:focus-visible { outline: 2px solid var(--brand-green-light); outline-offset: 2px; }
 .al-card-left { display: flex; align-items: center; gap: var(--space-3); min-width: 0; }
@@ -149,9 +200,9 @@
 .ds-empty-state .title { font-size: 14px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
 
 /* Pagination */
-.al-pagination-wrap { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); margin-top: var(--space-5); }
-.al-pagination-count { font-size: 12.5px; color: var(--text-muted); }
-.ds-pagination { display: flex; gap: 4px; align-items: center; }
+.al-pagination-wrap { display: flex; flex-direction: column; align-items: center; gap: var(--space-2); margin-top: var(--space-5); min-width: 0; max-width: 100%; }
+.al-pagination-count { font-size: 12.5px; color: var(--text-muted); text-align: center; }
+.ds-pagination { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; justify-content: center; max-width: 100%; }
 .ds-page-btn {
   width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
   border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; color: var(--text-secondary);
@@ -161,6 +212,7 @@
 .ds-page-btn:hover { background: var(--surface-subtle); }
 .ds-page-btn.active { background: var(--brand-green); color: #fff; }
 .ds-page-btn.disabled { opacity: .4; pointer-events: none; }
+.ds-page-btn.ds-page-gap { color: var(--text-muted); pointer-events: none; width: 22px; }
 .ds-page-btn:focus-visible { outline: 2px solid var(--brand-green-light); outline-offset: 2px; }
 
 @media (max-width: 991px) {
@@ -176,12 +228,6 @@
 {% endblock %}
 
 {% block dash_content %}
-<nav class="ds-breadcrumb" aria-label="Breadcrumb">
-  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
-  <span class="sep">/</span><a href="{% url 'dashboard:activity_log' %}">Activity Log</a>
-  <span class="sep">/</span><span class="current" aria-current="page">{{ username }}</span>
-</nav>
-
 <!-- Profile summary header -->
 <div class="al-profile-header">
   <div class="al-profile-identity">
@@ -211,23 +257,41 @@
 
 <!-- KPI stats -->
 <div class="row g-3 mb-4">
-  <div class="col-6 col-md-4 col-lg-2">
-    <div class="ds-kpi-card"><div class="kpi-label">Total</div><div class="kpi-value">{{ stats.total }}</div></div>
+  <div class="col-12 col-sm-6 col-lg-4">
+    <div class="ds-kpi-card">
+      <div><div class="kpi-label">Total</div><div class="kpi-value">{{ stats.total }}</div></div>
+      <div class="kpi-icon icon-total"><i class="fas fa-list-check"></i></div>
+    </div>
   </div>
-  <div class="col-6 col-md-4 col-lg-2">
-    <div class="ds-kpi-card"><div class="kpi-label">Successful</div><div class="kpi-value">{{ stats.successful }}</div></div>
+  <div class="col-12 col-sm-6 col-lg-4">
+    <div class="ds-kpi-card">
+      <div><div class="kpi-label">Successful</div><div class="kpi-value">{{ stats.successful }}</div></div>
+      <div class="kpi-icon icon-success"><i class="fas fa-circle-check"></i></div>
+    </div>
   </div>
-  <div class="col-6 col-md-4 col-lg-2">
-    <div class="ds-kpi-card"><div class="kpi-label">Failed</div><div class="kpi-value">{{ stats.failed }}</div></div>
+  <div class="col-12 col-sm-6 col-lg-4">
+    <div class="ds-kpi-card">
+      <div><div class="kpi-label">Failed</div><div class="kpi-value">{{ stats.failed }}</div></div>
+      <div class="kpi-icon icon-failed"><i class="fas fa-circle-xmark"></i></div>
+    </div>
   </div>
-  <div class="col-6 col-md-4 col-lg-2">
-    <div class="ds-kpi-card"><div class="kpi-label">Logins</div><div class="kpi-value">{{ stats.logins }}</div></div>
+  <div class="col-12 col-sm-6 col-lg-4">
+    <div class="ds-kpi-card">
+      <div><div class="kpi-label">Logins</div><div class="kpi-value">{{ stats.logins }}</div></div>
+      <div class="kpi-icon icon-logins"><i class="fas fa-right-to-bracket"></i></div>
+    </div>
   </div>
-  <div class="col-6 col-md-4 col-lg-2">
-    <div class="ds-kpi-card"><div class="kpi-label">Updates</div><div class="kpi-value">{{ stats.updates }}</div></div>
+  <div class="col-12 col-sm-6 col-lg-4">
+    <div class="ds-kpi-card">
+      <div><div class="kpi-label">Updates</div><div class="kpi-value">{{ stats.updates }}</div></div>
+      <div class="kpi-icon icon-updates"><i class="fas fa-pen"></i></div>
+    </div>
   </div>
-  <div class="col-6 col-md-4 col-lg-2">
-    <div class="ds-kpi-card"><div class="kpi-label">Orders Processed</div><div class="kpi-value">{{ stats.orders_processed }}</div></div>
+  <div class="col-12 col-sm-6 col-lg-4">
+    <div class="ds-kpi-card">
+      <div><div class="kpi-label">Orders Processed</div><div class="kpi-value">{{ stats.orders_processed }}</div></div>
+      <div class="kpi-icon icon-orders"><i class="fas fa-shopping-bag"></i></div>
+    </div>
   </div>
 </div>
 
@@ -251,15 +315,6 @@
       </div>
       <label class="lk-filter-date"><span>From</span><input type="date" name="from" value="{{ date_from }}"></label>
       <label class="lk-filter-date"><span>To</span><input type="date" name="to" value="{{ date_to }}"></label>
-      <div>
-        <label class="visually-hidden" for="al-status">Status</label>
-        <select id="al-status" name="status" class="lk-input">
-          <option value="">All Statuses</option>
-          {% for val, label in status_choices %}
-          <option value="{{ val }}" {% if val == status_filter %}selected{% endif %}>{{ label }}</option>
-          {% endfor %}
-        </select>
-      </div>
       <div class="lk-filter-actions">
         <button type="submit" class="lk-btn lk-btn-primary"><i class="fas fa-search"></i>Search</button>
         <a href="{% url 'dashboard:activity_log_user' username %}" class="lk-btn lk-btn-ghost"><i class="fas fa-rotate-right"></i>Clear</a>
@@ -321,7 +376,7 @@
 </div>
 {% endif %}
 
-<!-- Pagination -->
+<!-- Pagination (windowed: first, last, and 2 pages either side of the current one) -->
 {% if page_obj.has_other_pages %}
 <div class="al-pagination-wrap">
   <nav aria-label="Activity pagination">
@@ -332,9 +387,13 @@
       <span class="ds-page-btn disabled" aria-hidden="true">‹</span>
       {% endif %}
       {% for n in page_obj.paginator.page_range %}
-      <a class="ds-page-btn {% if n == page_obj.number %}active{% endif %}"
-         href="?page={{ n }}&q={{ search }}&action={{ action_filter }}&status={{ status_filter }}&from={{ date_from }}&to={{ date_to }}"
-         {% if n == page_obj.number %}aria-current="page"{% endif %}>{{ n }}</a>
+        {% if n == 1 or n == page_obj.paginator.num_pages or n >= page_obj.number|add:'-2' and n <= page_obj.number|add:'2' %}
+        <a class="ds-page-btn {% if n == page_obj.number %}active{% endif %}"
+           href="?page={{ n }}&q={{ search }}&action={{ action_filter }}&status={{ status_filter }}&from={{ date_from }}&to={{ date_to }}"
+           {% if n == page_obj.number %}aria-current="page"{% endif %}>{{ n }}</a>
+        {% elif n == page_obj.number|add:'-3' or n == page_obj.number|add:'3' %}
+        <span class="ds-page-btn ds-page-gap" aria-hidden="true">…</span>
+        {% endif %}
       {% endfor %}
       {% if page_obj.has_next %}
       <a class="ds-page-btn" href="?page={{ page_obj.next_page_number }}&q={{ search }}&action={{ action_filter }}&status={{ status_filter }}&from={{ date_from }}&to={{ date_to }}" aria-label="Next page">›</a>
@@ -343,7 +402,6 @@
       {% endif %}
     </div>
   </nav>
-  <div class="al-pagination-count">Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} activities · Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</div>
 </div>
 {% endif %}
 {% endblock %}

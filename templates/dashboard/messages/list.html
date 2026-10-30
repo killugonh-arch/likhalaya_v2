@@ -50,14 +50,14 @@
 .msg-edit-btn { display: none; }
 .msg-edit-btn.is-visible { display: inline-flex; }
 
-.msg-row { display: flex; align-items: flex-start; gap: 14px; padding: 16px var(--space-4); border-bottom: 1px solid var(--border); cursor: pointer; transition: background 120ms ease; }
+.msg-row { display: flex; align-items: center; gap: 14px; padding: 16px var(--space-4); border-bottom: 1px solid var(--border); cursor: pointer; transition: background 120ms ease; }
 .msg-row:last-child { border-bottom: none; }
 .msg-row:hover { background: var(--surface-subtle); }
 .msg-row.is-unread { background: #fbfdfc; }
 .msg-checkbox { padding-top: 3px; }
 .msg-avatar { width: 42px; height: 42px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 15px; font-weight: 700; flex-shrink: 0; }
 .msg-body { flex: 1; min-width: 0; }
-.msg-top-line { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.msg-top-line { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .msg-name-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .msg-name { font-weight: 700; font-size: 13.5px; color: var(--text-primary); }
 .msg-badge { font-size: 10.5px; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
@@ -97,7 +97,6 @@ body.dark-mode .msg-row:hover, body.dark-mode .msg-row.is-unread { background: v
       <input type="hidden" name="next" value="{{ request.get_full_path }}">
       <button type="submit" class="ds-btn ds-btn-primary"><i class="fas fa-check"></i>Mark All as Read</button>
     </form>
-    <a href="{{ request.path }}" class="ds-btn ds-btn-secondary"><i class="fas fa-rotate"></i>Refresh</a>
   </div>
 </div>
 
@@ -124,10 +123,6 @@ body.dark-mode .msg-row:hover, body.dark-mode .msg-row.is-unread { background: v
 </div>
 
 <div class="dash-panel">
-  <div class="msg-list-header">
-    <span class="count ms-auto">{% if chat_rows %}{{ chat_rows|length }} chat{{ chat_rows|length|pluralize }}{% if page_obj.paginator.count %} · {% endif %}{% endif %}{% if page_obj.paginator.count or not chat_rows %}Showing {{ page_obj.start_index }}–{{ page_obj.end_index }} of {{ page_obj.paginator.count }} customer{{ page_obj.paginator.count|pluralize }}{% endif %}</span>
-  </div>
-
   {% for c in chat_rows %}
   <div class="msg-row {% if c.unread %}is-unread{% endif %}" data-href="{% url 'dashboard:chat_detail' c.pk %}">
     <div class="msg-avatar" style="background:#0F6B4F;">{{ c.display_name|first|upper }}</div>
@@ -170,13 +165,9 @@ body.dark-mode .msg-row:hover, body.dark-mode .msg-row.is-unread { background: v
               <span class="msg-badge" style="background:#f1ecfd;color:#7c3aed;">{{ msg.get_inquiry_type_display }}</span>
             {% elif msg.inquiry_type == 'custom_order' or msg.inquiry_type == 'product_request' %}
               <span class="msg-badge" style="background:#fdf1e6;color:#c9841a;">{{ msg.get_inquiry_type_display }}</span>
-            {% else %}
-              <span class="msg-badge" style="background:var(--brand-green-light);color:var(--brand-green);">{{ msg.get_inquiry_type_display }}</span>
             {% endif %}
           </div>
           <div class="msg-email">{{ msg.email }}</div>
-          <div class="msg-subject">{{ msg.subject }}</div>
-          <div class="msg-snippet">{{ msg.message|truncatechars:80 }}</div>
         </div>
         <div class="msg-meta">
           {% if g.unread %}

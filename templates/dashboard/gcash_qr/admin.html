@@ -70,7 +70,7 @@ body.dark-mode .dash-table tbody tr { border-color: var(--dm-border); }
     <div class="dash-panel">
       <div class="dash-panel-header">
         <div class="icon-badge"><i class="fas fa-qrcode"></i></div>
-        <div><h6>Current QR Code</h6><div class="subtitle">Shown to customers at checkout</div></div>
+        <div><h6>Current QR Code</h6></div>
       </div>
       <div class="dash-panel-body">
         {% if active %}
@@ -85,12 +85,10 @@ body.dark-mode .dash-table tbody tr { border-color: var(--dm-border); }
           <form method="post" action="{% url 'dashboard:gcash_qr_admin_update_details' active.pk %}" class="mb-3">
             {% csrf_token %}
             <label class="ds-label" style="font-size:11.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px;">Account Name</label>
-            <input type="text" name="account_name" value="{{ active.account_name }}" placeholder="e.g. Pedro Penduko A." class="form-control mb-2">
-            <div style="font-size:11.5px;color:var(--text-muted);margin-bottom:10px;">Shown to customers as "First Last", e.g. "Deniel P*"</div>
+            <input type="text" name="account_name" value="{{ active.account_name }}" placeholder="e.g. Pedro Penduko A." class="form-control mb-3">
 
             <label class="ds-label" style="font-size:11.5px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:6px;">Account Number</label>
-            <input type="text" name="account_number" value="{{ active.account_number }}" placeholder="e.g. +63 975 154 1234" class="form-control mb-2">
-            <div style="font-size:11.5px;color:var(--text-muted);margin-bottom:10px;">Shown to customers in full, no masking.</div>
+            <input type="text" name="account_number" value="{{ active.account_number }}" placeholder="e.g. +63 975 154 1234" class="form-control mb-3">
 
             <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm"><i class="fas fa-check me-2"></i>Save Account Details</button>
           </form>
@@ -129,7 +127,7 @@ body.dark-mode .dash-table tbody tr { border-color: var(--dm-border); }
     <div class="dash-panel">
       <div class="dash-panel-header">
         <div class="icon-badge"><i class="fas fa-list-check"></i></div>
-        <div><h6>Staff Requests</h6><div class="subtitle">Removal / replacement requests awaiting review</div></div>
+        <div><h6>Staff Requests</h6></div>
       </div>
       <div class="dash-panel-body p-0">
         <div class="table-responsive">
@@ -181,7 +179,7 @@ body.dark-mode .dash-table tbody tr { border-color: var(--dm-border); }
 <div class="dash-panel" id="qr-history">
   <div class="dash-panel-header">
     <div class="icon-badge"><i class="fas fa-clock-rotate-left"></i></div>
-    <div><h6>QR Code History</h6><div class="subtitle">Every uploaded QR code and its final status</div></div>
+    <div><h6>QR Code History</h6></div>
   </div>
   <div class="dash-panel-body p-0">
     <div class="table-responsive">

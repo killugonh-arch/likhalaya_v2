@@ -2,6 +2,7 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Avg, Count, Q
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 
@@ -139,7 +140,7 @@ def review_restore(request, pk):
     log_activity(request, 'restore', f'Restored review on "{review.product.name}"',
                  resource='Review', resource_label=label)
     messages.success(request, 'Review restored.')
-    return redirect('dashboard:archive')
+    return redirect(f"{reverse('dashboard:archive')}?tab=reviews")
 
 
 @admin_required
@@ -152,4 +153,4 @@ def review_delete_permanent(request, pk):
     log_activity(request, 'delete', f'Permanently deleted review on "{product_name}"',
                  resource='Review', resource_label=label)
     messages.success(request, 'Review permanently deleted.')
-    return redirect('dashboard:archive')
+    return redirect(f"{reverse('dashboard:archive')}?tab=reviews")

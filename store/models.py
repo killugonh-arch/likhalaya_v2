@@ -553,6 +553,9 @@ class MessageReply(models.Model):
     )
     is_staff_reply = models.BooleanField(default=False)
     body = EncryptedTextField()
+    # Snapshot of the message this reply was answering ("Replying to ..."),
+    # copied at send time. Encrypted like body since it holds message text.
+    quoted_text = EncryptedTextField(blank=True, default='')
     is_read_by_customer = models.BooleanField(default=False)
     is_read_by_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

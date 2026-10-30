@@ -9,14 +9,14 @@
 .ad-wrap { --ad-radius: 20px; --ad-radius-sm: 14px; --ad-space: 24px; }
 
 /* ============ Header ============ */
-.ad-eyebrow { color: #8b9490; font-size: 13px; margin-bottom: 4px; }
-.ad-title { font-weight: 800; font-size: 28px; letter-spacing: -.02em; color: var(--teal); margin-bottom: 2px; }
-.ad-subtitle { color: #8b9490; font-size: 14.5px; }
-body.dark-mode .ad-eyebrow, body.dark-mode .ad-subtitle { color: #9aa5a3; }
+.ad-title { font-weight: 800; font-size: 22px; letter-spacing: -.01em; color: #1a1d1b; margin-bottom: 2px; }
+.ad-subtitle { color: #8b9490; font-size: 13.5px; }
+body.dark-mode .ad-title { color: var(--dm-text); }
+body.dark-mode .ad-subtitle { color: #9aa5a3; }
 
 .ad-back-btn {
   display: inline-flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 600;
-  color: #4b5563; background: #fff; border: 1px solid #e9ebe9; border-radius: 12px;
+  color: #4b5563; background: #fff; border: 1px solid #e4e7e4; border-radius: 10px;
   padding: 9px 16px; text-decoration: none; transition: all .15s ease;
 }
 .ad-back-btn:hover { color: var(--teal); border-color: var(--teal); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,.06); }
@@ -31,6 +31,7 @@ body.dark-mode .ad-back-btn { background: var(--dm-card, #1a1f1e); border-color:
 }
 .ad-card.ad-hover:hover { box-shadow: 0 4px 10px rgba(16,24,20,.05), 0 16px 32px rgba(16,24,20,.07); transform: translateY(-2px); }
 body.dark-mode .ad-card { background: var(--dm-card, #1a1f1e); box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.ad-pad { padding: 22px var(--ad-space); }
 
 .ad-card-title {
   font-size: 12.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
@@ -40,7 +41,7 @@ body.dark-mode .ad-card { background: var(--dm-card, #1a1f1e); box-shadow: 0 1px
 body.dark-mode .ad-card-title { color: #9aa5a3; }
 
 /* ============ Hero card ============ */
-.ad-hero { padding: 28px var(--ad-space); }
+.ad-hero { padding: 24px var(--ad-space); }
 .ad-hero-avatar {
   width: 56px; height: 56px; border-radius: 16px; background: linear-gradient(135deg, var(--teal), #2f8f6e);
   color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 800;
@@ -65,8 +66,6 @@ body.dark-mode .ad-role-pill { background: rgba(79,209,197,.14); color: var(--dm
 }
 .ad-status-success { background: rgba(39,174,96,.12); color: #1e8449; }
 .ad-status-failed  { background: rgba(192,57,43,.12); color: #c0392b; }
-.ad-status-warning { background: rgba(214,158,46,.14); color: #a16207; }
-.ad-status-info    { background: rgba(47,143,206,.12); color: #1f6ca8; }
 
 /* ============ Action / value badges ============ */
 .ad-action-badge {
@@ -80,7 +79,7 @@ body.dark-mode .ad-role-pill { background: rgba(79,209,197,.14); color: var(--dm
 .ad-action-logout   { background: rgba(139,148,144,.14); color: #5b6663; }
 .ad-action-default  { background: rgba(139,148,144,.14); color: #5b6663; }
 
-/* ============ Detail rows (Activity Information / Affected Object) ============ */
+/* ============ Detail rows ============ */
 .ad-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; padding: 13px 0; border-bottom: 1px solid #f0f1ef; }
 .ad-row:last-child { border-bottom: none; }
 .ad-label { color: #8b9490; font-size: 12.5px; font-weight: 600; text-transform: uppercase; letter-spacing: .4px; flex-shrink: 0; padding-top: 2px; }
@@ -96,9 +95,6 @@ body.dark-mode .ad-value { color: #f1f4f2; }
 body.dark-mode .ad-object-icon { background: rgba(79,209,197,.14); color: var(--dm-teal); }
 
 /* ============ Change comparison cards ============ */
-.ad-compare-label { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px; color: #6b7280; margin-bottom: 10px; }
-body.dark-mode .ad-compare-label { color: #9aa5a3; }
-
 .ad-change-block { border-radius: var(--ad-radius-sm); background: #fafbfa; padding: 6px; margin-bottom: 12px; }
 .ad-change-block:last-child { margin-bottom: 0; }
 body.dark-mode .ad-change-block { background: rgba(255,255,255,.03); }
@@ -153,7 +149,7 @@ body.dark-mode .ad-value-card-new .ad-value-card-text { color: #6fd6c9; }
 body.dark-mode .ad-change-thumb { background: #1a1f1e; border-color: rgba(255,255,255,.1); }
 body.dark-mode .ad-change-thumb-placeholder { border-color: var(--dm-border); color: #9aa5a3; }
 
-/* No-changes empty state */
+/* Empty / info states */
 .ad-empty { text-align: center; padding: 28px 16px; color: #8b9490; font-size: 13.5px; }
 .ad-empty i { font-size: 22px; margin-bottom: 8px; display: block; color: #c6ccc9; }
 
@@ -197,19 +193,13 @@ body.dark-mode .ad-accordion-btn:hover { background: rgba(255,255,255,.06); }
 
 /* ============ Responsive ============ */
 @media (max-width: 991px) {
-  .ad-title { font-size: 23px; }
-  .ad-hero { padding: 22px 18px; }
+  .ad-hero { padding: 20px 18px; }
 }
 </style>
 
 <div class="ad-wrap">
-  <div class="dash-breadcrumb">
-    <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
-    <span class="sep">/</span><a href="{% url 'dashboard:activity_log' %}">Activity Log</a>
-    <span class="sep">/</span><span class="current">Details</span>
-  </div>
 
-  <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-3">
+  <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
     <div>
       <h1 class="ad-title">Activity Detail</h1>
       <p class="ad-subtitle mb-0">View complete audit information for this activity.</p>
@@ -239,12 +229,10 @@ body.dark-mode .ad-accordion-btn:hover { background: rgba(255,255,255,.06); }
     </div>
   </div>
 
-  <div class="row g-4">
-    <!-- ============ LEFT COLUMN ============ -->
+  <!-- ============ ROW 1: Activity Information | Change Summary ============ -->
+  <div class="row g-4 mb-4">
     <div class="col-lg-6">
-
-      <!-- CARD 1: Activity Information -->
-      <div class="ad-card ad-hover mb-4" style="padding: 22px var(--ad-space);" role="region" aria-labelledby="ad-info-heading">
+      <div class="ad-card ad-pad h-100" role="region" aria-labelledby="ad-info-heading">
         <h2 class="ad-card-title" id="ad-info-heading"><i class="fas fa-clipboard-list"></i> Activity Information</h2>
         <div class="ad-row">
           <span class="ad-label">Action Performed</span>
@@ -256,62 +244,22 @@ body.dark-mode .ad-accordion-btn:hover { background: rgba(255,255,255,.06); }
           </span>
         </div>
         <div class="ad-row">
-          <span class="ad-label">Username</span>
-          <span class="ad-value">{{ log.username|default:"—" }}</span>
+          <span class="ad-label">Resource Type</span>
+          <span class="ad-value">{{ log.resource|default:"—" }}</span>
         </div>
         <div class="ad-row">
-          <span class="ad-label">Role</span>
-          <span class="ad-value">{{ log.role|title|default:"—" }}</span>
+          <span class="ad-label">IP Address</span>
+          <span class="ad-value">{{ log.ip_address|default:"—" }}</span>
         </div>
         <div class="ad-row">
-          <span class="ad-label">Status</span>
-          <span class="ad-value">
-            <span class="ad-status-badge {% if log.status == 'failed' %}ad-status-failed{% else %}ad-status-success{% endif %}" style="padding:5px 12px;font-size:12px;">
-              <i class="fas {% if log.status == 'failed' %}fa-circle-xmark{% else %}fa-circle-check{% endif %}"></i>
-              {{ log.get_status_display }}
-            </span>
-          </span>
-        </div>
-        <div class="ad-row">
-          <span class="ad-label">Timestamp</span>
+          <span class="ad-label">Date &amp; Time</span>
           <span class="ad-value">{{ log.timestamp|date:"M d, Y · g:i A" }}</span>
         </div>
       </div>
-
-      <!-- CARD 2: Affected Object -->
-      <div class="ad-card ad-hover mb-4" style="padding: 22px var(--ad-space);" role="region" aria-labelledby="ad-object-heading">
-        <h2 class="ad-card-title" id="ad-object-heading"><i class="fas fa-cube"></i> Affected Object</h2>
-        {% if log.resource or log.resource_label %}
-        <div class="d-flex align-items-center gap-3 mt-2">
-          <div class="ad-object-icon" aria-hidden="true">
-            <i class="fas
-              {% if log.resource == 'User' %}fa-user
-              {% elif log.resource == 'Product' %}fa-box
-              {% elif log.resource == 'Order' %}fa-bag-shopping
-              {% elif log.resource == 'Category' %}fa-layer-group
-              {% else %}fa-file-lines{% endif %}"></i>
-          </div>
-          <div>
-            <div class="ad-value" style="text-align:left;font-size:15px;">
-              {{ log.resource|default:"—" }}{% if log.resource_label %}: {{ log.resource_label }}{% endif %}
-            </div>
-            <div class="ad-hero-time mt-1"><i class="fas fa-hashtag" style="font-size:10px;"></i> Resource reference</div>
-          </div>
-        </div>
-        {% else %}
-        <div class="ad-empty">
-          <i class="fas fa-cube"></i>
-          No affected object recorded for this activity.
-        </div>
-        {% endif %}
-      </div>
     </div>
 
-    <!-- ============ RIGHT COLUMN ============ -->
     <div class="col-lg-6">
-
-      <!-- CARD 3: Change Summary -->
-      <div class="ad-card ad-hover mb-4" style="padding: 22px var(--ad-space);" role="region" aria-labelledby="ad-changes-heading">
+      <div class="ad-card ad-pad h-100" role="region" aria-labelledby="ad-changes-heading">
         <h2 class="ad-card-title" id="ad-changes-heading"><i class="fas fa-code-compare"></i> Change Summary</h2>
 
         {% if field_changes %}
@@ -345,29 +293,6 @@ body.dark-mode .ad-accordion-btn:hover { background: rgba(255,255,255,.06); }
                   {% else %}
                     <span class="ad-change-thumb-placeholder">{{ change.new }}</span>
                   {% endif %}
-                </div>
-              </div>
-            </div>
-
-            {% elif change.label == "Description" %}
-            <div class="ad-change-block" data-collapsible="true">
-              <div class="ad-change-field">
-                <span class="ad-change-field-name">{{ change.label }}</span>
-                <button type="button" class="ad-change-toggle" aria-expanded="false" aria-label="Toggle {{ change.label }} change details">
-                  <i class="fas fa-chevron-down"></i>
-                </button>
-              </div>
-              <div class="ad-change-values">
-                <div class="ad-value-pair ad-stacked">
-                  <div class="ad-value-card ad-value-card-old">
-                    <span class="ad-value-card-tag">Old Value</span>
-                    <span class="ad-value-card-text">{{ change.old }}</span>
-                  </div>
-                  <div class="ad-value-arrow-v"><i class="fas fa-arrow-down"></i></div>
-                  <div class="ad-value-card ad-value-card-new">
-                    <span class="ad-value-card-tag">New Value</span>
-                    <span class="ad-value-card-text">{{ change.new }}</span>
-                  </div>
                 </div>
               </div>
             </div>
@@ -411,6 +336,17 @@ body.dark-mode .ad-accordion-btn:hover { background: rgba(255,255,255,.06); }
             <span class="ad-value-card-text">{{ log.new_value|default:"—" }}</span>
           </div>
         </div>
+
+        {% elif log.action == 'delete' %}
+        <div class="ad-empty">
+          <i class="fas fa-trash"></i>
+          This item was removed. There are no field changes to compare.
+        </div>
+        {% elif log.action == 'create' %}
+        <div class="ad-empty">
+          <i class="fas fa-plus"></i>
+          New record created. There are no previous values to compare.
+        </div>
         {% else %}
         <div class="ad-empty">
           <i class="fas fa-code-compare"></i>
@@ -418,21 +354,51 @@ body.dark-mode .ad-accordion-btn:hover { background: rgba(255,255,255,.06); }
         </div>
         {% endif %}
       </div>
-
-      {% if log.description %}
-      <!-- DESCRIPTION -->
-      <div class="ad-card ad-hover mb-4" style="padding: 22px var(--ad-space);" role="region" aria-labelledby="ad-desc-heading">
-        <h2 class="ad-card-title" id="ad-desc-heading"><i class="fas fa-note-sticky"></i> Description</h2>
-        <div class="ad-desc-card mt-2">
-          <p class="ad-desc-text mb-0">{{ log.description }}</p>
-        </div>
-      </div>
-      {% endif %}
     </div>
   </div>
 
+  <!-- ============ ROW 2: Affected Object | Description ============ -->
+  <div class="row g-4 mb-4">
+    <div class="{% if log.description %}col-lg-6{% else %}col-12{% endif %}">
+      <div class="ad-card ad-pad h-100" role="region" aria-labelledby="ad-object-heading">
+        <h2 class="ad-card-title" id="ad-object-heading"><i class="fas fa-cube"></i> Affected Object</h2>
+        {% if log.resource or log.resource_label %}
+        <div class="d-flex align-items-center gap-3 mt-3">
+          <div class="ad-object-icon" aria-hidden="true">
+            <i class="fas
+              {% if log.resource == 'User' %}fa-user
+              {% elif log.resource == 'Product' %}fa-box
+              {% elif log.resource == 'Order' %}fa-bag-shopping
+              {% elif log.resource == 'Category' %}fa-layer-group
+              {% else %}fa-file-lines{% endif %}"></i>
+          </div>
+          <div class="ad-value" style="text-align:left;font-size:15px;">
+            {{ log.resource|default:"—" }}{% if log.resource_label %}: {{ log.resource_label }}{% endif %}
+          </div>
+        </div>
+        {% else %}
+        <div class="ad-empty">
+          <i class="fas fa-cube"></i>
+          No affected object recorded for this activity.
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if log.description %}
+    <div class="col-lg-6">
+      <div class="ad-card ad-pad h-100" role="region" aria-labelledby="ad-desc-heading">
+        <h2 class="ad-card-title" id="ad-desc-heading"><i class="fas fa-note-sticky"></i> Description</h2>
+        <div class="ad-desc-card mt-3">
+          <p class="ad-desc-text mb-0">{{ log.description }}</p>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
   <!-- ============ TIMELINE ============ -->
-  <div class="ad-card ad-hover mb-4" style="padding: 22px var(--ad-space);" role="region" aria-labelledby="ad-timeline-heading">
+  <div class="ad-card ad-pad mb-4" role="region" aria-labelledby="ad-timeline-heading">
     <h2 class="ad-card-title" id="ad-timeline-heading"><i class="fas fa-timeline"></i> Activity Timeline</h2>
     <div class="ad-timeline mt-3">
       <div class="ad-tl-item">
@@ -441,27 +407,17 @@ body.dark-mode .ad-accordion-btn:hover { background: rgba(255,255,255,.06); }
           <div class="ad-tl-line"></div>
         </div>
         <div>
-          <div class="ad-tl-title">Activity Created</div>
+          <div class="ad-tl-title">{{ log.username|default:"Unknown user" }} — {{ log.get_action_display }}{% if log.resource_label %}: {{ log.resource_label }}{% endif %}</div>
           <div class="ad-tl-meta">{{ log.timestamp|date:"M d, Y · g:i A" }}</div>
         </div>
       </div>
       <div class="ad-tl-item">
         <div class="ad-tl-dot-col">
           <div class="ad-tl-dot"></div>
-          <div class="ad-tl-line"></div>
         </div>
         <div>
-          <div class="ad-tl-title">Saved to Audit Log</div>
-          <div class="ad-tl-meta">Recorded with status: {{ log.get_status_display }}</div>
-        </div>
-      </div>
-      <div class="ad-tl-item">
-        <div class="ad-tl-dot-col">
-          <div class="ad-tl-dot"></div>
-        </div>
-        <div>
-          <div class="ad-tl-title">Available for Reporting</div>
-          <div class="ad-tl-meta">Visible in Activity Log &amp; exports</div>
+          <div class="ad-tl-title">Recorded in audit log</div>
+          <div class="ad-tl-meta">Status: {{ log.get_status_display }}{% if log.ip_address %} · IP {{ log.ip_address }}{% endif %}</div>
         </div>
       </div>
     </div>
@@ -479,24 +435,12 @@ body.dark-mode .ad-accordion-btn:hover { background: rgba(255,255,255,.06); }
         <span class="ad-value">{{ log.id|default:"—" }}</span>
       </div>
       <div class="ad-row">
-        <span class="ad-label">Username</span>
-        <span class="ad-value">{{ log.username|default:"—" }}</span>
+        <span class="ad-label">IP Address</span>
+        <span class="ad-value">{{ log.ip_address|default:"—" }}</span>
       </div>
       <div class="ad-row">
-        <span class="ad-label">Role</span>
-        <span class="ad-value">{{ log.role|title|default:"—" }}</span>
-      </div>
-      <div class="ad-row">
-        <span class="ad-label">Action</span>
-        <span class="ad-value">{{ log.get_action_display }}</span>
-      </div>
-      <div class="ad-row">
-        <span class="ad-label">Status</span>
-        <span class="ad-value">{{ log.get_status_display }}</span>
-      </div>
-      <div class="ad-row">
-        <span class="ad-label">Timestamp</span>
-        <span class="ad-value">{{ log.timestamp|date:"M d, Y · g:i A" }}</span>
+        <span class="ad-label">Exact Time</span>
+        <span class="ad-value">{{ log.timestamp|date:"Y-m-d H:i:s" }}</span>
       </div>
     </div>
   </div>

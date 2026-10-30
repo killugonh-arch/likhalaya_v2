@@ -480,6 +480,11 @@ body.dark-mode .btn-icon-delete { background: #ff6b6b !important; }
 .dash-page > .d-flex.justify-content-between { flex-wrap: wrap; gap: 12px; }
 .dash-page .card-footer.d-flex { flex-wrap: wrap; gap: 8px; }
 .dash-page .pagination { flex-wrap: wrap; }
+/* Brand-green pagination (replaces Bootstrap's default blue) */
+body:not(.dark-mode) .dash-page .pagination .page-link { color: var(--brand-green, #0F6B4F); }
+body:not(.dark-mode) .dash-page .pagination .page-link:hover { background: rgba(15,107,79,.10); color: var(--brand-green, #0F6B4F); }
+body:not(.dark-mode) .dash-page .pagination .page-link:focus { box-shadow: 0 0 0 .2rem rgba(15,107,79,.2); }
+body:not(.dark-mode) .dash-page .pagination .page-item.active .page-link { background: var(--brand-green, #0F6B4F); border-color: var(--brand-green, #0F6B4F); color: #fff; }
 .dash-page .nav-tabs, .dash-page .nav-pills { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
 .dash-page .nav-tabs::-webkit-scrollbar, .dash-page .nav-pills::-webkit-scrollbar { display: none; }
 .dash-page .nav-tabs .nav-link, .dash-page .nav-pills .nav-link { white-space: nowrap; }

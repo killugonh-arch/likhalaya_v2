@@ -330,8 +330,13 @@ class ContactMessageViewSet(viewsets.ReadOnlyModelViewSet):
             is_read_by_staff=is_staff,
         )
 
-        if not is_staff and thread.status in (ContactMessage.STATUS_RESOLVED, ContactMessage.STATUS_CLOSED):
-            thread.status = ContactMessage.STATUS_UNDER_REVIEW
-            thread.save(update_fields=['status'])
+        if not is_staff:
+            # Customer replied (mobile app): mark the thread unread for admin.
+            update_fields = ['is_read']
+            thread.is_read = False
+            if thread.status in (ContactMessage.STATUS_RESOLVED, ContactMessage.STATUS_CLOSED):
+                thread.status = ContactMessage.STATUS_UNDER_REVIEW
+                update_fields.append('status')
+            thread.save(update_fields=update_fields)
 
         return Response(MessageReplySerializer(new_reply).data, status=status.HTTP_201_CREATED)

@@ -369,6 +369,20 @@
   var totalPages = Math.ceil(total / PAGE_SIZE);
   var currentPage = 1;
 
+  var navBtns = [];
+  var prevBtn, nextBtn;
+
+  function updatePagination() {
+    navBtns.forEach(function (btn, i) {
+      var active = (i + 1) === currentPage;
+      btn.classList.toggle('active', active);
+      if (active) btn.setAttribute('aria-current', 'page');
+      else btn.removeAttribute('aria-current');
+    });
+    prevBtn.disabled = currentPage === 1;
+    nextBtn.disabled = currentPage === totalPages;
+  }
+
   function showPage(page, opts) {
     currentPage = Math.min(Math.max(page, 1), totalPages);
     var start = (currentPage - 1) * PAGE_SIZE;
@@ -377,48 +391,46 @@
       var idx = parseInt(el.getAttribute('data-idx'), 10);
       el.style.display = (idx >= start && idx < end) ? '' : 'none';
     });
-    renderPagination();
-    if (opts && opts.scroll) {
-      paginationEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-    }
+    updatePagination();
+    // On a user click, bring the view back to the top of the page.
+    if (opts && opts.user) window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  function renderPagination() {
+  function buildPagination() {
     paginationEl.innerHTML = '';
     paginationEl.style.display = 'flex';
 
-    var prev = document.createElement('button');
-    prev.type = 'button';
-    prev.className = 'mo-page-btn mo-page-nav';
-    prev.innerHTML = '<i class="fas fa-chevron-left"></i>';
-    prev.setAttribute('aria-label', 'Previous page');
-    prev.disabled = currentPage === 1;
-    prev.addEventListener('click', function () { showPage(currentPage - 1, { scroll: true }); });
-    paginationEl.appendChild(prev);
+    prevBtn = document.createElement('button');
+    prevBtn.type = 'button';
+    prevBtn.className = 'mo-page-btn mo-page-nav';
+    prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+    prevBtn.setAttribute('aria-label', 'Previous page');
+    prevBtn.addEventListener('click', function (e) { e.preventDefault(); showPage(currentPage - 1, { user: true }); });
+    paginationEl.appendChild(prevBtn);
 
     for (var p = 1; p <= totalPages; p++) {
       (function (p) {
         var btn = document.createElement('button');
         btn.type = 'button';
-        btn.className = 'mo-page-btn' + (p === currentPage ? ' active' : '');
+        btn.className = 'mo-page-btn';
         btn.textContent = p;
         btn.setAttribute('aria-label', 'Go to page ' + p);
-        if (p === currentPage) btn.setAttribute('aria-current', 'page');
-        btn.addEventListener('click', function () { showPage(p, { scroll: true }); });
+        btn.addEventListener('click', function (e) { e.preventDefault(); showPage(p, { user: true }); });
         paginationEl.appendChild(btn);
+        navBtns.push(btn);
       })(p);
     }
 
-    var next = document.createElement('button');
-    next.type = 'button';
-    next.className = 'mo-page-btn mo-page-nav';
-    next.innerHTML = '<i class="fas fa-chevron-right"></i>';
-    next.setAttribute('aria-label', 'Next page');
-    next.disabled = currentPage === totalPages;
-    next.addEventListener('click', function () { showPage(currentPage + 1, { scroll: true }); });
-    paginationEl.appendChild(next);
+    nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.className = 'mo-page-btn mo-page-nav';
+    nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+    nextBtn.setAttribute('aria-label', 'Next page');
+    nextBtn.addEventListener('click', function (e) { e.preventDefault(); showPage(currentPage + 1, { user: true }); });
+    paginationEl.appendChild(nextBtn);
   }
 
+  buildPagination();
   showPage(1);
 })();
 </script>

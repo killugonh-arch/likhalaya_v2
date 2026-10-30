@@ -1,3 +1,6 @@
+import json
+from datetime import timedelta
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.db.models import Q, Prefetch
 from django.core.paginator import Paginator
@@ -28,8 +31,10 @@ MESSAGE_OLDER_REPLIES_WINDOW_SECONDS = 10
 def _customer_reply_cooldown_remaining(thread, user):
     """Seconds left before `user` may send another reply on `thread`, or 0
     if they're clear to send. Based on their own last reply in this thread."""
+    # Counted across ALL of the customer's inquiries, since one reply can now
+    # be sent on any of them (the "Reply" button on a message).
     last_reply = (
-        MessageReply.objects.filter(thread=thread, is_staff_reply=False)
+        MessageReply.objects.filter(thread__customer=user, is_staff_reply=False)
         .order_by('-created_at')
         .first()
     )
@@ -145,7 +150,7 @@ def contact(request):
         if request.POST.get('website'):
             fake_message = (
                 'Thank you! Your request has been received. Our team will review your inquiry '
-                'and reply here on the site — check My Messages for updates.'
+                'and reply here on the site. Check My Messages for updates.'
             )
             if is_ajax:
                 return JsonResponse({'ok': True, 'message': fake_message})
@@ -158,7 +163,7 @@ def contact(request):
             msg.save()
             success_message = (
                 'Thank you! Your request has been received. Our team will review your inquiry '
-                'and reply here on the site — check My Messages for updates.'
+                'and reply here on the site. Check My Messages for updates.'
             )
             if is_ajax:
                 return JsonResponse({'ok': True, 'message': success_message})
@@ -199,63 +204,181 @@ def contact(request):
     return render(request, 'store/contact.html', {'form': form, 'context_product': context_product})
 
 
+def _parse_quote(raw):
+    """Turn a stored MessageReply.quoted_text into {subject, body, time}.
+    Older replies stored plain text only, so fall back to that."""
+    if not raw:
+        return None
+    try:
+        data = json.loads(raw)
+        if isinstance(data, dict):
+            return {
+                'subject': data.get('s', ''),
+                'body': data.get('b', ''),
+                'time': data.get('t', ''),
+            }
+    except (ValueError, TypeError):
+        pass
+    return {'subject': '', 'body': raw, 'time': ''}
+
+
+def _inquiry_details(t):
+    """The extra info the customer filled in on the Contact form for this
+    inquiry, as (label, value) pairs — empty fields are left out."""
+    order_ref = t.order_number_ref or (t.order.order_number if t.order_id and getattr(t.order, 'order_number', None) else '')
+    rows = [
+        ('Product', t.product.name if t.product_id else ''),
+        ('Order', order_ref),
+        ('Item', t.item_name),
+        ('Quantity', t.quantity),
+        ('Customization', t.customization_request),
+        ('Preferred materials', t.preferred_materials),
+        ('Target budget', t.target_budget),
+        ('Preferred date', t.preferred_date.strftime('%b %d, %Y') if t.preferred_date else ''),
+        ('Organization', t.organization_name),
+        ('Materials condition', t.get_materials_condition_display() if t.materials_condition else ''),
+        ('Partnership type', t.get_partnership_type_display() if t.partnership_type else ''),
+        ('Partnership details', t.partnership_details),
+        ('Feedback type', t.get_feedback_type_display() if t.feedback_type else ''),
+        ('Related product', t.related_product),
+        ('Concern type', t.get_concern_type_display() if t.concern_type else ''),
+        ('Additional details', t.additional_details),
+    ]
+    return [(label, value) for label, value in rows if value]
+
+
 @login_required
 def my_messages(request):
-    """Customer-facing inbox: every inquiry the logged-in customer has sent,
-    with an unread indicator when staff has replied."""
-    threads = (
+    """Customer-facing messages: ONE combined conversation covering every
+    inquiry the customer has sent, in chronological order. Replies are sent
+    in-site (no email) and attach to the customer's most recent inquiry.
+    Message bodies are stored encrypted (see store/fields.py)."""
+    threads = list(
         ContactMessage.objects.filter(customer=request.user)
+        .select_related('product', 'order')
+        .order_by('created_at')
         .prefetch_related('replies')
-        .order_by('-created_at')
     )
-    return render(request, 'store/my_messages.html', {'threads': threads})
-
-
-@login_required
-def my_message_detail(request, pk):
-    """Customer-facing conversation thread for one inquiry — reply in-site,
-    no email involved. Message bodies are stored encrypted (see store/fields.py)."""
-    thread = get_object_or_404(ContactMessage, pk=pk, customer=request.user)
+    latest = threads[-1] if threads else None
 
     if request.method == 'POST':
+        if latest is None:
+            return redirect('store:contact')
         body = request.POST.get('body', '').strip()
-        cooldown_remaining = _customer_reply_cooldown_remaining(thread, request.user)
+        cooldown_remaining = _customer_reply_cooldown_remaining(latest, request.user)
         if cooldown_remaining > 0:
             messages.error(
                 request,
                 f'Please wait {cooldown_remaining}s before sending another message.'
             )
         elif body:
+            # "Reply" button on a message: the reply goes on that message's
+            # inquiry (only the customer's own), with a snapshot of the quoted
+            # message. Without it, it goes on the most recent inquiry as before.
+            target = latest
+            quoted_text = ''
+            reply_to = request.POST.get('reply_to', '').strip()
+            if reply_to.isdigit():
+                target = next((t for t in threads if t.pk == int(reply_to)), latest)
+                quoted_text = json.dumps({
+                    's': target.subject,
+                    'b': request.POST.get('reply_quote', '').strip()[:300],
+                    't': request.POST.get('reply_quote_time', '').strip()[:40],
+                })
             MessageReply.objects.create(
-                thread=thread,
+                thread=target,
                 is_staff_reply=False,
+                quoted_text=quoted_text,
                 body=body,
                 is_read_by_customer=True,
                 is_read_by_staff=False,
             )
-            if thread.status in (ContactMessage.STATUS_RESOLVED, ContactMessage.STATUS_CLOSED):
-                thread.status = ContactMessage.STATUS_UNDER_REVIEW
-                thread.save(update_fields=['status'])
+            latest = target
+            # Flag the thread as unread so the admin bell, the unread count and
+            # the Messages list light up for this new customer reply.
+            update_fields = ['is_read']
+            latest.is_read = False
+            if latest.status in (ContactMessage.STATUS_RESOLVED, ContactMessage.STATUS_CLOSED):
+                latest.status = ContactMessage.STATUS_UNDER_REVIEW
+                update_fields.append('status')
+            latest.save(update_fields=update_fields)
             messages.success(request, 'Your reply has been sent.')
-        return redirect('store:my_message_detail', pk=pk)
+        return redirect('store:my_messages')
 
-    # Mark staff replies as read now that the customer is viewing the thread.
-    thread.replies.filter(is_staff_reply=True, is_read_by_customer=False).update(is_read_by_customer=True)
+    has_unread = any(t.has_unread_for_customer for t in threads)
 
-    # Infinite scroll: only render the most recent page of replies up front;
-    # older ones load on demand as the customer scrolls up in the thread.
-    all_reply_ids = list(thread.replies.order_by('created_at').values_list('id', flat=True))
-    initial_ids = all_reply_ids[-MESSAGE_THREAD_PAGE_SIZE:]
-    has_more = len(all_reply_ids) > len(initial_ids)
-    initial_replies = thread.replies.filter(id__in=initial_ids).order_by('created_at')
+    # Merge every inquiry + its replies into one chronological timeline.
+    timeline = []
+    for t in threads:
+        timeline.append({
+            'is_staff_reply': False,
+            'body': t.message,
+            'created_at': t.created_at,
+            'thread_pk': t.pk,
+            'subject': t.subject,
+            'inquiry_type': t.inquiry_type,
+            'type_display': t.get_inquiry_type_display(),
+            'starts_thread': True,
+            'details': _inquiry_details(t),
+            'image_url': t.reference_image.url if t.reference_image else '',
+            'quote': None,
+            'seen': t.is_read,
+        })
+        for r in t.replies.all():
+            timeline.append({
+                'is_staff_reply': r.is_staff_reply,
+                'body': r.body,
+                'created_at': r.created_at,
+                'thread_pk': t.pk,
+                'subject': t.subject,
+                'starts_thread': False,
+                'quote': _parse_quote(r.quoted_text),
+                'seen': r.is_read_by_staff,
+            })
+    timeline.sort(key=lambda e: e['created_at'])
 
-    return render(request, 'store/my_message_detail.html', {
-        'thread': thread,
-        'replies': initial_replies,
-        'has_more_replies': has_more,
-        'oldest_loaded_reply_id': initial_ids[0] if initial_ids else None,
-        'cooldown_remaining': _customer_reply_cooldown_remaining(thread, request.user),
+    # The "Reply" button only shows on messages from the last 6 hours.
+    reply_cutoff = timezone.now() - timedelta(hours=6)
+    for e in timeline:
+        e['can_reply'] = e['created_at'] >= reply_cutoff
+
+    # Group back-to-back messages from the same sender sent within 5 minutes of
+    # the previous one: the name shows once (first), the avatar and the time
+    # show only on the last message of the group. A new inquiry always starts
+    # a new group.
+    prev = None
+    for e in timeline:
+        e['is_continuation'] = bool(
+            prev
+            and not e['starts_thread']
+            and prev['is_staff_reply'] == e['is_staff_reply']
+            and (e['created_at'] - prev['created_at']).total_seconds() <= 300
+        )
+        prev = e
+    for i, e in enumerate(timeline):
+        nxt = timeline[i + 1] if i + 1 < len(timeline) else None
+        e['show_time'] = not (nxt and nxt['is_continuation'])
+
+    # Mark staff replies as read now that the customer is viewing the conversation.
+    MessageReply.objects.filter(
+        thread__customer=request.user, is_staff_reply=True, is_read_by_customer=False
+    ).update(is_read_by_customer=True)
+
+    return render(request, 'store/my_messages.html', {
+        'threads': threads,
+        'timeline': timeline,
+        'has_unread': has_unread,
+        'first_thread': threads[0] if threads else None,
+        'cooldown_remaining': _customer_reply_cooldown_remaining(latest, request.user) if latest else 0,
     })
+
+
+@login_required
+def my_message_detail(request, pk):
+    """Old per-thread URL (still used by notification links): everything now
+    lives in the single combined conversation."""
+    get_object_or_404(ContactMessage, pk=pk, customer=request.user)
+    return redirect('store:my_messages')
 
 
 @login_required

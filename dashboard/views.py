@@ -387,7 +387,7 @@ def message_list(request):
         g['count'] += 1
         if not m.is_read:
             g['unread'] += 1
-    paginator = Paginator(list(groups.values()), 15)
+    paginator = Paginator(list(groups.values()), 10)
     page_obj = paginator.get_page(request.GET.get('page'))
     return render(request, 'dashboard/messages/list.html', {
         'messages_list': page_obj,
@@ -409,6 +409,61 @@ def message_mark_all_read(request):
     return redirect(_safe_next(request, request.POST.get('next'), 'dashboard:message_list'))
 
 
+# Fields that are NOT shown as "detail rows" in an inquiry bubble (they are
+# either shown elsewhere, or are internal bookkeeping fields).
+_INQUIRY_DETAIL_SKIP = {
+    'id', 'customer', 'name', 'email', 'subject', 'message', 'inquiry_type',
+    'status', 'staff_notes', 'is_read', 'created_at', 'updated_at',
+    'is_deleted', 'deleted_at', 'deleted_by',
+}
+
+
+def _inquiry_details(thread):
+    """Extra form fields of an inquiry (phone, location, item, quantity...)
+    as [(label, value)] rows, plus an optional reference image URL."""
+    from django.db import models as dj_models
+    details = []
+    image_url = ''
+    for f in thread._meta.concrete_fields:
+        if f.name in _INQUIRY_DETAIL_SKIP or f.is_relation:
+            continue
+        if isinstance(f, (dj_models.DateTimeField, dj_models.DateField, dj_models.BooleanField)):
+            continue
+        val = getattr(thread, f.name, None)
+        if isinstance(f, (dj_models.ImageField, dj_models.FileField)):
+            if val:
+                try:
+                    image_url = val.url
+                except ValueError:
+                    pass
+            continue
+        if f.choices:
+            val = getattr(thread, f'get_{f.name}_display')()
+        if val in (None, ''):
+            continue
+        label = str(f.verbose_name)
+        details.append((label[:1].upper() + label[1:], str(val)))
+    return details, image_url
+
+
+def _parse_quote(raw):
+    """Turn a stored MessageReply.quoted_text into {subject, body, time}.
+    Older replies stored plain text only, so fall back to that."""
+    if not raw:
+        return None
+    try:
+        data = json.loads(raw)
+        if isinstance(data, dict):
+            return {
+                'subject': data.get('s', ''),
+                'body': data.get('b', ''),
+                'time': data.get('t', ''),
+            }
+    except (ValueError, TypeError):
+        pass
+    return {'subject': '', 'body': raw, 'time': ''}
+
+
 @staff_required
 def message_detail(request, pk):
     msg = get_object_or_404(ContactMessage, pk=pk)
@@ -422,11 +477,22 @@ def message_detail(request, pk):
             reply_to = request.POST.get('reply_to', '').strip()
             if reply_to.isdigit() and msg.customer_id:
                 target = ContactMessage.objects.filter(pk=int(reply_to), customer_id=msg.customer_id).first() or msg
+            # Snapshot of the message being replied to (shown as a quote above
+            # the reply): the inquiry subject, the message text (if any) and
+            # its time. Only kept when staff actually used the Reply button.
+            quoted_text = ''
+            if reply_to:
+                quoted_text = json.dumps({
+                    's': target.subject,
+                    'b': request.POST.get('reply_quote', '').strip()[:300],
+                    't': request.POST.get('reply_quote_time', '').strip()[:40],
+                })
             if body:
                 MessageReply.objects.create(
                     thread=target,
                     staff=request.user,
                     is_staff_reply=True,
+                    quoted_text=quoted_text,
                     body=body,
                     is_read_by_staff=True,
                     is_read_by_customer=False,
@@ -448,10 +514,22 @@ def message_detail(request, pk):
         messages.success(request, 'Request updated.')
         return redirect('dashboard:message_detail', pk=pk)
 
-    if not msg.is_read:
-        msg.is_read = True
-        msg.save(update_fields=['is_read'])
-    msg.replies.filter(is_staff_reply=False, is_read_by_staff=False).update(is_read_by_staff=True)
+    # Opening a conversation marks the WHOLE conversation read: every inquiry
+    # from this sender (same account or same email), not just the newest one
+    # the list row links to. The list groups by email, so marking only this
+    # one message left the rest unread.
+    sender_q = Q(pk=msg.pk)
+    if msg.customer_id:
+        sender_q |= Q(customer_id=msg.customer_id)
+    sender_email = (msg.email or '').strip()
+    if sender_email:
+        sender_q |= Q(email__iexact=sender_email)
+    sender_ids = list(ContactMessage.objects.filter(sender_q).values_list('pk', flat=True))
+    ContactMessage.objects.filter(pk__in=sender_ids, is_read=False).update(is_read=True)
+    MessageReply.objects.filter(
+        thread_id__in=sender_ids, is_staff_reply=False, is_read_by_staff=False
+    ).update(is_read_by_staff=True)
+    msg.is_read = True
 
     # Build one merged, chronological conversation covering every inquiry this
     # customer account has ever sent (not just this one), so staff can see
@@ -468,6 +546,11 @@ def message_detail(request, pk):
 
     timeline = []
     for thread in account_threads:
+        details, image_url = _inquiry_details(thread)
+        text = (thread.message or '').strip()
+        # Hide the plain message text when the same text is already shown
+        # as one of the detail rows (e.g. "Partnership details").
+        show_body = bool(text) and text not in {v.strip() for _, v in details}
         timeline.append({
             'is_staff_reply': False,
             'sender_name': thread.name,
@@ -476,6 +559,12 @@ def message_detail(request, pk):
             'subject': thread.subject,
             'thread_pk': thread.pk,
             'is_current': thread.pk == msg.pk,
+            'starts_thread': True,
+            'type_display': thread.get_inquiry_type_display(),
+            'details': details,
+            'image_url': image_url,
+            'quote': None,
+            'show_body': show_body,
         })
         for reply in thread.replies.all():
             if reply.is_staff_reply:
@@ -491,6 +580,12 @@ def message_detail(request, pk):
                 'thread_pk': thread.pk,
                 'is_current': thread.pk == msg.pk,
                 'is_read_by_customer': reply.is_read_by_customer,
+                'starts_thread': False,
+                'type_display': '',
+                'details': [],
+                'image_url': '',
+                'quote': _parse_quote(reply.quoted_text),
+                'show_body': True,
             })
     timeline.sort(key=lambda e: e['created_at'])
     # Group back-to-back messages from the same sender when they were sent
@@ -557,6 +652,11 @@ def message_delete(request, pk):
     return redirect('dashboard:message_detail', pk=pk)
 
 
+def _archive_redirect(tab):
+    """Send the admin back to the Archive page on the same tab they acted from."""
+    return redirect(f"{reverse('dashboard:archive')}?tab={tab}")
+
+
 @admin_required
 def message_restore(request, pk):
     msg = get_object_or_404(ContactMessage.all_objects, pk=pk, is_deleted=True)
@@ -565,7 +665,7 @@ def message_restore(request, pk):
         log_activity(request, 'restore', f'Restored message "{msg.subject}"',
                      resource='ContactMessage', resource_label=msg.subject)
         messages.success(request, f'Message "{msg.subject}" restored.')
-    return redirect('dashboard:archive')
+    return _archive_redirect('messages')
 
 
 @admin_required
@@ -577,7 +677,7 @@ def message_delete_permanent(request, pk):
                      resource='ContactMessage', resource_label=subject)
         msg.delete()
         messages.success(request, f'Message "{subject}" permanently deleted.')
-    return redirect('dashboard:archive')
+    return _archive_redirect('messages')
 
 
 # ─── Products ───────────────────────────────────────────────────────────────────
@@ -813,7 +913,7 @@ def product_restore(request, pk):
         log_activity(request, 'restore', f'Restored product "{product.name}"',
                      resource='Product', resource_label=product.name)
         messages.success(request, f'Product "{product.name}" restored.')
-    return redirect('dashboard:archive')
+    return _archive_redirect('products')
 
 
 @admin_required
@@ -825,7 +925,7 @@ def product_delete_permanent(request, pk):
                      resource='Product', resource_label=name)
         product.delete()
         messages.success(request, f'Product "{name}" permanently deleted.')
-    return redirect('dashboard:archive')
+    return _archive_redirect('products')
 
 
 # ─── Orders ─────────────────────────────────────────────────────────────────────
@@ -1369,7 +1469,7 @@ def user_restore(request, pk):
         log_activity(request, 'restore', f'Restored account "{user.username}"',
                      resource='User', resource_label=user.username)
         messages.success(request, f'Account "{user.username}" restored.')
-    return redirect('dashboard:archive')
+    return _archive_redirect('customers' if user.role == 'customer' else 'staff')
 
 
 @admin_required
@@ -1381,7 +1481,7 @@ def user_delete_permanent(request, pk):
                      resource='User', resource_label=username)
         user.delete()
         messages.success(request, f'Account "{username}" permanently deleted.')
-    return redirect('dashboard:archive')
+    return _archive_redirect('customers' if user.role == 'customer' else 'staff')
 
 
 # ─── Archive ────────────────────────────────────────────────────────────────────
@@ -1541,8 +1641,10 @@ def activity_log(request):
     failed_logins = base_qs.filter(action='login_failed')
     if search:
         failed_logins = failed_logins.filter(Q(username__icontains=search) | Q(ip_address__icontains=search))
-    failed_total = failed_logins.count()
-    failed_logins = list(failed_logins.order_by('-timestamp')[:10])
+    failed_qs = failed_logins.order_by('-timestamp')
+    failed_total = failed_qs.count()
+    failed_page_obj = Paginator(failed_qs, 3).get_page(request.GET.get('fpage'))
+    failed_logins = list(failed_page_obj.object_list)
 
     # Attach the matching account (if the attempted username/email exists) and a
     # friendly network label to each row, for the Failed Login Attempts table.
@@ -1625,6 +1727,7 @@ def activity_log(request):
         'page_obj': page_obj,
         'failed_logins': failed_logins,
         'failed_total': failed_total,
+        'failed_page_obj': failed_page_obj,
         'search': search,
         'staff_filter': staff_filter,
         'action_filter': action_filter,
@@ -1914,7 +2017,7 @@ def category_restore(request, pk):
         log_activity(request, 'restore', f'Restored category "{cat.name}"',
                      resource='Category', resource_label=cat.name)
         messages.success(request, f'Category "{cat.name}" restored.')
-    return redirect('dashboard:archive')
+    return _archive_redirect('categories')
 
 
 @admin_required
@@ -1926,7 +2029,7 @@ def category_delete_permanent(request, pk):
                      resource='Category', resource_label=name)
         cat.delete()
         messages.success(request, f'Category "{name}" permanently deleted.')
-    return redirect('dashboard:archive')
+    return _archive_redirect('categories')
 
 
 # ─── Reports ────────────────────────────────────────────────────────────────
@@ -2655,7 +2758,7 @@ def video_restore(request, pk):
         log_activity(request, 'restore', f'Restored livelihood video "{video.title}"',
                      resource='LivelihoodVideo', resource_label=video.title)
         messages.success(request, f'Video "{video.title}" restored.')
-    return redirect('dashboard:archive')
+    return _archive_redirect('videos')
 
 
 @admin_required
@@ -2667,7 +2770,7 @@ def video_delete_permanent(request, pk):
                      resource='LivelihoodVideo', resource_label=title)
         video.delete()
         messages.success(request, f'Video "{title}" permanently deleted.')
-    return redirect('dashboard:archive')
+    return _archive_redirect('videos')
 
 # ─── GCash QR Code Management ──────────────────────────────────────────────
 QR_MIN_SIZE = 5 * 1024        # 5 KB

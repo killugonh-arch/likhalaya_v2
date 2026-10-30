@@ -6,7 +6,6 @@
 
 {% block extra_css %}
 <style>
-.breadcrumb-bar { background: #f8f6f2; padding: 10px 0; font-size: 12px; }
 .product-gallery { border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,.08); }
 .product-gallery img { width: 100%; max-height: 460px; object-fit: cover; }
 .gallery-thumb { width: 72px; height: 72px; border-radius: 10px; object-fit: cover; cursor: pointer; border: 2px solid transparent; transition: all .2s; }
@@ -63,7 +62,6 @@
 
 /* ===== Compact phone spacing ===== */
 @media (max-width: 575.98px) {
-  .breadcrumb-bar { padding: 6px 0; }
   .gallery-thumb { width: 56px; height: 56px; }
   .artisan-card { padding: 14px; border-radius: 12px; }
   .mic-dots { margin-top: 8px; }
@@ -75,20 +73,6 @@
 {% endblock %}
 
 {% block content %}
-<!-- Breadcrumb -->
-<div class="breadcrumb-bar">
-  <div class="container">
-    <nav aria-label="breadcrumb">
-      <ol class="breadcrumb mb-0">
-        <li class="breadcrumb-item"><a href="{% url 'store:home' %}" class="text-muted text-decoration-none">Home</a></li>
-        <li class="breadcrumb-item"><a href="{% url 'store:shop' %}" class="text-muted text-decoration-none">Shop</a></li>
-        {% if product.category %}<li class="breadcrumb-item"><a href="{{ product.category.get_absolute_url }}" class="text-muted text-decoration-none">{{ product.category.name }}</a></li>{% endif %}
-        <li class="breadcrumb-item active" style="color:var(--teal);">{{ product.name }}</li>
-      </ol>
-    </nav>
-  </div>
-</div>
-
 <div class="container pt-4">
   <button type="button" class="back-pill" id="backBtn" data-shop-url="{% url 'store:shop' %}"><i class="fas fa-arrow-left"></i>Back</button>
 </div>
@@ -126,7 +110,6 @@
         <div style="font-size:32px;font-weight:800;color:var(--gold);">
           {% if product.has_size_pricing %}₱{{ product.price_small|floatformat:0 }}{% else %}{{ product.price_display }}{% endif %}
         </div>
-        {% if product.has_size_pricing %}<div class="text-muted small">Starts at this price — pick a size when you add to cart</div>{% endif %}
       </div>
 
       <!-- Stock -->
@@ -206,12 +189,6 @@
         </a>
       </div>
 
-      <!-- Trust badges -->
-      <div class="d-flex gap-4 flex-wrap">
-        <div class="text-muted small"><i class="fas fa-shield-alt me-1 text-success"></i>Secure checkout</div>
-        <div class="text-muted small"><i class="fas fa-truck me-1 text-primary"></i>Nationwide delivery</div>
-        <div class="text-muted small"><i class="fas fa-heart me-1 text-danger"></i>Supports PDL artisans</div>
-      </div>
     </div>
   </div>
 

@@ -38,12 +38,6 @@
   --transition: 150ms ease;
 }
 
-.ds-breadcrumb { font-size: 12px; color: var(--text-muted); margin-bottom: var(--space-3); display: flex; align-items: center; gap: 6px; }
-.ds-breadcrumb a { color: var(--text-muted); text-decoration: none; transition: color var(--transition); }
-.ds-breadcrumb a:hover { color: var(--brand-green); }
-.ds-breadcrumb .current { color: var(--text-primary); font-weight: 600; }
-.ds-breadcrumb .sep { color: var(--border); }
-
 .dash-greeting-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
 .dash-greeting-sub { font-size: 13px; color: var(--text-muted); }
 
@@ -107,7 +101,7 @@
 .dash-kpi-icon.icon-revenue   { background: var(--brand-green-light); color: var(--brand-green); }
 
 /* Panels (account detail groups + orders) */
-.dash-panel { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); }
+.dash-panel { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); overflow: hidden; }
 .dash-panel-header { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); gap: var(--space-2); flex-wrap: wrap; }
 .dash-panel-header h6 { font-size: 14px; font-weight: 700; color: var(--text-primary); margin: 0; }
 .dash-panel-body { padding: var(--space-4); }
@@ -121,10 +115,18 @@
 .ds-field-label { font-size: 11.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .04em; font-weight: 600; }
 .ds-field-value { font-size: 14px; color: var(--text-primary); font-weight: 600; margin-top: 1px; word-break: break-word; }
 
+/* Address sub-row: align with text of the fields above (icon 30px + gap 10px) */
+.ds-field-indent { padding-left: 40px; }
+
 /* Orders table */
-.ds-table { width: 100%; border-collapse: collapse; background: var(--surface-white); border-radius: var(--radius-md); overflow: hidden; }
-.ds-table thead th { background: var(--surface-subtle); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); padding: 12px var(--space-3); text-align: left; border-bottom: 1px solid var(--border); }
-.ds-table tbody td { padding: 14px var(--space-3); font-size: 13.5px; color: var(--text-primary); border-bottom: 1px solid var(--border); }
+.ds-table { width: 100%; border-collapse: collapse; background: var(--surface-white); }
+.ds-table thead th { background: var(--surface-subtle); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); padding: 12px var(--space-3); text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.ds-table tbody td { padding: 14px var(--space-3); font-size: 13.5px; color: var(--text-primary); border-bottom: 1px solid var(--border); vertical-align: middle; }
+/* Match panel header horizontal padding so the title and the first column line up */
+.ds-table thead th:first-child,
+.ds-table tbody td:first-child { padding-left: var(--space-4); }
+.ds-table thead th:last-child,
+.ds-table tbody td:last-child { padding-right: var(--space-4); }
 .ds-table tbody tr { transition: background var(--transition); }
 .ds-table tbody tr:hover { background: var(--surface-subtle); }
 .ds-table tbody tr:last-child td { border-bottom: none; }
@@ -146,24 +148,19 @@
 }
 @media (max-width: 575px) {
   .dash-panel-header { flex-direction: column; align-items: flex-start; }
+  .ds-field-indent { padding-left: 0; }
 }
 </style>
 {% endblock %}
 
 {% block dash_content %}
-<nav class="ds-breadcrumb" aria-label="Breadcrumb">
-  <a href="{% url 'dashboard:home' %}"><i class="fas fa-home"></i></a>
-  <span class="sep">/</span><a href="{% url 'dashboard:user_list' %}">Users</a>
-  <span class="sep">/</span><span class="current" aria-current="page">{{ profile_user.username }}</span>
-</nav>
-
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
   <div>
     <h1 class="dash-greeting-title">User Profile</h1>
     <p class="dash-greeting-sub mb-0">Account details and order history</p>
   </div>
   <div class="d-flex gap-2">
-        {% if profile_user.pk != user.pk %}
+    {% if profile_user.pk != user.pk %}
     <button type="button" class="ds-btn ds-btn-danger-outline ds-btn-sm" data-bs-toggle="modal" data-bs-target="#delete-user-{{ profile_user.pk }}">
       <i class="fas fa-box-archive me-2"></i>Archive Account
     </button>
@@ -304,34 +301,20 @@
               </div>
             </div>
           </div>
-          <div class="col-sm-4">
-            <div class="ds-field-label">City/Municipality</div>
-            <div class="ds-field-value">{{ profile_user.city|default:"—" }}</div>
-          </div>
-          <div class="col-sm-4">
-            <div class="ds-field-label">Province</div>
-            <div class="ds-field-value">{{ profile_user.province|default:"—" }}</div>
-          </div>
-          <div class="col-sm-4">
-            <div class="ds-field-label">ZIP Code</div>
-            <div class="ds-field-value">{{ profile_user.zip_code|default:"—" }}</div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="dash-panel">
-      <div class="dash-panel-header"><h6>Account Status</h6></div>
-      <div class="dash-panel-body">
-        <div class="ds-field">
-          <div class="ds-field-icon"><i class="fas fa-shield-halved"></i></div>
-          <div>
-            <div class="ds-field-label">Status</div>
-            <div class="ds-field-value">
-              <span class="ds-badge {% if profile_user.is_active %}ds-badge-success{% else %}ds-badge-danger{% endif %}">
-                <span class="ds-status-dot {% if profile_user.is_active %}active{% else %}inactive{% endif %}"></span>
-                {% if profile_user.is_active %}Active{% else %}Inactive{% endif %}
-              </span>
+          <div class="col-12">
+            <div class="row g-3 ds-field-indent">
+              <div class="col-sm-4">
+                <div class="ds-field-label">City/Municipality</div>
+                <div class="ds-field-value">{{ profile_user.city|default:"—" }}</div>
+              </div>
+              <div class="col-sm-4">
+                <div class="ds-field-label">Province</div>
+                <div class="ds-field-value">{{ profile_user.province|default:"—" }}</div>
+              </div>
+              <div class="col-sm-4">
+                <div class="ds-field-label">ZIP Code</div>
+                <div class="ds-field-value">{{ profile_user.zip_code|default:"—" }}</div>
+              </div>
             </div>
           </div>
         </div>
