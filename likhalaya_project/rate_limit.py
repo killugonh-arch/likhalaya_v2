@@ -30,6 +30,17 @@ def check_hourly_limit(key, max_per_hour):
     return True
 
 
+def is_hourly_limit_reached(key, max_per_hour):
+    """Returns True if the cap is already reached. Does NOT increment."""
+    return cache.get(key, 0) >= max_per_hour
+
+
+def increment_hourly(key):
+    """Add one to the hourly counter. Use after a successful action."""
+    count = cache.get(key, 0)
+    cache.set(key, count + 1, 60 * 60)
+
+
 def throttle(key_func, max_per_hour, response_factory=None):
     """View decorator to cap calls per hour per cache key."""
     def decorator(view_func):

@@ -15,7 +15,12 @@ from django.conf import settings
 from django.core.cache import cache
 from .forms import RegisterForm, LoginForm, ProfileUpdateForm, OTPVerifyForm, NoReuseSetPasswordForm, NoReusePasswordChangeForm
 from .models import CustomUser, EmailOTP
-from likhalaya_project.rate_limit import get_client_ip, check_hourly_limit
+from likhalaya_project.rate_limit import (
+    get_client_ip,
+    check_hourly_limit,
+    is_hourly_limit_reached,
+    increment_hourly,
+)
 from orders.pending import apply_pending_action
 from .axes_utils import is_exempt_login
 
@@ -41,7 +46,8 @@ OTP_RESEND_COOLDOWN_SECONDS = 30
 #   - 3 wrong on account C  → C now counts → IP blocked (3 accounts hit)
 #
 # Register: 5/hr per IP is generous for normal use (most real users register
-# once) while making account-farm automation impractical.
+# once) while making account-farm automation impractical. Only registrations
+# that pass form validation count toward the limit.
 LOGIN_MAX_FAILED_ACCOUNTS = 3       # distinct accounts needed to block an IP
 LOGIN_FAILED_ACCOUNTS_WINDOW = 60 * 60   # seconds
 LOGIN_FIRST_ACCOUNT_THRESHOLD = 5   # tries before the 1st account "counts"
@@ -89,8 +95,11 @@ def register_view(request):
 
         # Per-IP registration rate limit: 5 new accounts per IP per hour.
         # Stops automated account-farm scripts. Real users register once.
+        # We only CHECK here; the counter goes up below, after the form
+        # passes validation, so weak passwords / typos don't burn tries.
         ip = get_client_ip(request)
-        if not check_hourly_limit(f'register_ip:{ip}', REGISTER_MAX_PER_HOUR):
+        register_key = f'register_ip:{ip}'
+        if is_hourly_limit_reached(register_key, REGISTER_MAX_PER_HOUR):
             messages.error(
                 request,
                 'Too many registration attempts from your connection. Please try again in an hour.'
@@ -100,6 +109,7 @@ def register_view(request):
 
         form = RegisterForm(request.POST)
         if form.is_valid():
+            increment_hourly(register_key)
             user = form.save(commit=False)
             user.is_active = False  # locked out until the emailed code is confirmed
             user.save()
