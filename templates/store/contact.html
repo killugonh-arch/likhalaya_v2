@@ -188,14 +188,31 @@
   .contact-card { padding: 22px 18px; border-radius: 14px; }
   .info-item { gap: 12px; margin-bottom: 18px; }
   .info-icon { width: 40px; height: 40px; border-radius: 10px; font-size: 14px; }
-  .info-item .fw-bold { font-size: 16px; }
-  .info-item .small { font-size: 14.5px; }
+  .info-item .fw-bold { font-size: 14px; }
+  .info-item .small { font-size: 12.5px; }
+  /* All form fields match Full Name's size on phones */
+  #contact-form .form-label { font-size: 12px; }
+  #contact-form .form-control, #contact-form .form-select { font-size: 13px; padding: .375rem .625rem; text-overflow: ellipsis; }
+  #contact-form .btn { font-size: 14px; }
+  .donation-note { font-size: 11px; padding: 12px; }
+  .donation-note .mt-2 { text-align: center; }
+  .donation-note .mt-2 .text-muted { font-size: 10px !important; }
+  .material-chip { font-size: 10.5px; padding: 4px 10px; margin: 2px; }
+  .subtype-pill { font-size: 11px; padding: 7px 14px; }
+  .purpose-section-title { font-size: 20px; }
+  .purpose-section-sub { font-size: 11.5px; }
+  .col-lg-5 > h5, #contact-form-heading, .col-lg-7 h5.fw-bold { font-size: 20px !important; }
+  #contact-placeholder { font-size: 14px !important; }
+  .subtype-pill { font-size: 11px; }
+  .help-tips-card h6 { font-size: 13px; }
+  .help-tips-card li { font-size: 12px; }
+  .field-optional-tag { font-size: 10.5px; }
   .purpose-grid { flex-direction: row; flex-wrap: nowrap; gap: 10px; overflow-x: auto; padding-bottom: 6px; justify-content: flex-start; }
   .purpose-card { flex: 0 0 110px; max-width: 110px; padding: 16px 10px; border-radius: 14px; flex-direction: column; text-align: center; gap: 10px; align-items: center; }
   .purpose-card .purpose-icon { width: 48px; height: 48px; font-size: 18px; flex-shrink: 0; border-radius: 12px; }
-  .purpose-card .purpose-label { font-size: 12px; }
+  .purpose-card .purpose-label { font-size: 11px; }
   .purpose-card .purpose-desc { display: none; }
-  .subtype-wrap { justify-content: flex-start; }
+  .subtype-wrap { justify-content: center; }
 }
 
 /* ===== Compact phone spacing ===== */
@@ -345,12 +362,12 @@
             {% endif %}
 
             {# ---------- Common fields (Name / Email / Contact Number) ---------- #}
-            <div class="col-sm-6">
+            <div class="col-6 pair-field">
               <label class="form-label fw-semibold small">Full Name <span class="text-danger">*</span></label>
               {{ form.name }}
               {% if form.name.errors %}<div class="text-danger small mt-1">{{ form.name.errors.0 }}</div>{% endif %}
             </div>
-            <div class="col-sm-6">
+            <div class="col-6 pair-field">
               <label class="form-label fw-semibold small">Email Address <span class="text-danger">*</span></label>
               {{ form.email }}
               {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
@@ -374,20 +391,20 @@
                 Donations of usable raw materials can help support the creation of livelihood opportunities for PDL artisans.
                 <div class="mt-2">
                   <span class="text-muted" style="font-size:12px;">Examples:</span><br>
-                  <span class="material-chip" data-fill="Fabric">Fabric</span><span class="material-chip" data-fill="Yarn">Yarn</span><span class="material-chip" data-fill="Wood">Wood</span><span class="material-chip" data-fill="Paint">Paint</span><span class="material-chip" data-fill="Paper">Paper</span><span class="material-chip" data-fill="Packaging Materials">Packaging Materials</span><span class="material-chip" data-fill="Craft Supplies">Craft Supplies</span><span class="material-chip" data-fill="Buffing Paper">Buffing Paper</span><span class="material-chip" data-fill="Coffee Waste (Packs)">Coffee Waste (Packs)</span>
+                  <span class="material-chip" data-fill="Fabric">Fabric</span><span class="material-chip" data-fill="Yarn">Yarn</span><span class="material-chip" data-fill="Wood">Wood</span><span class="material-chip" data-fill="Paint">Paint</span><span class="material-chip" data-fill="Paper">Paper</span><span class="material-chip" data-fill="Packaging Materials">Packaging Materials</span><span class="material-chip" data-fill="Craft Supplies">Craft Supplies</span><span class="material-chip" data-fill="Buffing Paper">Buffing Paper</span><span class="material-chip" data-fill="Coffee Waste (Packs)">Coffee Waste (Packs)</span><span class="material-chip" data-fill="">Others</span>
                 </div>
               </div>
             </div>
 
             {# ---------- item_name: "Product" (custom_order / bulk_order) or "Material Type" (donate_materials) ---------- #}
-            <div class="col-sm-6 dynamic-field-group" data-field="item_name" data-show-for="custom_order bulk_order donate_materials">
+            <div class="col-6 dynamic-field-group" data-field="item_name" data-show-for="custom_order bulk_order donate_materials">
               <label class="form-label fw-semibold small" id="label_item_name" for="{{ form.item_name.id_for_label }}">Product</label>
               {{ form.item_name }}
               {% if form.item_name.errors %}<div class="text-danger small mt-1">{{ form.item_name.errors.0 }}</div>{% endif %}
             </div>
 
             {# ---------- quantity ---------- #}
-            <div class="col-sm-6 dynamic-field-group" data-field="quantity" data-show-for="custom_order bulk_order donate_materials">
+            <div class="col-6 dynamic-field-group" data-field="quantity" data-show-for="custom_order bulk_order donate_materials">
               <label class="form-label fw-semibold small" id="label_quantity" for="{{ form.quantity.id_for_label }}">Quantity</label>
               {{ form.quantity }}
               {% if form.quantity.errors %}<div class="text-danger small mt-1">{{ form.quantity.errors.0 }}</div>{% endif %}
@@ -401,14 +418,14 @@
             </div>
 
             {# ---------- target_budget (Product & Custom Orders only, always optional) ---------- #}
-            <div class="col-sm-6 dynamic-field-group" data-field="target_budget" data-show-for="custom_order">
+            <div class="col-6 dynamic-field-group" data-field="target_budget" data-show-for="custom_order">
               <label class="form-label fw-semibold small">Budget <span class="field-optional-tag">(Optional)</span></label>
               {{ form.target_budget }}
               {% if form.target_budget.errors %}<div class="text-danger small mt-1">{{ form.target_budget.errors.0 }}</div>{% endif %}
             </div>
 
             {# ---------- organization_name: optional for Bulk Orders, required for Partnership ---------- #}
-            <div class="col-sm-6 dynamic-field-group" data-field="organization_name" data-show-for="bulk_order partnership">
+            <div class="col-6 dynamic-field-group" data-field="organization_name" data-show-for="bulk_order partnership">
               <label class="form-label fw-semibold small" id="label_organization_name" for="{{ form.organization_name.id_for_label }}">Organization / Business Name</label>
               {{ form.organization_name }}
               {% if form.organization_name.errors %}<div class="text-danger small mt-1">{{ form.organization_name.errors.0 }}</div>{% endif %}
@@ -422,7 +439,7 @@
             </div>
 
             {# ---------- partnership_type (Partnership only) ---------- #}
-            <div class="col-sm-6 dynamic-field-group" data-field="partnership_type" data-show-for="partnership">
+            <div class="col-6 dynamic-field-group" data-field="partnership_type" data-show-for="partnership">
               <label class="form-label fw-semibold small" for="{{ form.partnership_type.id_for_label }}">Partnership Type <span class="text-danger">*</span></label>
               {{ form.partnership_type }}
               {% if form.partnership_type.errors %}<div class="text-danger small mt-1">{{ form.partnership_type.errors.0 }}</div>{% endif %}
@@ -436,14 +453,14 @@
             </div>
 
             {# ---------- materials_condition (Donate Raw Materials only) ---------- #}
-            <div class="col-sm-6 dynamic-field-group" data-field="materials_condition" data-show-for="donate_materials">
+            <div class="col-6 dynamic-field-group" data-field="materials_condition" data-show-for="donate_materials">
               <label class="form-label fw-semibold small" for="{{ form.materials_condition.id_for_label }}">Condition <span class="text-danger">*</span></label>
               {{ form.materials_condition }}
               {% if form.materials_condition.errors %}<div class="text-danger small mt-1">{{ form.materials_condition.errors.0 }}</div>{% endif %}
             </div>
 
             {# ---------- feedback_type (Feedback only) ---------- #}
-            <div class="col-sm-6 dynamic-field-group" data-field="feedback_type" data-show-for="feedback">
+            <div class="col-6 dynamic-field-group" data-field="feedback_type" data-show-for="feedback">
               <label class="form-label fw-semibold small" for="{{ form.feedback_type.id_for_label }}">Feedback Type <span class="text-danger">*</span></label>
               {{ form.feedback_type }}
               {% if form.feedback_type.errors %}<div class="text-danger small mt-1">{{ form.feedback_type.errors.0 }}</div>{% endif %}

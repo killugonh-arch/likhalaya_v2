@@ -187,6 +187,12 @@
   .row.g-3 { --bs-gutter-y: .6rem; }
   .auth-input-group.mt-3 { margin-top: 12px !important; }
 }
+/* First + Last name stay on one line on phones */
+@media (max-width: 575.98px) {
+  .name-row .auth-input-icon { display: none; }
+  .name-row .auth-input-wrap input, .name-row .auth-input-wrap .form-control { padding-left: 12px; padding-right: 8px; font-size: 14px; }
+  .name-row .auth-input-label { font-size: 13px; }
+}
 </style>
 {% endblock %}
 
@@ -237,15 +243,15 @@
         {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
 
         <!-- Name -->
-        <div class="row g-3">
-          <div class="col-sm-6">
+        <div class="row g-2 g-sm-3 name-row">
+          <div class="col-6">
             <div class="auth-input-group mb-0">
               <label class="auth-input-label" for="{{ form.first_name.id_for_label }}">First Name <span class="req">*</span></label>
               <div class="auth-input-wrap"><i class="far fa-user auth-input-icon"></i>{{ form.first_name }}</div>
               {% if form.first_name.errors %}<div class="auth-field-error"><i class="fas fa-circle-exclamation"></i>{{ form.first_name.errors.0 }}</div>{% endif %}
             </div>
           </div>
-          <div class="col-sm-6">
+          <div class="col-6">
             <div class="auth-input-group mb-0">
               <label class="auth-input-label" for="{{ form.last_name.id_for_label }}">Last Name <span class="req">*</span></label>
               <div class="auth-input-wrap"><i class="far fa-user auth-input-icon"></i>{{ form.last_name }}</div>
@@ -306,6 +312,7 @@
           <i class="fas fa-user-plus" id="regBtnIcon"></i>
           <span id="regBtnText">Create Account</span>
         </button>
+        <div id="regNeedHint" style="display:none;margin-top:10px;font-size:12.5px;color:#8a6d1f;text-align:center;"></div>
       </form>
 
       <div class="auth-divider">or</div>
@@ -352,13 +359,33 @@
   const terms     = document.getElementById('id_agree_terms');
 
   function updateSubmitState() {
+    if (form.dataset.submitting) return;
     const hasName  = firstName && firstName.value.trim().length >= 2;
     const hasEmail = email && isValidEmail(email.value);
     const strength = pw1 ? measureStrength(pw1.value) : 0;
     const pwMatch  = pw1 && pw2 && pw2.value.length > 0 && pw1.value === pw2.value;
     const agreed   = terms && terms.checked;
     submitBtn.disabled = !(hasName && hasEmail && strength >= 2 && pwMatch && agreed);
+
+    // Tell the user exactly what is still missing
+    var missing = [];
+    if (!hasName)  missing.push('first name');
+    if (!hasEmail) missing.push('valid email');
+    if (strength < 2) missing.push('stronger password (8+ characters plus a capital letter or number)');
+    else if (!pwMatch) missing.push('matching confirm password');
+    if (!agreed)   missing.push('agree to the Terms');
+    var need = document.getElementById('regNeedHint');
+    if (need) {
+      need.textContent = missing.length ? 'Still needed: ' + missing.join(', ') + '.' : '';
+      need.style.display = missing.length ? 'block' : 'none';
+    }
   }
+
+  // Safety net: autofill / password managers can fill fields without firing 'input'
+  form.addEventListener('input', updateSubmitState);
+  form.addEventListener('change', updateSubmitState);
+  form.addEventListener('keyup', updateSubmitState);
+  setInterval(updateSubmitState, 600);
 
   if (firstName) firstName.addEventListener('input', updateSubmitState);
 
@@ -466,6 +493,7 @@
   /* ---- Anti-double-submit ---- */
   form.addEventListener('submit', function () {
     if (submitBtn.disabled) return false;
+    form.dataset.submitting = '1';
     submitBtn.disabled = true;
     document.getElementById('regBtnIcon').className = 'fas fa-spinner fa-spin';
     document.getElementById('regBtnText').textContent = 'Creating Account…';

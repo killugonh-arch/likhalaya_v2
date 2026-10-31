@@ -3,6 +3,7 @@
 
 {% load static %}
 {% block navbar %}{% endblock %}
+{% block footer %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -49,7 +50,10 @@
 
 /* ============ Progress banner ============ */
 .terms-progress-banner {
-  background: linear-gradient(135deg, #0F3D39 0%, #1E5F5A 100%);
+  background:
+    repeating-linear-gradient(45deg, rgba(255,255,255,.035) 0, rgba(255,255,255,.035) 1px, transparent 1px, transparent 14px),
+    repeating-linear-gradient(-45deg, rgba(255,255,255,.035) 0, rgba(255,255,255,.035) 1px, transparent 1px, transparent 14px),
+    linear-gradient(135deg, #0F3D39 0%, #1E5F5A 60%, #235f59 100%);
   border-radius: 14px;
   padding: 18px 24px;
   display: flex;
@@ -221,6 +225,12 @@
   .terms-progress-bar-wrap { flex: 0 0 100%; }
   .terms-accept-bar { flex-wrap: wrap; gap: 10px; }
   .terms-accept-bar .bar-text { font-size: 12.5px; }
+  .terms-section-body h2 { font-size: 15px; }
+  .terms-section-body p, .terms-section-body li { font-size: 13px; line-height: 1.7; }
+  .terms-progress-banner .banner-text strong { font-size: 13px; }
+  .terms-progress-banner .banner-text span { font-size: 11.5px; }
+  .terms-back-top { font-size: 12.5px; }
+  .terms-help-box .label, .terms-help-box a { font-size: 13px; }
 }
 </style>
 {% endblock %}
@@ -354,7 +364,7 @@
           <div class="terms-help-box">
             <div class="label">Need help?</div>
             <a href="mailto:likhalaya@bjmp.gov.ph"><i class="fas fa-envelope"></i> likhalaya@bjmp.gov.ph</a><br>
-            <a href="{% url 'store:contact' %}"><i class="fas fa-arrow-up-right-from-square"></i> Contact Page</a>
+            <a href="https://www.facebook.com/BJMPCarigaraDistrictJailOfficial/" target="_blank" rel="noopener"><i class="fab fa-facebook"></i> Facebook</a>
           </div>
         </div>
       </div>
@@ -367,9 +377,7 @@
 
 <!-- Sticky accept/decline bar -->
 <div class="terms-accept-bar" id="termsAcceptBar" role="region" aria-label="Terms acceptance">
-  <span class="bar-text" id="termsBarText">
-    <strong>Ready to continue?</strong> — <span id="termsStickyBarSubtext">Scroll to read all sections</span>
-  </span>
+  <span class="bar-text" id="termsBarText"><strong>Ready to continue?</strong></span>
   <a href="{% url 'accounts:register' %}" class="btn-decline">Decline</a>
   <a href="{% url 'accounts:register' %}?terms_agreed=1" class="btn-accept" id="acceptBtn" aria-disabled="true"
      style="pointer-events:none;opacity:.6;" tabindex="-1">
@@ -411,7 +419,6 @@
       acceptBtn.removeAttribute('tabindex');
       barSubtext.textContent = 'All sections reviewed — you may now agree';
       if (stickyBarSubtext) stickyBarSubtext.textContent = 'All sections reviewed';
-      bannerEl.style.background = 'linear-gradient(135deg, #1a6a3a 0%, #27ae60 100%)';
       fill.style.background = 'linear-gradient(90deg, #27ae60, #6fcf97)';
     } else {
       barSubtext.textContent = (TOTAL_SECTIONS - count) + ' section' +

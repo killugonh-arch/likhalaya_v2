@@ -170,6 +170,26 @@ body { background: #F6F8FA; }
   .psummary-card { padding: 14px; gap: 12px; margin-bottom: 12px; }
   .profile-avatar { width: 64px; height: 64px; font-size: 22px; border-width: 3px; }
 }
+
+/* ===== Phones only: tighter profile fields, two per row ===== */
+@media (max-width: 767.98px) {
+  .pinfo-card-body { padding: 6px 16px 12px; }
+  .pinfo-card-title { font-size: 17px; }
+  #profileViewCard .pfield-grid { grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  #profileViewCard .pfield, #profileViewCard .pfield:nth-last-child(-n+2) { padding: 6px 0; border-bottom: 1px solid #f0f1ef; min-width: 0; }
+  #profileViewCard .pfield.pfield-full { grid-column: auto; }
+  #profileViewCard .pfield-grid > .pfield:nth-child(3) { grid-column: 1 / -1; } /* email: full width */
+  .pfield-label { font-size: 10.5px; margin-bottom: 1px; }
+  .pfield-value { font-size: 13.5px; line-height: 1.35; overflow-wrap: anywhere; }
+  .pfield-value .text-danger { font-size: 12px; }
+
+  /* Edit form: two per row, tighter */
+  #profileEditCard .row { --bs-gutter-x: 10px; --bs-gutter-y: 8px; }
+  #profileEditCard .row > [class*="col-sm-"] { flex: 0 0 auto; width: 50%; }
+  #profileEditCard .row > .col-sm-6:nth-child(3) { width: 100%; } /* email: full width */
+  #profileEditCard .form-label { font-size: 12px; margin-bottom: 2px; }
+  #profileEditCard .form-control, #profileEditCard .form-select { padding: 6px 10px; font-size: 13.5px; min-height: 0; }
+}
 </style>
 {% endblock %}
 

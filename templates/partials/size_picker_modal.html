@@ -74,6 +74,10 @@
                 <span class="spm-summary-label">Size</span>
                 <span class="spm-summary-value" id="spmSumSize">—</span>
               </div>
+              <div class="spm-summary-row" id="spmSumDimRow" style="display:none;">
+                <span class="spm-summary-label">Image size</span>
+                <span class="spm-summary-value" id="spmSumDim">—</span>
+              </div>
               <div class="spm-summary-row" id="spmSumDesignRow" style="display:none;">
                 <span class="spm-summary-label">Design</span>
                 <span class="spm-summary-value" id="spmSumDesign">—</span>
@@ -132,6 +136,7 @@
    (image + options) on desktop, single column on mobile.
    =================================================================== */
 
+#sizePickerModal { --spm-img-extra: 60px; } /* raise this to make the image taller */
 .spm-content {
   border-radius: 20px;
   border: none;
@@ -210,7 +215,7 @@
 .spm-image-frame {
   width: 100%;
   aspect-ratio: 4 / 3;
-  max-height: 210px;
+  max-height: calc(210px + var(--spm-img-extra));
   border-radius: 16px;
   overflow: hidden;
   background: #F7F8F6;
@@ -268,6 +273,7 @@
 .spm-size-card-name { font-weight: 700; font-size: 15px; color: #202525; }
 .spm-size-card.is-selected .spm-size-card-name { color: #124944; }
 .spm-size-card-price { font-size: 14px; color: #C9841A; font-weight: 700; }
+.spm-size-card-dim { font-size: 12px; color: #5A6360; font-weight: 600; }
 .spm-size-card-note { font-size: 11.5px; color: #737C79; font-weight: 600; margin-top: 4px; display: flex; align-items: center; gap: 5px; }
 .spm-size-card-note .dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; background: #2A9D6F; }
 .spm-size-card-note.is-out { color: #DC3545; }
@@ -439,7 +445,7 @@
     padding: 26px 30px 10px;
   }
   .spm-visual { position: sticky; top: 0; margin-bottom: 0; align-self: start; }
-  .spm-image-frame { aspect-ratio: 4 / 3; max-height: 280px; height: auto; min-height: 0; }
+  .spm-image-frame { aspect-ratio: 4 / 3; max-height: calc(280px + var(--spm-img-extra)); height: auto; min-height: 0; }
   .spm-design-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
@@ -452,7 +458,7 @@
     gap: 22px;
     padding: 22px 24px 8px;
   }
-  .spm-image-frame { aspect-ratio: 4 / 3; max-height: 240px; height: auto; min-height: 0; }
+  .spm-image-frame { aspect-ratio: 4 / 3; max-height: calc(240px + var(--spm-img-extra)); height: auto; min-height: 0; }
   .spm-design-grid { grid-template-columns: repeat(3, 1fr); }
 }
 
@@ -502,8 +508,8 @@
   /* --- Compact product hero (never eats the screen) --- */
   .spm-visual { margin-bottom: 14px; }
   .spm-image-frame {
-    height: 190px;
-    max-height: 220px;
+    height: calc(190px + var(--spm-img-extra));
+    max-height: calc(220px + var(--spm-img-extra));
     aspect-ratio: auto;
     border-radius: 14px;
     background: #F6F7F5;
@@ -583,7 +589,7 @@
   .spm-header .modal-title { font-size: 19px; }
   .spm-body { padding: 12px 14px 4px; }
   .spm-options { gap: 16px; }
-  .spm-image-frame { height: 180px; }
+  .spm-image-frame { height: calc(180px + var(--spm-img-extra)); }
   .spm-card-list { gap: 8px; }
   .spm-size-card { padding: 10px; min-height: 90px; }
   .spm-size-card-name { font-size: 13px; }
@@ -600,7 +606,7 @@
   .spm-header .modal-title { font-size: 17px; }
   .spm-subtitle { font-size: 11.5px; }
   .spm-body { padding: 10px 12px 4px; }
-  .spm-image-frame { height: 165px; }
+  .spm-image-frame { height: calc(165px + var(--spm-img-extra)); }
   .spm-card-list { gap: 6px; }
   .spm-size-card { padding: 8px; min-height: 82px; border-radius: 10px; }
   .spm-size-card-name { font-size: 12px; }
@@ -641,7 +647,7 @@
   .spm-body { padding: 8px 12px 2px; }
   .spm-options { gap: 10px; }
   .spm-visual { margin-bottom: 8px; }
-  .spm-image-frame { height: 130px; max-height: 150px; border-radius: 12px; }
+  .spm-image-frame { height: calc(130px + var(--spm-img-extra)); max-height: calc(150px + var(--spm-img-extra)); border-radius: 12px; }
 
   .spm-step-heading { font-size: 13.5px; }
   .spm-step-subheading { font-size: 11px; }
@@ -708,6 +714,8 @@
 
   var sumSizeRowEl = document.getElementById('spmSumSizeRow');
   var sumSizeEl = document.getElementById('spmSumSize');
+  var sumDimRowEl = document.getElementById('spmSumDimRow');
+  var sumDimEl = document.getElementById('spmSumDim');
   var sumDesignRowEl = document.getElementById('spmSumDesignRow');
   var sumDesignEl = document.getElementById('spmSumDesign');
   var sumPriceEl = document.getElementById('spmSumPrice');
@@ -898,7 +906,7 @@
       card.setAttribute('role', 'button');
       card.setAttribute('aria-selected', state.size === s.code ? 'true' : 'false');
       card.setAttribute('aria-disabled', available ? 'false' : 'true');
-      card.setAttribute('aria-label', s.name + ', ' + fmt(s.price) + (available ? ', ' + stock + ' available' : ', out of stock'));
+      card.setAttribute('aria-label', s.name + (s.dimensions ? ' (' + s.dimensions + ')' : '') + ', ' + fmt(s.price) + (available ? ', ' + stock + ' available' : ', out of stock'));
 
       var main = document.createElement('div');
       main.className = 'spm-size-card-main';
@@ -913,6 +921,12 @@
       note.innerHTML = '<span class="dot"></span>' + (available ? (stock + ' available') : 'Out of stock');
       main.appendChild(name);
       main.appendChild(price);
+      if (s.dimensions) {
+        var dim = document.createElement('div');
+        dim.className = 'spm-size-card-dim';
+        dim.textContent = s.dimensions;
+        main.appendChild(dim);
+      }
       main.appendChild(note);
 
       var check = document.createElement('div');
@@ -995,6 +1009,14 @@
       sumSizeEl.textContent = sizeObj ? sizeObj.name : '—';
     } else {
       sumSizeRowEl.style.display = 'none';
+    }
+
+    var dimSizeObj = getSizeObj(state.size);
+    if (state.hasSizes && dimSizeObj && dimSizeObj.dimensions) {
+      sumDimRowEl.style.display = '';
+      sumDimEl.textContent = dimSizeObj.dimensions;
+    } else {
+      sumDimRowEl.style.display = 'none';
     }
 
     if (state.hasVariants && state.design) {
@@ -1223,6 +1245,7 @@
             sizeList.push({
               code: s.code,
               name: s.name || s.code,
+              dimensions: s.dimensions || '',
               price: parseFloat(s.price) || 0,
               designs: s.designs || []
             });
@@ -1246,7 +1269,7 @@
           L: parseFloat(btn.dataset.priceL) || 0
         };
         sizeList = ['S', 'M', 'L'].map(function(code) {
-          return { code: code, name: legacyNames[code], price: legacyPrices[code], designs: [] };
+          return { code: code, name: legacyNames[code], dimensions: '', price: legacyPrices[code], designs: [] };
         });
       }
 

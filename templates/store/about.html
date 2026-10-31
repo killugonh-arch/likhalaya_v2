@@ -35,6 +35,9 @@
   .video-card .video-body { padding: 12px 14px; }
   .video-card .video-body h6 { font-size: 13px; }
   .row.g-3 .overflow-hidden.rounded-4 { height: 110px !important; }
+  .about-story p, #programs p { font-size: 14px; }
+  .person-card h6 { font-size: 13px; }
+  .person-card .small { font-size: 11px; }
 }
 
 /* ===== Compact phone spacing ===== */
@@ -75,7 +78,7 @@
 
   <!-- About the Jail -->
   <div class="row align-items-center g-5 mb-5">
-    <div class="col-lg-6">
+    <div class="col-lg-6 about-story">
       <h3 class="fw-bold mb-3" style="font-family:'Playfair Display',serif;color:var(--teal);">Handcrafted with Heart and Purpose</h3>
       <p class="text-muted mb-3" style="line-height:1.8;">
         Carigara District Jail, under the Bureau of Jail Management and Penology (BJMP) in Leyte, provides livelihood programs that help Persons Deprived of Liberty (PDLs) learn valuable skills and create quality handmade products. These include woven crafts, woodwork, metal crafts, and other locally made items that reflect their creativity, hard work, and dedication.
@@ -119,7 +122,7 @@
   </div>
   <div class="row g-4 justify-content-center">
     {% for person in personnel %}
-    <div class="col-sm-6 col-md-4 col-lg-3">
+    <div class="col-6 col-md-4 col-lg-3">
       <div class="person-card">
         {% if person.image %}
         <img src="{{ person.image.url }}" alt="{{ person.name }}" class="person-avatar">

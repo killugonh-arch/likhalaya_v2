@@ -9,7 +9,13 @@
 .filter-sidebar { position: sticky; top: 88px; }
 .filter-card { border: none; border-radius: 14px; box-shadow: 0 2px 12px rgba(0,0,0,.05); }
 .filter-badge { background: var(--teal); color: #fff; font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 700; }
-.sort-bar { background: #fff; border-radius: 10px; padding: 10px 16px; border: 1px solid #ece5d8; }
+.sort-bar { background: transparent; border: none; padding: 10px 0; }
+@media (max-width: 575.98px) {
+  .sort-bar { padding: 4px 0; margin-bottom: 10px !important; }
+  .sort-bar .small { font-size: 11px; }
+  .sort-bar .btn { font-size: 11px; padding: 1px 6px !important; line-height: 1.3; border-radius: 6px; }
+  .sort-bar .btn i { font-size: 11px; }
+}
 .price-range { width: 100%; }
 
 /* Mobile filter toggle: collapsed by default so filters don't push the

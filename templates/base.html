@@ -510,6 +510,18 @@
             }
         }
 
+        /* Footer text -2px on phones */
+        @media (max-width: 575.98px) {
+            .footer-brand-name { font-size: 20px; }
+            footer .col-lg-4 > small { font-size: 12px; }
+            .footer-heading { font-size: 10.5px; }
+            .footer-body-text { font-size: 12px; }
+            .footer-link-list,
+            .footer-link-list a { font-size: 12px; }
+            .footer-contact-item .footer-contact-text { font-size: 12px; }
+            .footer-bottom small { font-size: 12px; }
+        }
+
 
         /* =========================================================
            TOAST
@@ -883,11 +895,26 @@
                 gap: 0px;
                 margin: 0 !important;
                 overflow-x: auto;
-                scrollbar-width: none;
+                overflow-y: hidden;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+                scrollbar-color: #c4c4c4 #f1f1f1;
+                padding-bottom: 3px;
             }
 
+            /* visible drag line under the links when the screen is too short to fit them all */
             #navbarMain .navbar-nav::-webkit-scrollbar {
-                display: none;
+                height: 3px;
+            }
+
+            #navbarMain .navbar-nav::-webkit-scrollbar-track {
+                background: #f1f1f1;
+                border-radius: 10px;
+            }
+
+            #navbarMain .navbar-nav::-webkit-scrollbar-thumb {
+                background: #c4c4c4;
+                border-radius: 10px;
             }
 
             #navbarMain .navbar-nav .nav-link {
