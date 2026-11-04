@@ -396,7 +396,7 @@ def checkout(request):
                 'buy_now': False,
             }
             request.session.modified = True
-            return redirect('orders:checkout_review')
+            return redirect('orders:gcash_payment_pending')
 
         try:
             order = _create_order(request, cart.iter_selected(selected_ids), 'cod', form_data, cart=cart, selected_ids=selected_ids)
@@ -464,7 +464,7 @@ def _checkout_buy_now(request, cart):
                 'buy_now': True,
             }
             request.session.modified = True
-            return redirect('orders:checkout_review')
+            return redirect('orders:gcash_payment_pending')
 
         try:
             order = _create_order(request, [buy_now_item], 'cod', form_data)
@@ -540,60 +540,6 @@ def _sync_form_data_from_profile(request, form_data):
     form_data['province'] = u.province or form_data.get('province', '')
     form_data['zip_code'] = getattr(u, 'zip_code', '') or form_data.get('zip_code', '')
     return form_data
-
-
-@cache_control(no_store=True, no_cache=True, must_revalidate=True)
-def checkout_review(request):
-    """Step 2 of the GCash flow: let the customer review everything they
-    entered — and correct their delivery address or profile — before they
-    move on to the actual GCash QR/payment step."""
-    if not request.user.is_authenticated:
-        return redirect('accounts:login')
-
-    draft = request.session.get(GCASH_DRAFT_SESSION_KEY)
-    if not draft:
-        messages.info(request, 'Please fill in your order details first.')
-        return redirect('orders:checkout')
-
-    cart = Cart(request)
-    if draft.get('buy_now'):
-        buy_now_item = cart.get_buy_now_item()
-        if not buy_now_item:
-            messages.warning(request, 'That Buy Now item is no longer available.')
-            request.session.pop(GCASH_DRAFT_SESSION_KEY, None)
-            request.session.pop('checkout_source', None)
-            return redirect('store:shop')
-        items = [buy_now_item]
-    else:
-        all_ids = [str(pid) for pid in cart.cart.keys()]
-        selected_ids = [pid for pid in draft['selected_ids'] if pid in all_ids]
-        if not selected_ids:
-            messages.warning(request, 'Your cart changed since you started checkout. Please review your order again.')
-            request.session.pop(GCASH_DRAFT_SESSION_KEY, None)
-            return redirect('orders:checkout')
-        items = list(cart.iter_selected(selected_ids))
-
-    # Pull in any address/contact changes made on the Profile page while
-    # the customer was away reviewing/editing their location.
-    draft['form_data'] = _sync_form_data_from_profile(request, draft['form_data'])
-    request.session[GCASH_DRAFT_SESSION_KEY] = draft
-    request.session.modified = True
-
-    cart_total = sum(item['price'] * item['quantity'] for item in items)
-    quote = get_shipping_quote(
-        sum(item['quantity'] for item in items),
-        draft['form_data'].get('province', ''), draft['form_data'].get('city', ''),
-    )
-    shipping_fee = quote['fee']
-
-    return render(request, 'orders/checkout_review.html', {
-        'cart': items,
-        'cart_total': cart_total,
-        'shipping_fee': shipping_fee,
-        'shipping_quote': quote,
-        'grand_total': cart_total + shipping_fee,
-        'form_data': draft['form_data'],
-    })
 
 
 @cache_control(no_store=True, no_cache=True, must_revalidate=True)

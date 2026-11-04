@@ -12,7 +12,6 @@ urlpatterns = [
     path('checkout/buy-now/update/', views.buy_now_update, name='buy_now_update'),
     path('checkout/buy-now/cancel/', views.buy_now_cancel, name='buy_now_cancel'),
     path('checkout/select/', views.checkout_select, name='checkout_select'),
-    path('checkout/review/', views.checkout_review, name='checkout_review'),
     path('checkout/gcash/', views.gcash_payment_pending, name='gcash_payment_pending'),
     path('checkout/gcash/qr-image/', views.gcash_qr_image_pending, name='gcash_qr_image_pending'),
     path('checkout/gcash/<int:pk>/', views.gcash_payment, name='gcash_payment'),

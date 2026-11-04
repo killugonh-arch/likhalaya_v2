@@ -77,8 +77,8 @@
   <div class="row justify-content-center">
     <div class="col-lg-11 col-xl-10">
 
-      <a href="{% url 'orders:checkout_review' %}" class="back-pill">
-        <i class="fas fa-arrow-left me-1"></i>Back to Review Details
+      <a href="{% url 'orders:checkout' %}" class="back-pill">
+        <i class="fas fa-arrow-left me-1"></i>Back to Order Details
       </a>
 
       {% include 'orders/_checkout_stepper.html' with current_step=3 %}

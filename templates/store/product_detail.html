@@ -113,7 +113,8 @@
 
       <!-- Price -->
       <div class="mb-4">
-        <div style="font-size:32px;font-weight:800;color:var(--gold);">
+        <div style="font-size:32px;font-weight:800;line-height:1.1;color:var(--gold);">
+          <span style="display:block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:#8a8878;margin-bottom:4px;">Starts at</span>
           {% if product.has_size_pricing %}₱{{ product.price_small|floatformat:0 }}{% else %}{{ product.price_display }}{% endif %}
         </div>
       </div>

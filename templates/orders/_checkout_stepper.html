@@ -1,6 +1,6 @@
 {% comment %}
 Progressive checkout stepper. Include with {% include 'orders/_checkout_stepper.html' with current_step=N %}
-Steps: 1 Order Details · 2 Review Details · 3 GCash Payment · 4 Confirm
+Shown as 3 steps: Order Details (pages 1-2) · GCash Payment (page 3) · Confirm (page 4)
 {% endcomment %}
 <style>
 .co-stepper { display:flex; align-items:flex-start; justify-content:center; gap:4px; margin-bottom:28px; flex-wrap:nowrap; overflow-x:auto; padding-bottom:4px; }
@@ -23,33 +23,23 @@ Steps: 1 Order Details · 2 Review Details · 3 GCash Payment · 4 Confirm
 </style>
 <div class="co-stepper">
   <div class="co-step">
-    <div class="co-step-circle {% if current_step > 1 %}done{% elif current_step == 1 %}active{% else %}pending{% endif %}">
-      {% if current_step > 1 %}<i class="fas fa-check"></i>{% else %}1{% endif %}
+    <div class="co-step-circle {% if current_step > 2 %}done{% else %}active{% endif %}">
+      {% if current_step > 2 %}<i class="fas fa-check"></i>{% else %}1{% endif %}
     </div>
-    <div class="co-step-label {% if current_step > 1 %}done{% elif current_step == 1 %}active{% endif %}">Order Details</div>
-  </div>
-
-  <div class="co-step-line {% if current_step > 1 %}done{% else %}pending{% endif %}"></div>
-  <div class="co-step">
-    <div class="co-step-circle {% if current_step > 2 %}done{% elif current_step == 2 %}active{% else %}pending{% endif %}">
-      {% if current_step > 2 %}<i class="fas fa-check"></i>{% else %}2{% endif %}
-    </div>
-    <div class="co-step-label {% if current_step > 2 %}done{% elif current_step == 2 %}active{% endif %}">Review Details</div>
+    <div class="co-step-label {% if current_step > 2 %}done{% else %}active{% endif %}">Order Details</div>
   </div>
 
   <div class="co-step-line {% if current_step > 2 %}done{% else %}pending{% endif %}"></div>
   <div class="co-step">
     <div class="co-step-circle {% if current_step > 3 %}done{% elif current_step == 3 %}active{% else %}pending{% endif %}">
-      {% if current_step > 3 %}<i class="fas fa-check"></i>{% else %}3{% endif %}
+      {% if current_step > 3 %}<i class="fas fa-check"></i>{% else %}2{% endif %}
     </div>
     <div class="co-step-label {% if current_step > 3 %}done{% elif current_step == 3 %}active{% endif %}">GCash Payment</div>
   </div>
 
   <div class="co-step-line {% if current_step > 3 %}done{% else %}pending{% endif %}"></div>
   <div class="co-step">
-    <div class="co-step-circle {% if current_step > 4 %}done{% elif current_step == 4 %}active{% else %}pending{% endif %}">
-      {% if current_step > 4 %}<i class="fas fa-check"></i>{% else %}4{% endif %}
-    </div>
+    <div class="co-step-circle {% if current_step == 4 %}active{% else %}pending{% endif %}">3</div>
     <div class="co-step-label {% if current_step == 4 %}active{% endif %}">Confirm</div>
   </div>
 </div>
