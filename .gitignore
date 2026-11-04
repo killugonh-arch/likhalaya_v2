@@ -5,3 +5,7 @@ staticfiles/
 media/
 *.zip
 .env
+
+.dev_message_key
+security.log
+*.log
