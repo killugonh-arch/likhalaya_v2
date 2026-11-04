@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from likhalaya_project.private_media import private_media
 
 handler404 = 'likhalaya_project.views.error_404'
 handler403 = 'likhalaya_project.views.error_403'
@@ -9,6 +10,7 @@ handler500 = 'likhalaya_project.views.error_500'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('private-media/<path:path>', private_media, name='private_media'),
     path('', include('store.urls')),
     path('accounts/', include('accounts.urls')),
     path('orders/', include('orders.urls')),
