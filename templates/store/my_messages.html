@@ -166,6 +166,28 @@
         .message-detail-page .reply-form-row { flex-direction: column; }
         .message-detail-page .reply-send-btn { align-self: stretch; justify-content: center; }
     }
+    /* Large phones / small tablets: same compact spacing as phones */
+    @media (min-width: 576.02px) and (max-width: 767.98px) {
+        .message-detail-page { padding: 12px 10px 28px; }
+        .message-detail-page .thread-header { padding: 12px 14px 10px; gap: 10px; }
+        .message-detail-page .thread-header-icon { width: 38px; height: 38px; font-size: 15px; }
+        .message-detail-page .thread-subject { font-size: 16px; }
+        .message-detail-page .thread-body { padding: 10px 12px; }
+        .message-detail-page .msg-bubble-row { margin-bottom: 8px; gap: 6px; }
+        .message-detail-page .msg-bubble-row.grouped-next { margin-bottom: 3px; }
+        .message-detail-page .msg-bubble-row.starts-thread { margin-top: 12px; }
+        .message-detail-page .msg-avatar, .message-detail-page .msg-avatar-spacer { width: 30px; height: 30px; }
+        .message-detail-page .msg-bubble { padding: 8px 12px; font-size: 13px; border-radius: 16px; }
+        .message-detail-page .msg-bubble-sender { margin-bottom: 1px; }
+        .message-detail-page .msg-details { gap: 2px; }
+        .message-detail-page .msg-bubble-text + .msg-details { margin-top: 6px; padding-top: 6px; }
+        .message-detail-page .msg-detail-row { gap: 8px; font-size: 12px; line-height: 1.35; }
+        .message-detail-page .msg-inquiry-head { margin-bottom: 3px; }
+        .message-detail-page .msg-bubble-time { margin-top: 2px; }
+        .message-detail-page .thread-reply-area { padding: 10px 12px 12px; }
+        .message-detail-page .reply-textarea { height: 38px; min-height: 38px; font-size: 13px; }
+        .message-detail-page .reply-send-btn { height: 40px; font-size: 13px; }
+    }
     @media (max-width: 575.98px) {
         .message-detail-page { padding: 10px 8px 24px; }
         .message-detail-page .thread-card { border-radius: 16px; }
@@ -179,10 +201,39 @@
         .message-detail-page .msg-avatar-spacer { width: 30px; height: 30px; }
         .message-detail-page .msg-bubble-col { max-width: 86%; }
         .message-detail-page .msg-bubble { padding: 8px 11px; font-size: 13px; border-radius: 14px; }
+        .message-detail-page .msg-bubble-row.grouped-next { margin-bottom: 3px; }
+        .message-detail-page .msg-bubble-row.starts-thread { margin-top: 12px; }
+        .message-detail-page .msg-bubble-sender { margin-bottom: 1px; }
+        .message-detail-page .msg-details { gap: 2px; }
+        .message-detail-page .msg-bubble-text + .msg-details { margin-top: 6px; padding-top: 6px; }
+        .message-detail-page .msg-detail-row { gap: 8px; font-size: 12px; line-height: 1.35; }
+        .message-detail-page .msg-inquiry-head { margin-bottom: 3px; }
+        .message-detail-page .msg-bubble-time { margin-top: 2px; }
         .message-detail-page .thread-reply-area { padding: 8px 10px 10px; }
         .message-detail-page .reply-box { padding: 7px 11px 5px; }
-        .message-detail-page .reply-textarea { height: 40px; min-height: 40px; font-size: 16px; }
-        .message-detail-page .reply-send-btn { height: 42px; }
+        .message-detail-page .reply-textarea { height: 36px; min-height: 36px; font-size: 13px; }
+        .message-detail-page .reply-textarea::placeholder { font-size: 13px; }
+        .message-detail-page .reply-send-btn { height: 38px; font-size: 13px; padding: 0 16px; }
+        .message-detail-page .msg-bubble { font-size: 12.5px; }
+        .message-detail-page .msg-quote { font-size: 11px; padding: 4px 8px; margin-bottom: 5px; }
+        .message-detail-page .msg-quote-label { font-size: 10.5px; }
+        .message-detail-page .msg-quote-time { font-size: 10px; }
+        .message-detail-page .msg-bubble-time { font-size: 10px; }
+    }
+
+    /* All screens: the card fits the window — header on top, conversation scrolls, reply stays visible */
+    .message-detail-page .thread-card { height: calc(100dvh - 160px); min-height: 360px; }
+    .message-detail-page .thread-header, .message-detail-page .thread-reply-area { flex-shrink: 0; }
+    .message-detail-page .thread-body { flex: 1 1 auto; height: auto; min-height: 0; max-height: none; }
+
+    /* Phones: keep the reply box on screen — the conversation scrolls, the reply stays visible */
+    @media (max-width: 767.98px) {
+        .message-detail-page .thread-card { height: calc(100dvh - 150px); min-height: 360px; }
+        .message-detail-page .thread-header, .message-detail-page .thread-reply-area { flex-shrink: 0; }
+        .message-detail-page .thread-body { flex: 1 1 auto; height: auto; min-height: 0; max-height: none; }
+        .message-detail-page .reply-form-row { flex-direction: row; gap: 8px; align-items: stretch; }
+        .message-detail-page .reply-box { flex: 1; min-width: 0; }
+        .message-detail-page .reply-send-btn { align-self: stretch; height: auto; min-height: 38px; padding: 0 14px; }
     }
 </style>
 {% endblock %}
@@ -341,6 +392,20 @@
   }
 
   if (sendBtn) tickCooldown();
+})();
+
+(function fitThreadToScreen() {
+  var card = document.querySelector('.message-detail-page .thread-card');
+  if (!card) return;
+  function fit() {
+    var top = card.getBoundingClientRect().top + window.scrollY;
+    var h = window.innerHeight - top - 10;
+    card.style.height = Math.max(h, 360) + 'px';
+  }
+  fit();
+  window.addEventListener('resize', fit);
+  window.addEventListener('orientationchange', fit);
+  window.addEventListener('load', fit);
 })();
 </script>
 {% endif %}

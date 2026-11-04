@@ -41,7 +41,7 @@
             <div class="action-btns">
               <a href="{% url 'dashboard:category_edit' cat.pk %}" class="btn-icon-action btn-icon-edit" title="Edit"><i class="fas fa-pencil-alt"></i></a>
               {% if request.user.is_admin_user %}
-              <button type="button" class="btn-icon-action btn-icon-delete" title="Archive" data-bs-toggle="modal" data-bs-target="#delete-cat-{{ cat.pk }}"><i class="fas fa-trash"></i></button>
+              {% if cat.name|lower != "others" %}<button type="button" class="btn-icon-action btn-icon-delete" title="Archive" data-bs-toggle="modal" data-bs-target="#delete-cat-{{ cat.pk }}"><i class="fas fa-trash"></i></button>{% endif %}
               {% endif %}
             </div>
           </td>
@@ -58,7 +58,7 @@
 {% if request.user.is_admin_user %}
 {% for cat in categories %}
 {% url 'dashboard:category_delete' cat.pk as cat_delete_url %}
-{% include 'partials/confirm_delete_modal.html' with id_prefix="delete-cat-" obj_pk=cat.pk title='Archive Category' message_prefix='Move' item_name=cat.name message_suffix='to the Archive? Its products will keep their category link, and an admin can restore it anytime from the Archive page.' form_action=cat_delete_url submit_label='Archive' %}
+{% include 'partials/confirm_delete_modal.html' with id_prefix="delete-cat-" obj_pk=cat.pk title='Archive Category' message_prefix='Move' item_name=cat.name message_suffix='to the Archive? Its products will be moved to Others, and an admin can restore the category anytime from the Archive page.' form_action=cat_delete_url submit_label='Archive' %}
 {% endfor %}
 {% endif %}
 {% endblock %}

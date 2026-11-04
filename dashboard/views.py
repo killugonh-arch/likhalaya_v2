@@ -1907,8 +1907,26 @@ def activity_log_user(request, username):
 
 
 # ─── Categories ─────────────────────────────────────────────────────────────────
+OTHERS_CATEGORY_NAME = 'Others'
+
+
+def get_others_category():
+    """Return the catch-all "Others" category, creating (or un-archiving) it if needed."""
+    cat = Category.all_objects.filter(name__iexact=OTHERS_CATEGORY_NAME).first()
+    if cat is None:
+        return Category.all_objects.create(
+            name=OTHERS_CATEGORY_NAME,
+            description='Products that do not fit any other category.',
+            order=9999,
+        )
+    if cat.is_deleted:
+        cat.restore()
+    return cat
+
+
 @staff_required
 def category_list(request):
+    get_others_category()
     cats = Category.objects.annotate(product_count=Count('products')).order_by('order', 'name')
     return render(request, 'dashboard/categories/list.html', {'categories': cats})
 
@@ -1998,13 +2016,22 @@ def category_edit(request, pk):
 @admin_required
 def category_delete(request, pk):
     cat = get_object_or_404(Category, pk=pk)
+    if cat.name.strip().lower() == OTHERS_CATEGORY_NAME.lower():
+        messages.error(request, 'The "Others" category cannot be archived. Products from deleted categories are moved there.')
+        return redirect('dashboard:category_list')
     if request.method == 'POST':
         cat_name = cat.name
-        cat.archive(by_user=request.user)
+        with transaction.atomic():
+            others = get_others_category()
+            moved = Product.all_objects.filter(category=cat).update(category=others)
+            cat.archive(by_user=request.user)
         log_activity(request, 'delete', f'Archived category "{cat_name}"',
                      resource='Category', resource_label=cat_name,
                      previous_value=cat_name)
-        messages.success(request, f'Category "{cat_name}" moved to Archive. You can restore it anytime.')
+        if moved:
+            messages.success(request, f'Category "{cat_name}" moved to Archive. Its {moved} product(s) were moved to "{others.name}".')
+        else:
+            messages.success(request, f'Category "{cat_name}" moved to Archive. You can restore it anytime.')
         return redirect('dashboard:category_list')
     return render(request, 'dashboard/categories/confirm_delete.html', {'category': cat})
 

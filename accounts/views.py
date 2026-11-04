@@ -279,6 +279,13 @@ def login_view(request):
                 del fail_counts[attempted]
                 _set_fail_counts(ip, fail_counts)
             login(request, user)
+            # "Remember me": keep the session for 30 days; otherwise it ends
+            # when the browser closes. (Staff are still capped by the idle
+            # timeout middleware.)
+            if request.POST.get('remember_me'):
+                request.session.set_expiry(60 * 60 * 24 * 30)
+            else:
+                request.session.set_expiry(0)
             # Explicitly reset axes failure records for this username+IP.
             # AXES_RESET_ON_SUCCESS=True should handle this but calling it
             # directly ensures the DB record is cleared even on older versions.

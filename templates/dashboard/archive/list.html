@@ -79,10 +79,7 @@
           <td class="text-muted small">{{ product.deleted_at|date:"M d, Y · g:i A" }}</td>
           <td class="text-muted small">{{ product.deleted_by.username|default:"—" }}</td>
           <td class="text-end">
-            <form method="post" action="{% url 'dashboard:product_restore' product.pk %}" class="d-inline">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-sm btn-teal"><i class="fas fa-rotate-left me-1"></i>Restore</button>
-            </form>
+            <button type="button" class="btn btn-sm btn-teal" data-bs-toggle="modal" data-bs-target="#restoreModal" data-restore-url="{% url 'dashboard:product_restore' product.pk %}" data-item-name="{{ product.name }}"><i class="fas fa-rotate-left me-1"></i>Restore</button>
             <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#permaDeleteModal"
               data-delete-url="{% url 'dashboard:product_delete_permanent' product.pk %}"
               data-item-name="{{ product.name }}"><i class="fas fa-trash me-1"></i>Delete</button>
@@ -111,10 +108,7 @@
           <td class="text-muted small">{{ cat.deleted_at|date:"M d, Y · g:i A" }}</td>
           <td class="text-muted small">{{ cat.deleted_by.username|default:"—" }}</td>
           <td class="text-end">
-            <form method="post" action="{% url 'dashboard:category_restore' cat.pk %}" class="d-inline">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-sm btn-teal"><i class="fas fa-rotate-left me-1"></i>Restore</button>
-            </form>
+            <button type="button" class="btn btn-sm btn-teal" data-bs-toggle="modal" data-bs-target="#restoreModal" data-restore-url="{% url 'dashboard:category_restore' cat.pk %}" data-item-name="{{ cat.name }}" data-note="Its products stay in Others."><i class="fas fa-rotate-left me-1"></i>Restore</button>
             <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#permaDeleteModal"
               data-delete-url="{% url 'dashboard:category_delete_permanent' cat.pk %}"
               data-item-name="{{ cat.name }}"><i class="fas fa-trash me-1"></i>Delete</button>
@@ -148,10 +142,7 @@
           <td class="text-muted small">{{ cu.deleted_at|date:"M d, Y · g:i A" }}</td>
           <td class="text-muted small">{{ cu.deleted_by.username|default:"—" }}</td>
           <td class="text-end">
-            <form method="post" action="{% url 'dashboard:user_restore' cu.pk %}" class="d-inline">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-sm btn-teal"><i class="fas fa-rotate-left me-1"></i>Restore</button>
-            </form>
+            <button type="button" class="btn btn-sm btn-teal" data-bs-toggle="modal" data-bs-target="#restoreModal" data-restore-url="{% url 'dashboard:user_restore' cu.pk %}" data-item-name="{{ cu.username }}"><i class="fas fa-rotate-left me-1"></i>Restore</button>
             <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#permaDeleteModal"
               data-delete-url="{% url 'dashboard:user_delete_permanent' cu.pk %}"
               data-item-name="{{ cu.username }}"><i class="fas fa-trash me-1"></i>Delete</button>
@@ -190,10 +181,7 @@
           <td class="text-muted small">{{ su.deleted_at|date:"M d, Y · g:i A" }}</td>
           <td class="text-muted small">{{ su.deleted_by.username|default:"—" }}</td>
           <td class="text-end">
-            <form method="post" action="{% url 'dashboard:user_restore' su.pk %}" class="d-inline">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-sm btn-teal"><i class="fas fa-rotate-left me-1"></i>Restore</button>
-            </form>
+            <button type="button" class="btn btn-sm btn-teal" data-bs-toggle="modal" data-bs-target="#restoreModal" data-restore-url="{% url 'dashboard:user_restore' su.pk %}" data-item-name="{{ su.username }}"><i class="fas fa-rotate-left me-1"></i>Restore</button>
             <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#permaDeleteModal"
               data-delete-url="{% url 'dashboard:user_delete_permanent' su.pk %}"
               data-item-name="{{ su.username }}"><i class="fas fa-trash me-1"></i>Delete</button>
@@ -228,10 +216,7 @@
           <td class="text-muted small">{{ video.deleted_at|date:"M d, Y · g:i A" }}</td>
           <td class="text-muted small">{{ video.deleted_by.username|default:"—" }}</td>
           <td class="text-end">
-            <form method="post" action="{% url 'dashboard:video_restore' video.pk %}" class="d-inline">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-sm btn-teal"><i class="fas fa-rotate-left me-1"></i>Restore</button>
-            </form>
+            <button type="button" class="btn btn-sm btn-teal" data-bs-toggle="modal" data-bs-target="#restoreModal" data-restore-url="{% url 'dashboard:video_restore' video.pk %}" data-item-name="{{ video.title }}"><i class="fas fa-rotate-left me-1"></i>Restore</button>
             <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#permaDeleteModal"
               data-delete-url="{% url 'dashboard:video_delete_permanent' video.pk %}"
               data-item-name="{{ video.title }}"><i class="fas fa-trash me-1"></i>Delete</button>
@@ -262,10 +247,7 @@
           <td class="text-muted small">{{ r.deleted_at|date:"M d, Y · g:i A" }}</td>
           <td class="text-muted small">{{ r.deleted_by.username|default:"—" }}</td>
           <td class="text-end">
-            <form method="post" action="{% url 'reviews:dashboard_restore' r.pk %}" class="d-inline">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-sm btn-teal"><i class="fas fa-rotate-left me-1"></i>Restore</button>
-            </form>
+            <button type="button" class="btn btn-sm btn-teal" data-bs-toggle="modal" data-bs-target="#restoreModal" data-restore-url="{% url 'reviews:dashboard_restore' r.pk %}" data-item-name="{{ r.display_name }}'s review of {{ r.product.name }}"><i class="fas fa-rotate-left me-1"></i>Restore</button>
             <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#permaDeleteModal"
               data-delete-url="{% url 'reviews:dashboard_delete_permanent' r.pk %}"
               data-item-name="{{ r.display_name }}'s review of {{ r.product.name }}"><i class="fas fa-trash me-1"></i>Delete</button>
@@ -295,10 +277,7 @@
           <td class="text-muted small">{{ msg.deleted_at|date:"M d, Y · g:i A" }}</td>
           <td class="text-muted small">{{ msg.deleted_by.username|default:"—" }}</td>
           <td class="text-end">
-            <form method="post" action="{% url 'dashboard:message_restore' msg.pk %}" class="d-inline">
-              {% csrf_token %}
-              <button type="submit" class="btn btn-sm btn-teal"><i class="fas fa-rotate-left me-1"></i>Restore</button>
-            </form>
+            <button type="button" class="btn btn-sm btn-teal" data-bs-toggle="modal" data-bs-target="#restoreModal" data-restore-url="{% url 'dashboard:message_restore' msg.pk %}" data-item-name="{{ msg.subject }}"><i class="fas fa-rotate-left me-1"></i>Restore</button>
             <button type="button" class="btn btn-sm btn-outline-danger ms-1" data-bs-toggle="modal" data-bs-target="#permaDeleteModal"
               data-delete-url="{% url 'dashboard:message_delete_permanent' msg.pk %}"
               data-item-name="{{ msg.subject }}"><i class="fas fa-trash me-1"></i>Delete</button>
@@ -312,6 +291,36 @@
   </div>
 </div>
 {% endif %}
+
+<!-- Shared confirmation modal for all "Restore" buttons above -->
+<style>
+body .modal.lk-confirm .modal-footer .btn.lk-restore-go { background: var(--teal, #0F6B4F); border-color: var(--teal, #0F6B4F); color: #fff; }
+body.dark-mode .modal.lk-confirm .modal-footer .btn.lk-restore-go { background: var(--dm-teal); border-color: var(--dm-teal); color: #0e1420; }
+.lk-confirm-ico.ok { color: #0F6B4F; background: rgba(15,107,79,.12); }
+body.dark-mode .lk-confirm-ico.ok { color: var(--dm-teal); background: rgba(79,209,197,.14); }
+#restoreNote { display: block; margin-top: 6px; }
+</style>
+<div class="modal fade lk-confirm" id="restoreModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="lk-confirm-ico ok"><i class="fas fa-rotate-left"></i></div>
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold">Restore from Archive?</h5>
+      </div>
+      <div class="modal-body">
+        <strong id="restoreItemName"></strong> will become active again.
+        <span id="restoreNote"></span>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn" data-bs-dismiss="modal">Cancel</button>
+        <form method="post" id="restoreForm" action="">
+          {% csrf_token %}
+          <button type="submit" class="btn lk-restore-go">Restore</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
 
 <!-- Shared confirmation modal for all "Permanently Delete" buttons above -->
 <div class="modal fade" id="permaDeleteModal" tabindex="-1" aria-hidden="true">
@@ -336,6 +345,12 @@
 </div>
 
 <script>
+document.getElementById('restoreModal').addEventListener('show.bs.modal', function (event) {
+  const trigger = event.relatedTarget;
+  document.getElementById('restoreForm').action = trigger.getAttribute('data-restore-url');
+  document.getElementById('restoreItemName').textContent = trigger.getAttribute('data-item-name');
+  document.getElementById('restoreNote').textContent = trigger.getAttribute('data-note') || '';
+});
 document.getElementById('permaDeleteModal').addEventListener('show.bs.modal', function (event) {
   const trigger = event.relatedTarget;
   document.getElementById('permaDeleteForm').action = trigger.getAttribute('data-delete-url');

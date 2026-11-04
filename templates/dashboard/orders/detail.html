@@ -413,6 +413,23 @@
     .od-grid { display: block; }
     .od-card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
   }
+
+  /* ── Confirm dialogs (Cancel / Restore order) ── */
+  .od-confirm .modal-dialog { max-width: 400px; }
+  .od-confirm .modal-content { border: 1px solid #ece6d8; border-radius: 18px; padding: 26px 24px 20px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,.3); background: #fff; color: #1f2a2a; }
+  body.dark-mode .od-confirm .modal-content { background: var(--dm-surface); border-color: var(--dm-border); color: var(--dm-text); }
+  .od-confirm-ico { width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .od-confirm-ico.danger { color: #dc3545; background: rgba(220,53,69,.12); }
+  .od-confirm-ico.ok { color: #0F6B4F; background: rgba(15,107,79,.12); }
+  .od-confirm h3 { font-size: 18px; font-weight: 700; margin: 0 0 6px; }
+  .od-confirm p { font-size: 13.5px; margin: 0 0 20px; opacity: .75; }
+  .od-confirm-btns { display: flex; gap: 10px; }
+  .od-confirm-btns > *, .od-confirm-btns form { flex: 1; margin: 0; }
+  .od-confirm-btns .btn { width: 100%; padding: 10px 14px; font-size: 14px; font-weight: 600; border-radius: 10px; }
+  .od-confirm-btns .btn-keep { background: transparent; border: 1.5px solid #ece6d8; color: #1e5f5a; }
+  .od-confirm-btns .btn-keep:hover { border-color: #1e5f5a; }
+  body.dark-mode .od-confirm-btns .btn-keep { border-color: var(--dm-border); color: var(--dm-teal); }
+  .modal-backdrop.show { background: #0f1716; opacity: .55; }
 </style>
 
 <div class="dash-breadcrumb no-print">
@@ -808,21 +825,17 @@
 </script>
 
 <!-- Cancel Order Modal -->
-<div class="modal fade" id="cancelOrderModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade od-confirm" id="cancelOrderModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title fw-bold" style="color:#0F6B4F;">Cancel Order</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        Cancel order <strong>{{ order.order_number }}</strong>? Its items will be returned to stock. If this was a mistake, you can undo it afterwards from this page.
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Keep Order</button>
+      <div class="od-confirm-ico danger"><i class="fas fa-ban"></i></div>
+      <h3>Cancel this order?</h3>
+      <p>Cancel order <strong>{{ order.order_number }}</strong>? Its items will be returned to stock. If this was a mistake, you can undo it afterwards from this page.</p>
+      <div class="od-confirm-btns">
+        <button type="button" class="btn btn-keep" data-bs-dismiss="modal">Keep Order</button>
         <form method="post" action="{% url 'dashboard:order_cancel' order.pk %}">
           {% csrf_token %}
-          <button type="submit" class="btn btn-sm btn-danger">Cancel Order</button>
+          <button type="submit" class="btn btn-danger">Cancel Order</button>
         </form>
       </div>
     </div>
@@ -830,21 +843,17 @@
 </div>
 
 <!-- Undo Cancel Modal -->
-<div class="modal fade" id="undoCancelModal" tabindex="-1" aria-hidden="true">
+<div class="modal fade od-confirm" id="undoCancelModal" tabindex="-1" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title fw-bold" style="color:#0F6B4F;">Restore Order</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        Restore order <strong>{{ order.order_number }}</strong>? It goes back to <strong>{{ order.get_previous_status_display|default:"Pending" }}</strong> and its items are taken out of stock again.
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Not now</button>
+      <div class="od-confirm-ico ok"><i class="fas fa-rotate-left"></i></div>
+      <h3>Restore this order?</h3>
+      <p>Restore order <strong>{{ order.order_number }}</strong>? It goes back to <strong>{{ order.get_previous_status_display|default:"Pending" }}</strong> and its items are taken out of stock again.</p>
+      <div class="od-confirm-btns">
+        <button type="button" class="btn btn-keep" data-bs-dismiss="modal">Not now</button>
         <form method="post" action="{% url 'dashboard:order_undo_cancel' order.pk %}">
           {% csrf_token %}
-          <button type="submit" class="btn btn-sm btn-success" style="background:#0F6B4F;border-color:#0F6B4F;">Restore Order</button>
+          <button type="submit" class="btn btn-success" style="background:#0F6B4F;border-color:#0F6B4F;">Restore Order</button>
         </form>
       </div>
     </div>

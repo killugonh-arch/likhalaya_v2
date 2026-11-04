@@ -230,6 +230,23 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
 .pe-savebar.show { display: flex; }
 .pe-savebar .msg { font-size: 13px; font-weight: 600; color: var(--pe-gold); }
 .pe-savebar .btns { display: flex; gap: 10px; }
+.pe-leave {
+  --pe-surface: #fff; --pe-soft: #f7f5ef; --pe-line: #ece6d8; --pe-text: #1f2a2a;
+  --pe-acc: var(--teal, #1e5f5a); --pe-gold: var(--gold, #c9841a); color: var(--pe-text);
+}
+body.dark-mode .pe-leave {
+  --pe-surface: var(--dm-surface); --pe-soft: var(--dm-surface-2); --pe-line: var(--dm-border);
+  --pe-text: var(--dm-text); --pe-acc: var(--dm-teal);
+}
+.pe-leave { position: fixed; inset: 0; z-index: 3000; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(15,23,22,.55); backdrop-filter: blur(2px); }
+.pe-leave.show { display: flex; }
+.pe-leave-box { width: 100%; color: var(--pe-text); max-width: 400px; background: var(--pe-surface); border: 1px solid var(--pe-line); border-radius: 18px; padding: 26px 24px 20px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,.3); animation: peLeavePop .18s ease-out; }
+.pe-leave-ico { width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; color: var(--pe-gold); background: rgba(201,129,27,.14); }
+.pe-leave-box h3 { font-size: 18px; font-weight: 700; margin: 0 0 6px; }
+.pe-leave-box p { font-size: 13.5px; margin: 0 0 20px; opacity: .75; }
+.pe-leave-btns { display: flex; gap: 10px; justify-content: center; }
+.pe-leave-btns .pe-btn { flex: 1; justify-content: center; }
+@keyframes peLeavePop { from { opacity: 0; transform: scale(.94) translateY(8px); } to { opacity: 1; transform: none; } }
 .pe-toast {
   position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(20px); opacity: 0; pointer-events: none; z-index: 2000;
   background: #1f2a2a; color: #fff; padding: 11px 16px; border-radius: 12px; font-size: 13px; display: flex; gap: 14px; align-items: center; transition: all .2s; max-width: 92vw;
@@ -480,6 +497,18 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
     </div>
   </div>
 </form>
+</div>
+
+<div class="pe-leave" id="leaveModal" role="dialog" aria-modal="true" aria-labelledby="leaveTitle">
+  <div class="pe-leave-box">
+    <div class="pe-leave-ico"><i class="fas fa-triangle-exclamation"></i></div>
+    <h3 id="leaveTitle">Leave without saving?</h3>
+    <p>You have unsaved changes. If you leave now, they will be lost.</p>
+    <div class="pe-leave-btns">
+      <button type="button" class="pe-btn" id="leaveStay">Keep editing</button>
+      <button type="button" class="pe-btn gold" id="leaveGo">Leave</button>
+    </div>
+  </div>
 </div>
 
 <div class="pe-toast" id="toast"><span id="toastMsg"></span><button type="button" id="toastUndo" hidden>Undo</button></div>
@@ -868,6 +897,26 @@ body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-
     $('#id_images-TOTAL_FORMS').value = n;
   });
   window.addEventListener('beforeunload', function (e) { if (dirty) { e.preventDefault(); e.returnValue = ''; } });
+
+  /* Centered "leave without saving?" dialog for in-app links (sidebar, Back, Cancel).
+     Browser-level actions (refresh, close tab, address bar) can only use the native prompt above. */
+  var leaveModal = $('#leaveModal'), leaveHref = null;
+  function closeLeave() { leaveModal.classList.remove('show'); leaveHref = null; }
+  document.addEventListener('click', function (e) {
+    if (!dirty || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    var a = e.target.closest && e.target.closest('a[href]');
+    if (!a || a.target === '_blank' || a.hasAttribute('download')) return;
+    var href = a.getAttribute('href');
+    if (!href || href.charAt(0) === '#' || /^(javascript:|mailto:|tel:)/i.test(href)) return;
+    e.preventDefault();
+    leaveHref = a.href;
+    leaveModal.classList.add('show');
+    $('#leaveStay').focus();
+  }, true);
+  $('#leaveStay').addEventListener('click', closeLeave);
+  $('#leaveGo').addEventListener('click', function () { var u = leaveHref; dirty = false; if (u) window.location.href = u; });
+  leaveModal.addEventListener('click', function (e) { if (e.target === leaveModal) closeLeave(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && leaveModal.classList.contains('show')) closeLeave(); });
 
   function goToPrice(code) {
     var block = $('.pe-size[data-code="' + code + '"]'), inp = priceInput(code);

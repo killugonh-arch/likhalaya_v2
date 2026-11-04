@@ -4,5 +4,5 @@
 
 {% block dash_content %}
 {% url 'dashboard:category_list' as cancel_url %}
-{% include 'partials/confirm_delete_card.html' with title='Archive Category' message_prefix='Move' item_name=category.name message_suffix='to the Archive? Its products will keep their category link, and an admin can restore it anytime from the Archive page.' cancel_url=cancel_url submit_icon='fa-box-archive' submit_label='Archive' %}
+{% include 'partials/confirm_delete_card.html' with title='Archive Category' message_prefix='Move' item_name=category.name message_suffix='to the Archive? Its products will be moved to Others, and an admin can restore the category anytime from the Archive page.' cancel_url=cancel_url submit_icon='fa-box-archive' submit_label='Archive' %}
 {% endblock %}
