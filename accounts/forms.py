@@ -207,6 +207,68 @@ class LoginForm(AuthenticationForm):
         for field in self.fields.values():
             field.widget.attrs.update({'class': 'form-control'})
 
+# ZIP codes for Leyte's cities/municipalities (PHLPost), keyed by a normalized name.
+LEYTE_ZIPS = {
+    'abuyog': '6510',
+    'alangalang': '6517',
+    'albuera': '6542',
+    'babatngon': '6520',
+    'barugo': '6519',
+    'bato': '6525',
+    'baybay': '6521',
+    'burauen': '6516',
+    'calubian': '6534',
+    'capoocan': '6530',
+    'carigara': '6529',
+    'dagami': '6515',
+    'dulag': '6505',
+    'hilongos': '6524',
+    'hindang': '6523',
+    'inopacan': '6522',
+    'isabel': '6539',
+    'jaro': '6527',
+    'javier': '6511',
+    'julita': '6506',
+    'kananga': '6531',
+    'lapaz': '6508',
+    'leyte': '6533',
+    'macarthur': '6509',
+    'mahaplag': '6512',
+    'matagob': '6532',
+    'matalom': '6526',
+    'mayorga': '6507',
+    'merida': '6540',
+    'ormoc': '6541',
+    'palo': '6501',
+    'palompon': '6538',
+    'pastrana': '6514',
+    'sanisidro': '6535',
+    'sanmiguel': '6518',
+    'santafe': '6513',
+    'tabango': '6536',
+    'tabontabon': '6504',
+    'tacloban': '6500',
+    'tanauan': '6502',
+    'tolosa': '6503',
+    'tunga': '6528',
+    'villaba': '6537',
+}
+
+
+def _norm_place(name):
+    """'City of Ormoc' / 'Ormoc City' / 'Matag-ob' -> comparable key."""
+    import re
+    n = (name or '').strip().lower()
+    n = re.sub(r'^(city of|municipality of)\s+', '', n)
+    n = re.sub(r'\s+city$', '', n)
+    return re.sub(r'[^a-z]', '', n)
+
+
+def leyte_zip_for(city):
+    """ZIP code for a Leyte city/municipality, or '' if unknown."""
+    return LEYTE_ZIPS.get(_norm_place(city), '')
+
+
 class ProfileUpdateForm(forms.ModelForm):
     class Meta:
         model = CustomUser
@@ -227,6 +289,17 @@ class ProfileUpdateForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         for field in self.fields.values():
             field.widget.attrs.update({'class': 'form-control'})
+    def clean(self):
+        cleaned = super().clean()
+        # ZIP is derived from the chosen city, never typed by hand.
+        zip_code = leyte_zip_for(cleaned.get('city'))
+        if zip_code:
+            cleaned['zip_code'] = zip_code
+        return cleaned
+
+    def clean_province(self):
+        # Deliveries are limited to Leyte; the province can't be changed.
+        return 'Leyte'
     def clean_avatar(self):
         avatar = self.cleaned_data.get('avatar')
         validate_avatar_size(avatar)

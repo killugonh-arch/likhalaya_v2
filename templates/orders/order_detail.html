@@ -152,7 +152,7 @@
       <div class="od-info-cell"><span class="od-info-ico"><i class="fas fa-user"></i></span><div><div class="od-info-label">Name</div><div class="od-info-value">{{ order.full_name }}</div></div></div>
       <div class="od-info-cell"><span class="od-info-ico"><i class="fas fa-phone"></i></span><div><div class="od-info-label">Phone</div><div class="od-info-value">{{ order.phone }}</div></div></div>
       <div class="od-info-cell"><span class="od-info-ico"><i class="fas fa-credit-card"></i></span><div><div class="od-info-label">Payment</div><div class="od-info-value">{{ order.get_payment_method_display }}</div></div></div>
-      <div class="od-info-cell"><span class="od-info-ico"><i class="fas fa-location-dot"></i></span><div><div class="od-info-label">Address</div><div class="od-info-value">{{ order.address }}, {{ order.city }}, {{ order.province }} {{ order.zip_code }}</div></div></div>
+      <div class="od-info-cell"><span class="od-info-ico"><i class="fas fa-location-dot"></i></span><div><div class="od-info-label">Address</div><div class="od-info-value">{{ order.address }}, {% if order.barangay %}{{ order.barangay }}, {% endif %}{{ order.city }}, {{ order.province }} {{ order.zip_code }}</div></div></div>
     </div>
     {% if order.notes %}
     <div class="od-info-note"><span class="text-muted">Notes:</span> <span class="fw-semibold">{{ order.notes }}</span></div>

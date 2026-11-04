@@ -97,6 +97,7 @@ def _create_order(request, items, payment_method, form_data, extra=None, finaliz
             email=form_data.get('email', ''),
             phone=form_data.get('phone', ''),
             address=form_data.get('address', ''),
+            barangay=form_data.get('barangay') or getattr(request.user, 'barangay', '') or '',
             city=form_data.get('city', ''),
             province=form_data.get('province', ''),
             zip_code=form_data.get('zip_code', ''),
@@ -534,8 +535,10 @@ def _sync_form_data_from_profile(request, form_data):
     draft dict, in case they edited their profile mid-checkout. Keeps
     anything the profile doesn't track (like notes) untouched."""
     u = request.user
+    form_data['full_name'] = u.get_full_name() or form_data.get('full_name', '')
     form_data['phone'] = u.phone or form_data.get('phone', '')
     form_data['address'] = u.address or form_data.get('address', '')
+    form_data['barangay'] = getattr(u, 'barangay', '') or form_data.get('barangay', '')
     form_data['city'] = u.city or form_data.get('city', '')
     form_data['province'] = u.province or form_data.get('province', '')
     form_data['zip_code'] = getattr(u, 'zip_code', '') or form_data.get('zip_code', '')
@@ -690,9 +693,26 @@ def gcash_payment(request, pk):
             if new_value and getattr(order, order_field) != new_value:
                 setattr(order, order_field, new_value)
                 changed = True
+        brgy = getattr(u, 'barangay', '') or ''
+        if brgy and order.barangay != brgy:
+            order.barangay = brgy
+            changed = True
         zip_value = getattr(u, 'zip_code', '') or ''
         if zip_value and order.zip_code != zip_value:
             order.zip_code = zip_value
+            changed = True
+        full_name = u.get_full_name()
+        if full_name and order.full_name != full_name:
+            order.full_name = full_name
+            changed = True
+        # A new city/province can change the shipping fee, so keep the
+        # order's fee and total in step with the address.
+        new_fee = get_shipping_quote(
+            sum(item.quantity for item in order.items.all()), order.province, order.city,
+        )['fee']
+        if order.shipping_fee != new_fee:
+            order.shipping_fee = new_fee
+            order.total = order.subtotal + new_fee
             changed = True
         if changed:
             order.save()

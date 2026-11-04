@@ -44,6 +44,7 @@ class Order(models.Model):
     email = models.EmailField()
     phone = models.CharField(max_length=20)
     address = models.TextField()
+    barangay = models.CharField(max_length=150, blank=True)
     city = models.CharField(max_length=100)
     province = models.CharField(max_length=100)
     zip_code = models.CharField(max_length=10)
