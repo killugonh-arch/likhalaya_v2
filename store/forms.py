@@ -117,7 +117,7 @@ class ContactForm(forms.ModelForm):
                 'placeholder': 'Please describe your preferred size, color, material, design, engraving, or other customization…',
             }),
             'preferred_materials': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. Natural abaca fiber, navy blue'}),
-            'target_budget': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Optional — e.g. ₱1,500'}),
+            'target_budget': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'e.g. ₱1,500'}),
             'preferred_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'reference_image': forms.ClearableFileInput(attrs={'class': 'form-control', 'accept': 'image/jpeg,image/jpg,image/png,image/webp'}),
             'organization_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Company / Organization name'}),
@@ -125,7 +125,7 @@ class ContactForm(forms.ModelForm):
             'partnership_type': forms.Select(attrs={'class': 'form-select'}),
             'partnership_details': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Describe your proposed partnership…'}),
             'feedback_type': forms.Select(attrs={'class': 'form-select'}),
-            'related_product': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Optional — product name or link'}),
+            'related_product': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Product name or link'}),
             'concern_type': forms.Select(attrs={'class': 'form-select'}),
             'additional_details': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Anything else we should know?'}),
         }
@@ -174,15 +174,21 @@ class ContactForm(forms.ModelForm):
 
     @staticmethod
     def profile_location(user):
-        """Location string built from the customer's saved profile address."""
-        parts = [
-            getattr(user, 'address', ''),
-            getattr(user, 'barangay', ''),
-            getattr(user, 'city', ''),
-            getattr(user, 'province', ''),
-            getattr(user, 'zip_code', ''),
-        ]
-        return ', '.join(p.strip() for p in parts if p and p.strip())
+        """Full location string built from the customer's saved profile address.
+
+        Province is fixed to Leyte for every customer, so province / ZIP alone
+        is not a real location. Unless the customer has saved at least a
+        street, barangay or city, return '' so the field shows "None" and
+        sends them to complete their profile.
+        """
+        def clean(attr):
+            return (getattr(user, attr, '') or '').strip()
+
+        street, barangay, city = clean('address'), clean('barangay'), clean('city')
+        if not (street or barangay or city):
+            return ''
+        parts = [street, barangay, city, clean('province'), clean('zip_code')]
+        return ', '.join(p for p in parts if p)
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
@@ -194,13 +200,23 @@ class ContactForm(forms.ModelForm):
         # or type them in for this message.
         self._profile_phone = (getattr(user, 'phone', '') or '').strip() if user else ''
         self._profile_location = self.profile_location(user) if user else ''
-        self.phone_locked = bool(self._profile_phone)
-        self.location_locked = bool(self._profile_location)
+        # With a logged-in user, name/email/phone/location always come from the
+        # profile (clicking a field opens the profile editor instead).
+        self.phone_locked = bool(user)
+        self.location_locked = bool(user)
         if self.phone_locked:
             self.fields['phone'].widget.attrs['readonly'] = True
-            self.fields['phone'].widget.attrs['placeholder'] = ''
+            self.fields['phone'].widget.attrs['placeholder'] = (
+                '' if self._profile_phone else 'None')
         if self.location_locked:
             self.fields['location'].widget.attrs['readonly'] = True
+            self.fields['location'].widget.attrs['placeholder'] = (
+                '' if self._profile_location else 'None')
+        if user:
+            if not (user.get_full_name() or '').strip():
+                self.fields['name'].widget.attrs['placeholder'] = 'None'
+            if not (user.email or '').strip():
+                self.fields['email'].widget.attrs['placeholder'] = 'None'
         self.fields['inquiry_type'].required = True
         self.fields['materials_condition'].choices = [('', 'Select condition')] + list(ContactMessage.MATERIALS_CONDITION_CHOICES)
         self.fields['partnership_type'].choices = [('', 'Select type')] + list(ContactMessage.PARTNERSHIP_TYPE_CHOICES)
@@ -208,15 +224,18 @@ class ContactForm(forms.ModelForm):
         self.fields['concern_type'].choices = [('', 'Select concern type')] + list(ContactMessage.CONCERN_TYPE_CHOICES)
 
     def clean_phone(self):
-        # Locked -> always the profile value, whatever the POST body says.
-        if self.phone_locked:
-            return self._profile_phone
-        return (self.cleaned_data.get('phone') or '').strip()
+        # Required. Locked -> always the profile value, whatever the POST body says.
+        value = self._profile_phone if self.phone_locked else (self.cleaned_data.get('phone') or '').strip()
+        if not value:
+            raise forms.ValidationError('Please add your contact number in your profile first.')
+        return value
 
     def clean_location(self):
-        if self.location_locked:
-            return self._profile_location
-        return (self.cleaned_data.get('location') or '').strip()
+        # Required. Locked -> always the profile value, whatever the POST body says.
+        value = self._profile_location if self.location_locked else (self.cleaned_data.get('location') or '').strip()
+        if not value:
+            raise forms.ValidationError('Please add your location in your profile first.')
+        return value
 
     def clean_quantity(self):
         raw = (self.data.get('quantity') or '').strip()

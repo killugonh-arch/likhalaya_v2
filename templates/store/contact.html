@@ -11,7 +11,7 @@
 .info-item .small { font-size: 16px; }
 .form-control, .form-select { border-radius: 10px; border-color: #ddd; }
 .form-control:focus, .form-select:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(30,95,90,.12); }
-.form-control[readonly] { background: #f7f6f3; color: #555; cursor: default; }
+.form-control[readonly] { background: #f7f6f3; color: #555; cursor: pointer; }
 .form-control[readonly]:focus { box-shadow: none; border-color: #ddd; }
 
 /* ---------- Delivery-style info card (reused from checkout) ---------- */
@@ -68,6 +68,9 @@
   cursor: pointer; transition: all .15s ease; margin: 3px;
 }
 .material-chip:hover { border-color: var(--gold); color: var(--gold); background: rgba(201,132,26,.06); }
+.material-chip.active { border-color: var(--gold); color: var(--gold); background: rgba(201,132,26,.12); }
+#contact-form select option[value=""] { display: none; }
+input.material-locked { background: #f5f3ee; cursor: not-allowed; }
 
 /* ---------- Before-you-send help card ---------- */
 .help-tips-card {
@@ -373,12 +376,12 @@
               {% if form.email.errors %}<div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>{% endif %}
             </div>
             <div class="col-sm-6">
-              <label class="form-label fw-semibold small">Contact Number{% if not form.phone_locked %} <span class="text-muted fw-normal">(optional)</span>{% endif %}</label>
+              <label class="form-label fw-semibold small">Contact Number <span class="text-danger">*</span></label>
               {{ form.phone }}
               {% if form.phone.errors %}<div class="text-danger small mt-1">{{ form.phone.errors.0 }}</div>{% endif %}
             </div>
             <div class="col-sm-6">
-              <label class="form-label fw-semibold small">Location{% if not form.location_locked %} <span class="text-muted fw-normal">(optional)</span>{% endif %}</label>
+              <label class="form-label fw-semibold small">Location <span class="text-danger">*</span></label>
               {{ form.location }}
               {% if form.location.errors %}<div class="text-danger small mt-1">{{ form.location.errors.0 }}</div>{% endif %}
             </div>
@@ -491,14 +494,14 @@
 (function () {
   const FIELD_CONFIG = {
     item_name: {
-      custom_order:      { label: 'Product',       required: true },
-      bulk_order:        { label: 'Product',       required: true },
-      donate_materials:  { label: 'Material Type', required: true },
+      custom_order:      { label: 'Product',       required: true, placeholder: 'e.g. Woven Rattan Bag' },
+      bulk_order:        { label: 'Product',       required: true, placeholder: 'e.g. Woven Rattan Bag' },
+      donate_materials:  { label: 'Material Type', required: true, placeholder: 'e.g. Rattan strips, cotton fabric, yarn' },
     },
     quantity: {
-      custom_order:      { label: 'Quantity',                     required: true },
-      bulk_order:        { label: 'Quantity',                     required: true },
-      donate_materials:  { label: 'Quantity / Estimated Amount',  required: true },
+      custom_order:      { label: 'Quantity',                     required: true, placeholder: 'e.g. 2' },
+      bulk_order:        { label: 'Quantity',                     required: true, placeholder: 'e.g. 2' },
+      donate_materials:  { label: 'Quantity / Estimated Amount',  required: true, placeholder: 'e.g. 5' },
     },
     customization_request: {
       custom_order: { required: true },
@@ -573,6 +576,23 @@
   if (productInputEl) productInputEl.dataset.originalValue = productInputEl.value;
   const CONTEXT_PRODUCT_NAME = '{% if context_product %}{{ context_product.name|escapejs }}{% endif %}';
 
+  // Locked fields (name, email, phone, location) come from the customer's
+  // profile. Clicking one opens the profile editor, then returns here.
+  const PROFILE_EDIT_URL = "{% url 'accounts:profile' %}?edit=1&next=" +
+    encodeURIComponent(window.location.pathname + window.location.search);
+  const LOCKED_SELECTOR =
+    'input[name="name"], input[name="email"], input[name="phone"], input[name="location"]';
+  document.querySelectorAll(LOCKED_SELECTOR).forEach(function (el) {
+    el.title = 'Click to edit in your profile';
+  });
+  document.addEventListener('click', function (e) {
+    const el = e.target.closest ? e.target.closest(LOCKED_SELECTOR) : null;
+    if (el && el.hasAttribute('readonly')) {
+      e.preventDefault();
+      window.location.href = PROFILE_EDIT_URL;
+    }
+  }, true);
+
   // The "Partnerships & Donations" card maps to two real inquiry_type
   // values. This maps each real leaf type back to the card (group) it
   // belongs under, so the right card + pill stay highlighted no matter
@@ -612,6 +632,8 @@
         label.innerHTML = baseLabel + asteriskHtml + optionalHtml;
       }
 
+      if (cfg && cfg.placeholder && input) input.placeholder = cfg.placeholder;
+
       if (input && field !== 'donation_note' && field !== 'product_context') {
         const isRequired = visible && !ALWAYS_OPTIONAL_WHEN_VISIBLE.has(field) &&
           (cfg ? cfg.required : false);
@@ -621,6 +643,7 @@
     });
 
     if (inquiryInput) inquiryInput.value = type;
+    syncMaterialLock(type);
     if (submitLabel) submitLabel.textContent = SUBMIT_LABELS[type] || 'Send Message';
 
     // The product reference (and its "Asking about: X" banner) only belongs
@@ -696,10 +719,55 @@
     });
   }
 
+  // Dropdowns (condition, partnership type, feedback type, concern type):
+  // the blank "Select ..." option stays as the closed-box prompt but is not
+  // offered as a choice in the opened list.
+  document.querySelectorAll('#contact-form select:not([name="inquiry_type"])').forEach(sel => {
+    const blank = sel.querySelector('option[value=""]');
+    if (blank) { blank.hidden = true; blank.disabled = !sel.value; }
+  });
+
+  // Donate Raw Materials: the Material Type box is locked to the chosen chip.
+  // Only "Others" unlocks it so the donor can type their own material.
+  function setMaterialLock(locked) {
+    const itemInput = document.getElementById('{{ form.item_name.id_for_label }}');
+    if (!itemInput) return;
+    itemInput.readOnly = locked;
+    itemInput.classList.toggle('material-locked', locked);
+  }
+  function syncMaterialLock(type) {
+    const itemInput = document.getElementById('{{ form.item_name.id_for_label }}');
+    if (!itemInput) return;
+    const chips = Array.from(document.querySelectorAll('.material-chip'));
+    if (type !== 'donate_materials') {
+      setMaterialLock(false);
+      chips.forEach(c => c.classList.remove('active'));
+      return;
+    }
+    const val = itemInput.value.trim();
+    const match = chips.find(c => c.dataset.fill && c.dataset.fill === val);
+    const others = chips.find(c => !c.dataset.fill);
+    chips.forEach(c => c.classList.toggle('active', c === (match || (val ? others : null))));
+    if (match) { setMaterialLock(true); return; }
+    // empty -> locked until a chip is picked; custom text -> it was typed via "Others"
+    setMaterialLock(!val);
+    if (!val) itemInput.placeholder = 'Choose a material above';
+  }
+
   document.querySelectorAll('.material-chip').forEach(chip => {
     chip.addEventListener('click', () => {
       const itemInput = document.getElementById('{{ form.item_name.id_for_label }}');
-      if (itemInput) { itemInput.value = chip.dataset.fill; itemInput.focus(); }
+      if (!itemInput) return;
+      document.querySelectorAll('.material-chip').forEach(c => c.classList.toggle('active', c === chip));
+      if (chip.dataset.fill) {
+        itemInput.value = chip.dataset.fill;
+        setMaterialLock(true);
+      } else {
+        itemInput.value = '';
+        itemInput.placeholder = 'e.g. Rattan strips';
+        setMaterialLock(false);
+        itemInput.focus();
+      }
     });
   });
 

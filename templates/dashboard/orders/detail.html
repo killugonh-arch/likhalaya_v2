@@ -286,11 +286,15 @@
   .od-task-hint { font-size: 12.5px; color: #8a8377; line-height: 1.5; margin: 12px 0 2px; }
   body.dark-mode .od-task-hint { color: var(--dm-text-mute); }
   .od-courier-form { display: flex; gap: 8px; align-items: center; margin-top: 6px; }
+  .od-courier-form select { text-align: center; text-align-last: center; }
+  .od-courier-form select option { text-align: center; }
   .od-eta-box { border: 1px dashed #d9d2c3; border-radius: 10px; padding: 10px 12px; background: #fcfaf5; }
   .od-eta-label { font-size: 12px; font-weight: 700; color: #6b6b6b; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
   .od-eta-label i { color: var(--teal); }
   .od-eta-row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .od-eta-row input { width: 64px; text-align: center; }
+  .od-eta-row input[type=number]::-webkit-inner-spin-button,
+  .od-eta-row input[type=number]::-webkit-outer-spin-button { opacity: 1; height: 24px; }
   .od-eta-row .sep { font-size: 12.5px; color: #6b6b6b; }
   body.dark-mode .od-eta-box { background: var(--dm-surface-2); border-color: var(--dm-border); }
   body.dark-mode .od-eta-label, body.dark-mode .od-eta-row .sep { color: var(--dm-text-dim); }
@@ -636,9 +640,9 @@
               <div class="od-eta-box mb-2">
                 <div class="od-eta-label"><i class="fas fa-clock"></i>Estimated delivery time (customer will see this)</div>
                 <div class="od-eta-row">
-                  <input type="number" name="eta_days_min" class="form-control form-control-sm" min="1" max="60" placeholder="2" required aria-label="From days">
+                  <input type="number" name="eta_days_min" class="form-control form-control-sm" min="1" max="60" value="0" required aria-label="From days">
                   <span class="sep">to</span>
-                  <input type="number" name="eta_days_max" class="form-control form-control-sm" min="1" max="60" placeholder="3" required aria-label="To days">
+                  <input type="number" name="eta_days_max" class="form-control form-control-sm" min="1" max="60" value="0" required aria-label="To days">
                   <span class="sep">days</span>
                 </div>
               </div>
@@ -650,9 +654,9 @@
               {% csrf_token %}
               <div class="od-eta-label"><i class="fas fa-clock"></i>Estimated delivery time</div>
               <div class="od-eta-row">
-                <input type="number" name="eta_days_min" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_min|default_if_none:'' }}" placeholder="2" aria-label="From days">
+                <input type="number" name="eta_days_min" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_min|default_if_none:'0' }}" aria-label="From days">
                 <span class="sep">to</span>
-                <input type="number" name="eta_days_max" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_max|default_if_none:'' }}" placeholder="3" aria-label="To days">
+                <input type="number" name="eta_days_max" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_max|default_if_none:'0' }}" aria-label="To days">
                 <span class="sep">days</span>
                 <button type="submit" class="od-btn od-btn-secondary" style="white-space:nowrap;"><i class="fas fa-floppy-disk"></i>Update</button>
               </div>
@@ -667,9 +671,9 @@
               {% csrf_token %}
               <div class="od-eta-label"><i class="fas fa-clock"></i>Estimated delivery time</div>
               <div class="od-eta-row">
-                <input type="number" name="eta_days_min" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_min|default_if_none:'' }}" placeholder="2" aria-label="From days">
+                <input type="number" name="eta_days_min" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_min|default_if_none:'0' }}" aria-label="From days">
                 <span class="sep">to</span>
-                <input type="number" name="eta_days_max" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_max|default_if_none:'' }}" placeholder="3" aria-label="To days">
+                <input type="number" name="eta_days_max" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_max|default_if_none:'0' }}" aria-label="To days">
                 <span class="sep">days</span>
                 <button type="submit" class="od-btn od-btn-secondary" style="white-space:nowrap;"><i class="fas fa-floppy-disk"></i>Update</button>
               </div>
@@ -677,7 +681,6 @@
             <form method="post" action="{% url 'dashboard:order_assign_courier' order.pk %}" class="od-courier-form">
               {% csrf_token %}
               <select name="courier_id" class="form-select form-select-sm">
-                <option value="">— Unassigned —</option>
                 {% for c in couriers %}
                 <option value="{{ c.pk }}" {% if order.assigned_courier_id == c.pk %}selected{% endif %}>{{ c.get_full_name|default:c.username }}{% if c.role == 'staff' %} (Staff){% endif %}</option>
                 {% endfor %}
@@ -728,11 +731,7 @@
               <img src="{{ order.payment_proof.url }}" alt="GCash payment verification" class="rounded-3 border w-100" style="max-height:240px;object-fit:cover;">
             </a>
             <div class="mt-3" style="font-size:13px;">
-              <div class="text-success fw-semibold mb-1"><i class="fas fa-circle-check me-1"></i>Received</div>
-              {% if order.payment_submitted_at %}
-              <div class="text-muted">Sent: {{ order.payment_submitted_at|date:"M d, Y \a\t H:i" }}</div>
-              {% endif %}
-              <div class="text-muted">Amount due: <span class="fw-semibold" style="color:#2b2b2b;">₱{{ order.total|floatformat:2 }}</span></div>
+              <div class="text-success fw-semibold mb-2"><i class="fas fa-circle-check me-1"></i>Received</div>
               <a href="#" data-bs-toggle="modal" data-bs-target="#gcashProofModal" class="fw-semibold" style="color:var(--teal);text-decoration:underline;">View full size</a>
             </div>
             {% else %}
@@ -762,8 +761,8 @@
         </div>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <div class="modal-body text-center p-0" id="gcashZoomWrap" style="overflow:auto; max-height:78vh; background:#f3f1eb; cursor:zoom-in;">
-        <img src="{{ order.payment_proof.url }}" alt="GCash payment verification" id="gcashZoomImg" style="max-width:100%; display:block; margin:0 auto; transition:transform .15s ease; transform:scale(1); transform-origin:center top;">
+      <div class="modal-body text-center p-0" id="gcashZoomWrap" style="overflow:auto; max-height:calc(100vh - 130px); background:#f3f1eb; cursor:zoom-in;">
+        <img src="{{ order.payment_proof.url }}" alt="GCash payment verification" id="gcashZoomImg" style="max-width:100%; max-height:calc(100vh - 130px); width:auto; height:auto; object-fit:contain; display:block; margin:0 auto; transition:transform .15s ease; transform:scale(1); transform-origin:center top;">
       </div>
     </div>
   </div>

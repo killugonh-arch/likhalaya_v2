@@ -1011,7 +1011,7 @@ def order_start_processing(request, pk):
         if not (1 <= eta_min <= 60 and 1 <= eta_max <= 60):
             raise OrderStatusError("Delivery days must be between 1 and 60.")
         if eta_min > eta_max:
-            raise OrderStatusError("'From' days can't be more than 'to' days.")
+            raise OrderStatusError("The first number can't be bigger than the second. Example: 2 to 3 days.")
         order.start_processing()
         order.set_eta(eta_min, eta_max)
     except OrderStatusError as e:

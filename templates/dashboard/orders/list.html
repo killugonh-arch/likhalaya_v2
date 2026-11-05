@@ -157,9 +157,9 @@
         <label class="visually-hidden" for="order-payment">Payment method</label>
         <select id="order-payment" name="payment" class="lk-input">
           <option value="">All Payments</option>
-          {% for s, l in payment_choices %}
+          {% for s, l in payment_choices %}{% if s != 'bank' %}
           <option value="{{ s }}" {% if s == payment_filter %}selected{% endif %}>{{ l }}</option>
-          {% endfor %}
+          {% endif %}{% endfor %}
         </select>
       </div>
       <div class="lk-filter-actions">

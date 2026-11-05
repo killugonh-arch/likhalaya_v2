@@ -20,14 +20,19 @@
 .ds-breadcrumb a { color: var(--text-muted); text-decoration: none; }
 .ds-breadcrumb .current { color: var(--text-primary); font-weight: 600; }
 .ds-breadcrumb .sep { color: var(--border); }
-.dash-greeting-title { font-size: 20px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
-.dash-greeting-sub { font-size: 13px; color: var(--text-muted); }
+.dash-greeting-title { font-size: 24px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+.dash-greeting-sub { font-size: 15px; color: var(--text-secondary); }
 .dash-panel { background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-sm); margin-bottom: var(--space-4); }
-.dash-panel-header { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.dash-panel-header { padding: var(--space-3) var(--space-4); border-bottom: 1px solid var(--border); font-size: 16px; font-weight: 700; color: var(--text-primary); }
 .dash-panel-body { padding: var(--space-4); }
-.info-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 6px 0; border-bottom: 1px solid var(--surface-subtle); }
+.info-row { display: flex; justify-content: space-between; gap: 16px; font-size: 15px; line-height: 1.5; padding: 10px 0; border-bottom: 1px solid var(--border); }
 .info-row:last-child { border-bottom: none; }
-.info-row .label { color: var(--text-muted); }
+.info-row .label { color: var(--text-secondary); font-weight: 500; }
+.info-row .item-name { color: var(--text-primary); font-weight: 500; }
+.dash-panel-body p.text-muted, .dash-panel-body .text-muted, .dash-panel-body .small { color: var(--text-secondary) !important; }
+.dash-panel-body p { font-size: 14.5px !important; line-height: 1.55; }
+.upload-drop .fw-semibold { font-size: 16px; }
+.upload-drop .small { font-size: 13.5px !important; }
 .info-row .value { font-weight: 600; color: var(--text-primary); text-align: right; }
 .ds-btn { font-size: 14px; font-weight: 600; border-radius: var(--radius-sm); padding: 11px 16px; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 8px; width: 100%; }
 .ds-btn-primary { background: var(--brand-green); color: #fff; }
@@ -37,18 +42,31 @@
 .upload-drop.has-file { border-color: var(--brand-green); background: var(--brand-green-light); }
 .proof-preview { max-width: 100%; max-height: 260px; border-radius: 12px; margin-top: 10px; display: block; margin-left: auto; margin-right: auto; }
 .proof-final { border-radius: 12px; border: 1px solid var(--border); width: 100%; max-height: 260px; object-fit: cover; }
-.badge-pill { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
-.badge-warning { background: #FBF3E4; color: #B7791F; }
+.badge-pill { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 13.5px; font-weight: 700; }
+.badge-warning { background: #FBF3E4; color: #8A5A0B; }
 .badge-success { background: var(--brand-green-light); color: var(--brand-green); }
+
+/* Delivery progress tracker */
+.track-head { display: flex; justify-content: space-between; align-items: center; font-size: 14.5px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+.track-pct { color: var(--brand-green); font-weight: 700; }
+.track-bar { height: 10px; border-radius: 10px; background: var(--border); overflow: hidden; margin-bottom: 20px; }
+.track-bar > span { display: block; height: 100%; border-radius: 10px; background: var(--brand-green); transition: width .4s ease; }
+.track-steps { list-style: none; margin: 0; padding: 0; display: flex; align-items: flex-start; }
+.track-step { position: relative; flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 0 4px; }
+.track-step::before { content: ""; position: absolute; top: 15px; left: calc(50% + 16px); right: calc(-50% + 16px); height: 2px; background: var(--border); }
+.track-step:last-child::before { display: none; }
+.track-step.done::before { background: var(--brand-green); }
+.track-dot { flex: 0 0 32px; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; background: var(--surface-white); border: 2px solid var(--border); color: var(--text-secondary); z-index: 1; }
+.track-step.done .track-dot { background: var(--brand-green); border-color: var(--brand-green); color: #fff; }
+.track-step.current .track-dot { border-color: var(--brand-green); color: var(--brand-green); box-shadow: 0 0 0 4px var(--brand-green-light); }
+.track-title { font-size: 14px; font-weight: 600; color: var(--text-secondary); line-height: 1.35; }
+.track-step.done .track-title, .track-step.current .track-title { color: var(--text-primary); }
+.track-time { font-size: 12.5px; color: var(--text-secondary); margin-top: 2px; line-height: 1.35; }
+.track-now { font-size: 12px; font-weight: 700; color: var(--brand-green); background: var(--brand-green-light); border-radius: 12px; padding: 1px 9px; display: table; margin: 4px auto 0; line-height: 1.6; }
 </style>
 {% endblock %}
 
 {% block dash_content %}
-<nav class="ds-breadcrumb" aria-label="Breadcrumb">
-  <a href="{% url 'dashboard:courier_order_list' %}">My Deliveries</a>
-  <span class="sep">/</span><span class="current" aria-current="page">{{ order.order_number }}</span>
-</nav>
-
 <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
   <div>
     <h1 class="dash-greeting-title">{{ order.order_number }}</h1>
@@ -84,7 +102,7 @@
       <div class="dash-panel-body">
         {% for item in order.items.all %}
         <div class="info-row">
-          <span class="label">{{ item.quantity }}× {{ item.product_name }}{% if item.size %} ({{ item.size_display }}{% if item.design_name %} · {{ item.design_name }}{% endif %}){% elif item.design_name %} ({{ item.design_name }}){% endif %}</span>
+          <span class="item-name">{{ item.quantity }}× {{ item.product_name }}{% if item.size %} ({{ item.size_display }}{% if item.design_name %} · {{ item.design_name }}{% endif %}){% elif item.design_name %} ({{ item.design_name }}){% endif %}</span>
           <span class="value">₱{{ item.item_total|floatformat:2|intcomma }}</span>
         </div>
         {% endfor %}
@@ -93,6 +111,43 @@
   </div>
 
   <div class="col-lg-5">
+    <!-- Delivery progress -->
+    <div class="dash-panel">
+      <div class="dash-panel-header">Delivery Progress</div>
+      <div class="dash-panel-body">
+        <div class="track-head">
+          <span>{% if order.status == 'delivered' %}Delivered{% elif order.status == 'shipped' %}On the way{% elif order.status == 'confirmed' %}Ready for pickup{% else %}Processing{% endif %}</span>
+        </div>
+        <div class="track-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{% if order.status == 'delivered' %}100{% elif order.status == 'shipped' %}67{% elif order.status == 'confirmed' %}33{% else %}10{% endif %}">
+          <span style="width:{% if order.status == 'delivered' %}100{% elif order.status == 'shipped' %}67{% elif order.status == 'confirmed' %}33{% else %}10{% endif %}%;"></span>
+        </div>
+        <ol class="track-steps">
+          <li class="track-step {% if order.status == 'confirmed' or order.status == 'shipped' or order.status == 'delivered' %}done{% else %}current{% endif %}">
+            <span class="track-dot"><i class="fas {% if order.status == 'confirmed' or order.status == 'shipped' or order.status == 'delivered' %}fa-check{% else %}fa-gear{% endif %}"></i></span>
+            <div><div class="track-title">Processing{% if order.status != 'confirmed' and order.status != 'shipped' and order.status != 'delivered' %}<span class="track-now">Now</span>{% endif %}</div></div>
+          </li>
+          <li class="track-step {% if order.status == 'shipped' or order.status == 'delivered' %}done{% elif order.status == 'confirmed' %}current{% endif %}">
+            <span class="track-dot"><i class="fas {% if order.status == 'shipped' or order.status == 'delivered' %}fa-check{% else %}fa-box{% endif %}"></i></span>
+            <div>
+              <div class="track-title">Ready for Pickup{% if order.status == 'confirmed' %}<span class="track-now">Now</span>{% endif %}</div>
+              {% if order.pickup_confirmed_at %}<div class="track-time">Picked up {{ order.pickup_confirmed_at|date:"M d, Y \a\t H:i" }}</div>{% endif %}
+            </div>
+          </li>
+          <li class="track-step {% if order.status == 'delivered' %}done{% elif order.status == 'shipped' %}current{% endif %}">
+            <span class="track-dot"><i class="fas {% if order.status == 'delivered' %}fa-check{% else %}fa-truck-fast{% endif %}"></i></span>
+            <div><div class="track-title">On the Way{% if order.status == 'shipped' %}<span class="track-now">Now</span>{% endif %}</div></div>
+          </li>
+          <li class="track-step {% if order.status == 'delivered' %}done current{% endif %}">
+            <span class="track-dot"><i class="fas {% if order.status == 'delivered' %}fa-check{% else %}fa-circle-check{% endif %}"></i></span>
+            <div>
+              <div class="track-title">Delivered</div>
+              {% if order.delivery_confirmed_at %}<div class="track-time">{{ order.delivery_confirmed_at|date:"M d, Y \a\t H:i" }}</div>{% endif %}
+            </div>
+          </li>
+        </ol>
+      </div>
+    </div>
+
     {% if order.status == 'confirmed' %}
     <!-- Confirm Pickup task -->
     <div class="dash-panel">
@@ -120,7 +175,7 @@
       <div class="dash-panel-header">Pickup Proof</div>
       <div class="dash-panel-body">
         {% if order.pickup_proof %}<img src="{{ order.pickup_proof.url }}" class="proof-final mb-2" alt="Pickup proof">{% endif %}
-        <div class="text-muted" style="font-size:12.5px;">Confirmed {{ order.pickup_confirmed_at|date:"M d, Y \a\t H:i" }}</div>
+        <div class="text-muted" style="font-size:14px;">Confirmed {{ order.pickup_confirmed_at|date:"M d, Y \a\t H:i" }}</div>
       </div>
     </div>
 
@@ -149,14 +204,14 @@
       <div class="dash-panel-header">Pickup Proof</div>
       <div class="dash-panel-body">
         {% if order.pickup_proof %}<img src="{{ order.pickup_proof.url }}" class="proof-final mb-2" alt="Pickup proof">{% endif %}
-        <div class="text-muted" style="font-size:12.5px;">Confirmed {{ order.pickup_confirmed_at|date:"M d, Y \a\t H:i" }}</div>
+        <div class="text-muted" style="font-size:14px;">Confirmed {{ order.pickup_confirmed_at|date:"M d, Y \a\t H:i" }}</div>
       </div>
     </div>
     <div class="dash-panel">
       <div class="dash-panel-header">Delivery Proof</div>
       <div class="dash-panel-body">
         {% if order.delivery_proof %}<img src="{{ order.delivery_proof.url }}" class="proof-final mb-2" alt="Delivery proof">{% endif %}
-        <div class="text-muted" style="font-size:12.5px;">Confirmed {{ order.delivery_confirmed_at|date:"M d, Y \a\t H:i" }}</div>
+        <div class="text-muted" style="font-size:14px;">Confirmed {{ order.delivery_confirmed_at|date:"M d, Y \a\t H:i" }}</div>
       </div>
     </div>
     {% endif %}
