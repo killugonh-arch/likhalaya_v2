@@ -37,6 +37,7 @@
 .od-thumb img { width:100%; height:100%; object-fit:cover; }
 .od-item-name { font-weight:700; font-size:17.5px; color:#14323a; }
 .od-pill { display:inline-block; padding:2px 11px; border-radius:7px; background:#eaf2ef; color:#14323a; font-size:13.5px; font-weight:600; border:1px solid #dbe7e3; }
+.od-pill.qty { background:var(--teal); color:#fff; border-color:var(--teal); }
 .od-item-sub { font-size:15px; color:#6b7672; }
 .od-item-price { font-weight:800; font-size:19.5px; color:#000; white-space:nowrap; }
 
@@ -47,6 +48,7 @@
 .od-totals-final .lbl { display:flex; align-items:center; gap:10px; font-weight:700; font-size:17.5px; color:#14323a; }
 .od-totals-final .amt { font-weight:800; font-size:24.5px; color:var(--gold); }
 
+.od-eta-line { display:block; }
 .od-cancel-btn { display:inline-flex; align-items:center; gap:8px; background:#e0334c; color:#fff; border:0; border-radius:10px; padding:11px 36px; font-weight:700; font-size:17.5px; box-shadow:0 4px 12px rgba(224,51,76,.25); }
 .od-cancel-btn:hover { background:#c52a41; color:#fff; }
 
@@ -56,9 +58,19 @@
 }
 @media (max-width: 575.98px) {
   .od-card-head { padding:10px 14px; font-size:17px; }
-  .od-info-label { font-size:12.5px; }
-  .od-info-value { font-size:14.5px; }
-  .od-info-ico { width:30px; height:30px; font-size:13px; }
+  .od-eta { padding:.45rem .65rem !important; gap:.6rem !important; margin-top:.5rem !important; }
+  .od-eta-ico { width:28px !important; height:28px !important; font-size:12px; }
+  .od-eta-label { font-size:10.5px !important; line-height:1.2; }
+  .od-eta-line { display:flex; align-items:baseline; flex-wrap:wrap; gap:6px; }
+  .od-eta-date { font-size:14px !important; }
+  .od-info-ico { display:none; }
+  .od-card-head.tint { padding:8px 12px; font-size:15.5px; }
+  .od-card-head.tint .od-head-icon { width:26px; height:26px; font-size:13px; }
+  .od-info-grid { row-gap:8px; padding:10px 4px; }
+  .od-info-cell { padding:0 10px; }
+  .od-info-label { font-size:11px; }
+  .od-info-value { font-size:13px; line-height:1.25; }
+  .od-info-note { padding:0 14px 10px; font-size:13px; }
   .od-item-name { font-size:16px; }
   .od-pill { font-size:12px; }
   .od-item-sub { font-size:14px; }
@@ -103,8 +115,8 @@
   <div class="d-flex justify-content-between align-items-start mb-4 flex-wrap gap-2">
     <div>
       <h4 class="fw-bold mb-1" style="color:var(--teal);font-size:27px;">Order Details</h4>
-      <div class="text-muted" style="font-size:16px;">
-        Placed: <span class="fw-semibold text-dark">{{ order.created_at|date:"M d, Y \a\t H:i" }}</span>
+      <div class="text-muted" style="font-size:14px;">
+        Placed: {{ order.created_at|date:"M j, Y" }}
       </div>
     </div>
     <a href="{% url 'orders:my_orders' %}" class="back-pill"><i class="fas fa-arrow-left"></i>Back</a>
@@ -128,12 +140,13 @@
         {% endfor %}
       </div>
       {% if order.eta_display and order.status == 'processing' or order.eta_display and order.status == 'confirmed' or order.eta_display and order.status == 'shipped' %}
-      <div class="d-flex align-items-center gap-3 mt-3 p-3 rounded-3" style="background:#eef7f5;border:1px solid #cfe6e1;">
-        <span class="d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width:40px;height:40px;background:var(--teal);color:#fff;"><i class="fas fa-truck-fast"></i></span>
+      <div class="od-eta d-flex align-items-center gap-3 mt-3 p-3 rounded-3" style="background:#eef7f5;border:1px solid #cfe6e1;">
+        <span class="od-eta-ico d-inline-flex align-items-center justify-content-center rounded-circle flex-shrink-0" style="width:40px;height:40px;background:var(--teal);color:#fff;"><i class="fas fa-truck-fast"></i></span>
         <div>
-          <div class="text-muted" style="font-size:12px;font-weight:600;">Estimated arrival</div>
-          <div class="fw-bold" style="font-size:17px;color:var(--teal);">{{ order.eta_date_display }}</div>
-          <div class="text-muted" style="font-size:13px;">({{ order.eta_display }})</div>
+          <div class="od-eta-label text-muted" style="font-size:12px;font-weight:600;">Estimated arrival</div>
+          <div class="od-eta-line">
+            <span class="od-eta-date fw-bold" style="font-size:17px;color:var(--teal);">{{ order.eta_date_display }}</span>
+          </div>
         </div>
       </div>
       {% endif %}
@@ -202,12 +215,11 @@
       </div>
       <div style="flex:1;min-width:0;">
         <div class="od-item-name">{{ item.product_name }}</div>
-        {% if item.size_display or item.design_name %}
         <div class="d-flex flex-wrap gap-1 my-1">
           {% if item.size_display %}<span class="od-pill">{{ item.size_display }}</span>{% endif %}
           {% if item.design_name %}<span class="od-pill">{{ item.design_name }}</span>{% endif %}
+          <span class="od-pill qty">Qty: {{ item.quantity }}</span>
         </div>
-        {% endif %}
       </div>
       <div class="od-item-price">₱{{ item.item_total|floatformat:0|intcomma }}</div>
     </div>
@@ -256,7 +268,7 @@
         </div>
         <div class="text-muted mb-3" style="font-size:12px;">Order ID: <span class="fw-semibold text-dark">{{ order.order_number }}</span></div>
         <div class="mb-2">
-          Are you sure you want to cancel your order for <strong>{% for item in order.items.all %}{{ item.product_name }}{% if not forloop.last %}, {% endif %}{% endfor %}</strong>? This action cannot be undone.
+          Are you sure you want to cancel your order for <strong>{% for item in order.items.all %}{{ item.product_name }}{% if item.quantity > 1 %} (x{{ item.quantity }}){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}</strong>? This action cannot be undone.
         </div>
       </div>
       <div class="modal-footer">

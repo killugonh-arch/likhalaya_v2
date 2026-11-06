@@ -163,8 +163,9 @@
 .mo-order-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,.08); transform: translateY(-1px); }
 .mo-order-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
 .mo-order-card-row { display: flex; justify-content: space-between; font-size: 13.5px; padding: 6px 0; color: #5b6663; }
-.mo-order-card-row .mo-card-label { color: #8b9490; }
+.mo-order-card-row .mo-card-label { color: #8b9490; flex-shrink: 0; }
 .mo-order-card-row .mo-card-value { font-weight: 700; color: #1a2420; }
+.mo-order-card-row .mo-card-value.mo-card-items { text-align: right; margin-left: 14px; min-width: 0; word-break: break-word; }
 
 /* ============ Pagination ============ */
 .mo-pagination {
@@ -272,7 +273,7 @@
                 <td class="mo-col-order">
                   <a href="{% url 'orders:order_detail' order.pk %}" class="mo-order-link" onclick="event.stopPropagation();">{{ order.order_number }}</a>
                 </td>
-                <td class="mo-col-items">{{ order.items.count }} item{{ order.items.count|pluralize }}</td>
+                <td class="mo-col-items">{% for item in order.items.all %}{{ item.product_name }}{% if item.quantity > 1 %} (x{{ item.quantity }}){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
                 <td class="mo-col-total fw-bold" style="color:var(--gold);">₱{{ order.total|floatformat:0|intcomma }}</td>
                 <td>{{ order.get_payment_method_display }}</td>
                 <td class="mo-col-status">
@@ -286,7 +287,7 @@
                     {{ order.get_status_display }}
                   </span>
                 </td>
-                <td class="text-muted">{{ order.created_at|date:"M d, Y" }}</td>
+                <td class="text-muted">{{ order.created_at|date:"n/j/y" }}</td>
               </tr>
               {% endfor %}
             </tbody>
@@ -312,7 +313,7 @@
           </div>
           <div class="mo-order-card-row">
             <span class="mo-card-label">Items</span>
-            <span class="mo-card-value">{{ order.items.count }} item{{ order.items.count|pluralize }}</span>
+            <span class="mo-card-value mo-card-items">{% for item in order.items.all %}{{ item.product_name }}{% if item.quantity > 1 %} (x{{ item.quantity }}){% endif %}{% if not forloop.last %}, {% endif %}{% endfor %}</span>
           </div>
           <div class="mo-order-card-row">
             <span class="mo-card-label">Total</span>
@@ -324,7 +325,7 @@
           </div>
           <div class="mo-order-card-row">
             <span class="mo-card-label">Date</span>
-            <span class="mo-card-value">{{ order.created_at|date:"M d, Y" }}</span>
+            <span class="mo-card-value">{{ order.created_at|date:"n/j/y" }}</span>
           </div>
         </div>
         {% endfor %}

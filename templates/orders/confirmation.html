@@ -17,20 +17,14 @@
 .oc-copy { background:none; border:0; color:var(--gold); font-size:1rem; cursor:pointer; padding:2px 4px; opacity:.75; }
 .oc-copy:hover { opacity:1; }
 
-.oc-body { display:grid; grid-template-columns:1fr 1fr; gap:0; margin-top:26px; }
-.oc-info { display:grid; grid-template-columns:1fr 1fr; gap:22px 18px; padding-right:28px; align-content:start; }
-.oc-info .full { grid-column:1 / -1; }
-.oc-field { display:flex; align-items:center; gap:14px; min-width:0; }
-.oc-ico { width:44px; height:44px; border-radius:50%; background:#e3f3ea; color:var(--teal); display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; }
-.oc-field .k { color:#6b7a77; font-size:.78rem; }
-.oc-field .v { font-weight:700; color:#16302c; word-break:break-word; }
-.oc-badge { display:inline-block; background:#ffc107; color:#3a2d00; font-weight:700; font-size:.75rem; padding:3px 12px; border-radius:20px; }
+.oc-body { margin-top:26px; }
 
-.oc-items { border-left:1px solid #e3e8e6; padding-left:28px; }
+.oc-items { max-width:720px; margin:0 auto; }
 .oc-item { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid #e3e8e6; }
-.oc-item-ico { color:var(--teal); font-size:18px; width:24px; text-align:center; flex-shrink:0; }
+.oc-thumb { width:72px; height:72px; border-radius:12px; overflow:hidden; background:#f1f4f3; flex-shrink:0; display:flex; align-items:center; justify-content:center; color:#9aa5a1; font-size:20px; }
+.oc-thumb img { width:100%; height:100%; object-fit:cover; }
 .oc-item .nm { font-weight:700; color:#16302c; }
-.oc-item .qty { color:#6b7a77; font-size:.78rem; }
+.oc-item .qty { display:inline-block; margin-top:3px; padding:1px 9px; border-radius:6px; background:#fff1c2; color:#000; font-size:.82rem; font-weight:700; }
 .oc-item .amt { margin-left:auto; font-weight:800; color:var(--gold); font-size:1.1rem; }
 .oc-chip { display:inline-block; background:#e3f3ea; color:#2f5a4f; font-size:.68rem; padding:2px 9px; border-radius:20px; margin-left:6px; font-weight:600; }
 .oc-lines { margin-top:12px; font-size:.85rem; color:#6b7a77; }
@@ -54,10 +48,8 @@
   .oc-check-ring { width:76px; height:76px; } .oc-check { width:50px; height:50px; font-size:22px; }
   .oc-title { font-size:1.5rem; }
   .oc-ordno { width:100%; min-width:0; }
-  .oc-body { grid-template-columns:1fr; gap:20px; }
-  .oc-info { padding-right:0; grid-template-columns:1fr; }
-  .oc-items { border-left:0; padding-left:0; border-top:1px solid #e3e8e6; padding-top:14px; }
   .oc-btns .btn { width:100%; }
+  .oc-thumb { width:56px; height:56px; }
 }
 </style>
 {% endblock %}
@@ -85,33 +77,18 @@
         </div>
 
         <div class="oc-body">
-          <div class="oc-info">
-            <div class="oc-field">
-              <div class="oc-ico"><i class="far fa-user"></i></div>
-              <div><div class="k">Full Name</div><div class="v">{{ order.full_name }}</div></div>
-            </div>
-            <div class="oc-field">
-              <div class="oc-ico"><i class="far fa-envelope"></i></div>
-              <div><div class="k">Email</div><div class="v">{{ order.email }}</div></div>
-            </div>
-            <div class="oc-field">
-              <div class="oc-ico"><i class="far fa-credit-card"></i></div>
-              <div><div class="k">Payment Method</div><div class="v">{{ order.get_payment_method_display }}</div></div>
-            </div>
-            <div class="oc-field">
-              <div class="oc-ico"><i class="fas fa-info"></i></div>
-              <div><div class="k">Status</div><span class="oc-badge">{{ order.get_status_display }}</span></div>
-            </div>
-            <div class="oc-field full">
-              <div class="oc-ico"><i class="fas fa-location-dot"></i></div>
-              <div><div class="k">Delivery Address</div><div class="v">{{ order.address }}, {% if order.barangay %}{{ order.barangay }}, {% endif %}{{ order.city }}, {{ order.province }}</div></div>
-            </div>
-          </div>
-
           <div class="oc-items">
             {% for item in order.items.all %}
             <div class="oc-item">
-              <div class="oc-item-ico"><i class="fas fa-bag-shopping"></i></div>
+              <div class="oc-thumb">
+                {% if item.design.image %}
+                  <img src="{{ item.design.image.url }}" alt="{{ item.product_name }}">
+                {% elif item.product.image %}
+                  <img src="{{ item.product.image.url }}" alt="{{ item.product_name }}">
+                {% else %}
+                  <i class="fas fa-image"></i>
+                {% endif %}
+              </div>
               <div>
                 <div class="nm">{{ item.product_name }}
                   {% if item.size_display %}<span class="oc-chip">{{ item.size_display }}</span>{% endif %}
@@ -130,7 +107,7 @@
 
             <div class="oc-total">
               <div class="peso">₱</div>
-              <div class="lbl">{% if order.payment_method == 'cod' %}Total to Pay on Delivery{% else %}Total{% endif %}</div>
+              <div class="lbl">Total</div>
               <div class="amt">₱{{ order.total|floatformat:0|intcomma }}</div>
             </div>
           </div>
