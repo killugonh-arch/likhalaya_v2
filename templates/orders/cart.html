@@ -62,13 +62,13 @@
   background: var(--cart-green-soft); color: var(--cart-green);
   font-size: 11px; font-weight: 700; padding: 3px 10px; border-radius: 6px;
 }
-.cart-item-price { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 18px; color: var(--cart-green); margin-top: 8px; }
+.cart-item-price { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 18px; color: var(--cart-gold); margin-top: 8px; }
 .stock-warning { display: flex; align-items: center; gap: 5px; margin-top: 6px; font-size: 11.5px; font-weight: 500; color: var(--cart-gold); }
 
 /* Right side: line total, trash, quantity */
 .cart-line-side { display: flex; flex-direction: column; align-items: flex-end; gap: 14px; flex-shrink: 0; }
 .cart-line-top { display: flex; align-items: center; gap: 18px; }
-.cart-line-total { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 18px; color: var(--cart-green); }
+.cart-line-total { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 18px; color: var(--cart-gold); }
 .remove-line-btn {
   background: none; border: none; padding: 4px; color: #7b8582; font-size: 15px;
   cursor: pointer; transition: color .15s ease;
@@ -89,15 +89,6 @@
 .cart-qty-btn:disabled { color: #c3c7c5; cursor: not-allowed; }
 .cart-qty-value { min-width: 38px; text-align: center; font-weight: 700; font-size: 14px; color: #1a2420; }
 
-/* Pickup / delivery info bar */
-.cart-info-wrap { padding: 0 24px 24px; }
-.cart-info-bar {
-  display: flex; align-items: center; gap: 12px;
-  padding: 14px 16px; border-radius: 12px;
-  background: var(--cart-green-soft); color: #2f6f5a; font-size: 12.5px;
-}
-.cart-info-bar i { color: var(--cart-green); font-size: 16px; }
-
 /* ===== Order summary ===== */
 .summary-sticky-wrap { position: sticky; top: 96px; }
 .summary-card { border: none; border-radius: 20px; background: #fff; box-shadow: 0 6px 26px rgba(20,60,50,.07); padding: 26px 24px; }
@@ -106,11 +97,10 @@
 .summary-row .label { color: #5f6b67; }
 .summary-row .value { font-weight: 700; color: #1a2420; }
 .summary-row .value.shipping-free { color: var(--cart-green); }
-.free-shipping-alert { font-size: 12px; border-radius: 10px; background: var(--cart-green-soft); border: none; color: #2f6f5a; }
 .summary-divider { border: none; border-top: 1px solid #ECE8DD; margin: 16px 0; }
 .summary-grand-total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .summary-grand-total-label { font-family: 'Fraunces', serif; font-weight: 700; font-size: 16px; color: #1a2420; }
-.summary-grand-total { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 28px; color: var(--cart-green); }
+.summary-grand-total { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 28px; color: var(--cart-gold); }
 
 .btn-checkout {
   width: 100%; border: none; border-radius: 12px; padding: 14px 0;
@@ -121,13 +111,6 @@
 }
 .btn-checkout:hover { color: #fff; filter: brightness(.93); transform: translateY(-2px); box-shadow: 0 10px 24px rgba(201,132,26,.28); }
 .btn-checkout:disabled, .btn-checkout.disabled { background: #cbb98f; cursor: not-allowed; transform: none; box-shadow: none; filter: none; }
-
-.secure-checkout-note {
-  display: flex; align-items: center; gap: 12px; margin-top: 16px;
-  padding: 13px 16px; border-radius: 12px;
-  background: var(--cart-green-soft); color: #2f6f5a; font-size: 12.5px; line-height: 1.4;
-}
-.secure-checkout-note i { color: var(--cart-green); font-size: 17px; }
 
 /* ===== Empty cart ===== */
 .empty-cart-card { background: #fff; border-radius: 20px; box-shadow: 0 6px 26px rgba(20,60,50,.07); padding: 64px 24px; }
@@ -143,7 +126,7 @@
   box-shadow: 0 -6px 18px rgba(20,60,50,.12);
 }
 .cart-mobile-bar .bar-label { font-size: 11px; color: #5f6b67; line-height: 1.1; }
-.cart-mobile-bar .bar-total { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 20px; color: var(--cart-green); line-height: 1.1; }
+.cart-mobile-bar .bar-total { font-family: 'Inter', sans-serif; font-weight: 700; font-size: 20px; color: var(--cart-gold); line-height: 1.1; }
 .cart-mobile-bar .btn-checkout { width: auto; padding: 11px 20px; font-size: 14px; white-space: nowrap; }
 
 /* ===== Responsive (phone-first) ===== */
@@ -180,16 +163,12 @@
   .cart-qty-group { padding: 2px; }
   .cart-qty-btn { width: 34px; height: 34px; }
   .cart-qty-value { min-width: 30px; font-size: 13.5px; }
-  .cart-info-wrap { padding: 0 12px 12px; }
-  .cart-info-bar { padding: 9px 12px; font-size: 12px; gap: 9px; }
   .summary-card { padding: 14px 14px; }
   .summary-title { font-size: 17px; margin-bottom: 10px; }
   .summary-row { font-size: 13px; margin-bottom: 7px; }
   .summary-divider { margin: 10px 0; }
   .summary-grand-total { font-size: 22px; }
-  .free-shipping-alert { font-size: 11.5px; }
-  .secure-checkout-note { margin-top: 10px; padding: 9px 12px; font-size: 12px; gap: 9px; }
-  .empty-cart-card { padding: 36px 16px; }
+    .empty-cart-card { padding: 36px 16px; }
   .empty-cart-title { font-size: 24px; }
   .empty-cart-text { font-size: 14px; }
   .empty-cart-card .btn { font-size: 18px; }
@@ -243,7 +222,6 @@
                 {% if item.design_name %}<span class="cart-item-variant-badge">{{ item.design_name }}</span>{% endif %}
               </div>
               {% endif %}
-              <div class="cart-item-price">₱{{ item.price|floatformat:0|intcomma }}</div>
               {% if item.design %}{% if item.quantity >= item.design.stock %}
               <div class="stock-warning"><i class="fas fa-exclamation-circle"></i>Max available stock reached</div>
               {% endif %}{% elif item.quantity >= item.product.stock %}
@@ -272,13 +250,6 @@
             </div>
           </div>
           {% endfor %}
-
-          <div class="cart-info-wrap">
-            <div class="cart-info-bar">
-              <i class="fas fa-truck"></i>
-              <span>{% if cart_items|length == 1 %}This item is{% else %}These items are{% endif %} available for pickup or delivery. Shipping options will be confirmed at checkout.</span>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -304,16 +275,6 @@
                 </span>
               </div>
 
-              <div class="alert free-shipping-alert py-2 mb-2" id="freeShippingAlert">
-                <i class="fas fa-info-circle me-1"></i><span id="freeShippingText">
-                  {% if shipping_has_location %}
-                    Based on your address ({{ shipping_quote.zone }}{% if shipping_quote.distance_km %}, ~{{ shipping_quote.distance_km }} km{% endif %}) and number of items.
-                  {% else %}
-                    Shipping depends on your delivery location and number of items. Estimated here; final fee is set at checkout.
-                  {% endif %}
-                </span>
-              </div>
-
               <hr class="summary-divider">
 
               <div class="summary-grand-total-row">
@@ -324,11 +285,6 @@
               <button type="submit" class="btn-checkout" id="checkoutSubmitBtn">
                 <i class="fas fa-lock"></i>Proceed to Checkout<i class="fas fa-arrow-right"></i>
               </button>
-
-              <div class="secure-checkout-note">
-                <i class="fas fa-shield-halved"></i>
-                <span>Your payment information is secure and encrypted.</span>
-              </div>
             </div>
           </form>
         </div>
@@ -372,8 +328,6 @@
   const subtotalEl = document.getElementById('summarySubtotal');
   const shippingEl = document.getElementById('summaryShipping');
   const grandTotalEl = document.getElementById('summaryGrandTotal');
-  const freeShippingAlert = document.getElementById('freeShippingAlert');
-  const freeShippingText = document.getElementById('freeShippingText');
 
   const peso = (n) => '₱' + Math.round(n).toLocaleString('en-US');
 

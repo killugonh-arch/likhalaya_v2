@@ -38,14 +38,14 @@
 .od-item-name { font-weight:700; font-size:17.5px; color:#14323a; }
 .od-pill { display:inline-block; padding:2px 11px; border-radius:7px; background:#eaf2ef; color:#14323a; font-size:13.5px; font-weight:600; border:1px solid #dbe7e3; }
 .od-item-sub { font-size:15px; color:#6b7672; }
-.od-item-price { font-weight:800; font-size:19.5px; color:var(--teal); white-space:nowrap; }
+.od-item-price { font-weight:800; font-size:19.5px; color:#000; white-space:nowrap; }
 
 .od-totals { margin:0 16px 16px; padding:14px 18px; background:#f1f4f3; border-radius:14px; }
 .od-totals-row { display:flex; justify-content:space-between; font-size:15px; color:#5f6b67; margin-bottom:6px; }
 .od-totals-row span:last-child { font-weight:600; color:#14323a; }
 .od-totals-final { display:flex; justify-content:space-between; align-items:center; border-top:1px solid #d9dfdc; margin-top:8px; padding-top:12px; }
 .od-totals-final .lbl { display:flex; align-items:center; gap:10px; font-weight:700; font-size:17.5px; color:#14323a; }
-.od-totals-final .amt { font-weight:800; font-size:24.5px; color:var(--teal); }
+.od-totals-final .amt { font-weight:800; font-size:24.5px; color:var(--gold); }
 
 .od-cancel-btn { display:inline-flex; align-items:center; gap:8px; background:#e0334c; color:#fff; border:0; border-radius:10px; padding:11px 36px; font-weight:700; font-size:17.5px; box-shadow:0 4px 12px rgba(224,51,76,.25); }
 .od-cancel-btn:hover { background:#c52a41; color:#fff; }
@@ -70,9 +70,12 @@
   .od-item-price { font-size:17px; }
   .od-totals { margin:0 10px 12px; padding:12px 14px; }
   .od-totals-final .amt { font-size:21px; }
-  .od-step { font-size:13px; padding:5px 12px 5px 6px; }
-  .od-step .od-step-dot { width:20px; height:20px; font-size:10.5px; }
-  .od-step-line { width:6px; }
+  /* Status steps: always one line on phones */
+  .od-steps { flex-wrap:nowrap; gap:3px; justify-content:safe center; overflow-x:auto; scrollbar-width:none; }
+  .od-steps::-webkit-scrollbar { display:none; }
+  .od-step { font-size:9.5px; padding:5px 7px; gap:0; }
+  .od-step .od-step-dot, .od-step .od-step-num { display:none; }
+  .od-step-line { width:4px; }
 }
 
 /* ===== Compact phone spacing ===== */
@@ -101,14 +104,6 @@
     <div>
       <h4 class="fw-bold mb-1" style="color:var(--teal);font-size:27px;">Order Details</h4>
       <div class="text-muted" style="font-size:16px;">
-        {% with items=order.items.all %}
-        {% if items|length > 1 %}
-          {{ items.0.product_name }} <span class="text-muted">+{{ items|length|add:"-1" }} more</span>
-        {% else %}
-          {{ items.0.product_name }}
-        {% endif %}
-        {% endwith %}
-        <span class="mx-2">•</span>
         Placed: <span class="fw-semibold text-dark">{{ order.created_at|date:"M d, Y \a\t H:i" }}</span>
       </div>
     </div>
@@ -127,7 +122,7 @@
           <span class="od-step-dot">
             {% if forloop.counter < status_index or forloop.counter == status_index and order.status != 'cancelled' %}<i class="fas fa-check"></i>{% elif order.status == 'cancelled' %}<i class="fas fa-xmark"></i>{% endif %}
           </span>
-          {{ forloop.counter }}. {{ l }}
+          <span class="od-step-num">{{ forloop.counter }}.&nbsp;</span>{{ l }}
         </div>
         {% endif %}
         {% endfor %}
@@ -213,7 +208,6 @@
           {% if item.design_name %}<span class="od-pill">{{ item.design_name }}</span>{% endif %}
         </div>
         {% endif %}
-        <div class="od-item-sub">₱{{ item.product_price|floatformat:0|intcomma }} × {{ item.quantity }}</div>
       </div>
       <div class="od-item-price">₱{{ item.item_total|floatformat:0|intcomma }}</div>
     </div>
