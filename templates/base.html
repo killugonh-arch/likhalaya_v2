@@ -468,27 +468,32 @@
            FOOTER RESPONSIVE
            ========================================================= */
 
-        @media (max-width: 991px) {
+        /* Tablet + phone: brand/support centered, link columns centered blocks */
+        @media (max-width: 991.98px) {
 
-            footer .row.g-4 > div {
+            .footer-col-brand,
+            .footer-col-support {
                 text-align: center;
-            }
-
-            .footer-contact-item {
-                gap: 12px;
-            }
-
-            .footer-contact-icon {
-                margin-top: 0;
-            }
-
-            .footer-support-icon {
-                margin-left: auto;
-                margin-right: auto;
             }
 
             .footer-brand-logos-wrap {
                 justify-content: center;
+            }
+
+            .footer-col-links,
+            .footer-col-contact {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .footer-col-links .footer-heading,
+            .footer-col-contact .footer-heading {
+                text-align: center;
+            }
+
+            .footer-heading {
+                margin-bottom: 14px !important;
             }
 
             .footer-bottom {
@@ -496,30 +501,42 @@
             }
 
             .footer-bottom .d-flex {
-                flex-direction: column;
-                align-items: center;
-                gap: 6px !important;
-            }
-
-            footer .row.g-4 > div {
-                margin-bottom: 8px;
-            }
-
-            .footer-heading {
-                margin-bottom: 14px !important;
+                justify-content: center;
             }
         }
 
-        /* Footer text -2px on phones */
+        /* Phone: compact footer, Quick Links + Contact side by side */
         @media (max-width: 575.98px) {
-            .footer-brand-name { font-size: 20px; }
-            footer .col-lg-4 > small { font-size: 12px; }
-            .footer-heading { font-size: 10.5px; }
-            .footer-body-text { font-size: 12px; }
+
+            footer.mt-5 { margin-top: 1.5rem !important; }
+            footer { padding-top: 1.1rem !important; padding-bottom: .8rem !important; }
+
+            footer .row.g-4 { --bs-gutter-y: .6rem; --bs-gutter-x: .6rem; margin-bottom: 0 !important; }
+
+            .footer-brand-logo { width: 30px; height: 30px; padding: 3px; }
+            .footer-brand-name { font-size: 16px; }
+            footer .footer-col-brand > small { font-size: 10.5px; }
+            footer .footer-col-brand .footer-body-text { margin-top: .4rem !important; }
+
+            .footer-heading { font-size: 9.5px; margin-bottom: 8px !important; }
+            .footer-body-text { font-size: 10.5px; line-height: 1.5; }
+
+            .footer-link-list li { margin-bottom: 6px; }
             .footer-link-list,
-            .footer-link-list a { font-size: 12px; }
-            .footer-contact-item .footer-contact-text { font-size: 12px; }
-            .footer-bottom small { font-size: 12px; }
+            .footer-link-list a { font-size: 11px; }
+
+            .footer-contact-list { align-items: flex-start; }
+            .footer-contact-item { gap: 7px; margin-bottom: 6px; }
+            .footer-contact-icon { width: 22px; height: 22px; border-radius: 6px; font-size: 10px; }
+            .footer-contact-item .footer-contact-text {
+                font-size: 10.5px;
+                line-height: 1.3;
+                word-break: break-word;
+                text-align: left;
+            }
+
+            .footer-bottom { margin-top: 2px; padding-top: 8px; }
+            .footer-bottom small { font-size: 10px; }
         }
 
 
@@ -846,7 +863,7 @@
 
 
         /* =========================================================
-           MOBILE NAVBAR
+           MOBILE NAVBAR  (sizes bumped up)
            ========================================================= */
 
         @media (max-width: 767.98px) {
@@ -856,11 +873,11 @@
             }
 
             .navbar-brand img {
-                height: 28px !important;
+                height: 32px !important;
             }
 
             .navbar-brand {
-                gap: 4px !important;
+                gap: 6px !important;
             }
 
             .navbar .container {
@@ -918,8 +935,8 @@
             }
 
             #navbarMain .navbar-nav .nav-link {
-                font-size: 9.5px;
-                padding: 4px 3px !important;
+                font-size: 12px;
+                padding: 6px 5px !important;
                 white-space: nowrap;
             }
 
@@ -936,13 +953,13 @@
 
             .navbar-utility-row {
                 justify-content: flex-end;
-                gap: 8px !important;
+                gap: 10px !important;
                 margin-top: 0;
                 padding-right: 2px;
             }
 
             .utility-icon {
-                font-size: 16px;
+                font-size: 22px;
             }
 
             .navbar-utility-row .utility-icon-btn,
@@ -950,16 +967,16 @@
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                min-width: 24px;
-                min-height: 24px;
+                min-width: 32px;
+                min-height: 32px;
             }
 
             .navbar-utility-row .utility-cart-badge {
-                font-size: 8px;
-                min-width: 12px;
-                height: 12px;
-                line-height: 12px;
-                padding: 0 2px;
+                font-size: 9px;
+                min-width: 14px;
+                height: 14px;
+                line-height: 14px;
+                padding: 0 3px;
             }
 
 
@@ -985,8 +1002,8 @@
             #navbarMain .btn.btn-teal,
             #navbarMain .btn.btn-outline-secondary {
                 width: auto;
-                padding: 5px 8px;
-                font-size: 10px;
+                padding: 8px 14px;
+                font-size: 13px;
                 white-space: nowrap;
             }
         }
@@ -998,16 +1015,60 @@
                 height: 28px !important;
             }
 
+            #navbarMain .navbar-nav .nav-link {
+                font-size: 11px;
+                padding: 6px 4px !important;
+            }
+
             #navbarMain .btn.btn-teal,
             #navbarMain .btn.btn-outline-secondary {
-                padding: 5px 8px;
-                font-size: 10px;
+                padding: 7px 11px;
+                font-size: 12px;
             }
 
             .navbar-utility-row {
                 gap: 8px !important;
             }
         }
+
+
+        /* =========================================================
+           LOGIN / REGISTER — SAME SIZE
+           ========================================================= */
+
+        #navbarMain .btn.btn-teal,
+        #navbarMain .btn.btn-outline-secondary {
+            box-sizing: border-box;
+            width: 84px;
+            height: 42px;
+            padding: 0 !important;
+            font-weight: 600;
+            border-width: 1px;
+            border-style: solid;
+        }
+
+        #navbarMain .btn.btn-teal {
+            border-color: var(--teal);
+        }
+
+        @media (max-width: 767.98px) {
+            #navbarMain .btn.btn-teal,
+            #navbarMain .btn.btn-outline-secondary {
+                width: 66px;
+                height: 36px;
+                padding: 0 !important;
+                font-size: 13px;
+            }
+        }
+
+        @media (max-width: 400px) {
+            #navbarMain .btn.btn-teal,
+            #navbarMain .btn.btn-outline-secondary {
+                width: 58px;
+                height: 32px;
+                padding: 0 !important;
+                font-size: 12px;
+            }
         }
 
 
@@ -1021,8 +1082,8 @@
         }
 
         .mobile-menu-button {
-            width: 36px;
-            height: 36px;
+            width: 40px;
+            height: 40px;
 
             padding: 0 !important;
 
@@ -1035,7 +1096,7 @@
         }
 
         .mobile-menu-button i {
-            font-size: 25px;
+            font-size: 30px;
             line-height: 1;
         }
 
@@ -2667,7 +2728,7 @@ document.addEventListener('DOMContentLoaded', function () {
                  BRAND
                  ================================================= -->
 
-            <div class="col-lg-4">
+            <div class="col-12 col-lg-4 footer-col-brand">
 
                 <div
                     class="d-flex align-items-center gap-2 mb-2 footer-brand-logos-wrap"
@@ -2708,7 +2769,7 @@ document.addEventListener('DOMContentLoaded', function () {
                  QUICK LINKS
                  ================================================= -->
 
-            <div class="col-lg-2 col-6">
+            <div class="col-6 col-lg-2 footer-col-links">
 
                 <h6
                     class="text-uppercase fw-bold mb-3 footer-heading"
@@ -2752,7 +2813,7 @@ document.addEventListener('DOMContentLoaded', function () {
                  CONTACT
                  ================================================= -->
 
-            <div class="col-lg-3 col-6">
+            <div class="col-6 col-lg-3 footer-col-contact">
 
                 <h6
                     class="text-uppercase fw-bold mb-3 footer-heading"
@@ -2814,7 +2875,7 @@ document.addEventListener('DOMContentLoaded', function () {
                  SUPPORT
                  ================================================= -->
 
-            <div class="col-lg-3">
+            <div class="col-12 col-lg-3 footer-col-support">
 
                 <h6
                     class="text-uppercase fw-bold mb-3 footer-heading"
