@@ -5,12 +5,12 @@
 {% block extra_css %}
 <style>
 /* ===== Order detail layout ===== */
-.od-step-card { background:#fff; border:1px solid #e6ece9; border-radius:16px; padding:14px 16px; }
-.od-steps { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:8px; }
-.od-step-line { width:26px; height:2px; background:#d9dedc; flex-shrink:0; }
+.od-step-card { background:#fff; border:1px solid #e6ece9; border-radius:16px; padding:10px 14px; }
+.od-steps { display:flex; align-items:center; justify-content:center; flex-wrap:nowrap; gap:5px; overflow-x:auto; scrollbar-width:none; }
+.od-step-line { width:14px; height:2px; background:#d9dedc; flex-shrink:0; }
 .od-step-line.done { background:#27ae60; }
-.od-step { display:inline-flex; align-items:center; gap:9px; padding:9px 20px 9px 9px; border-radius:999px; background:#eceeed; color:#8a938f; font-size:17px; font-weight:600; white-space:nowrap; }
-.od-step .od-step-dot { width:30px; height:30px; border-radius:50%; background:#c9cfcc; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:15px; }
+.od-step { display:inline-flex; align-items:center; gap:6px; padding:5px 12px 5px 5px; border-radius:999px; background:#eceeed; color:#8a938f; font-size:12.5px; font-weight:600; white-space:nowrap; }
+.od-step .od-step-dot { width:20px; height:20px; border-radius:50%; background:#c9cfcc; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:10px; }
 .od-step.done { background:#27ae60; color:#fff; }
 .od-step.done .od-step-dot { background:rgba(255,255,255,.28); }
 .od-step.current { background:var(--teal); color:#fff; }
@@ -39,11 +39,11 @@
 .od-pill { display:inline-block; padding:2px 11px; border-radius:7px; background:#eaf2ef; color:#14323a; font-size:13.5px; font-weight:600; border:1px solid #dbe7e3; }
 .od-pill.qty { background:var(--teal); color:#fff; border-color:var(--teal); }
 .od-item-sub { font-size:15px; color:#6b7672; }
-.od-item-price { font-weight:800; font-size:19.5px; color:#000; white-space:nowrap; }
+.od-item-price { font-weight:800; font-size:19.5px; color:var(--gold); white-space:nowrap; }
 
 .od-totals { margin:0 16px 16px; padding:14px 18px; background:#f1f4f3; border-radius:14px; }
 .od-totals-row { display:flex; justify-content:space-between; font-size:15px; color:#5f6b67; margin-bottom:6px; }
-.od-totals-row span:last-child { font-weight:600; color:#14323a; }
+.od-totals-row span:last-child { font-weight:700; color:#000; }
 .od-totals-final { display:flex; justify-content:space-between; align-items:center; border-top:1px solid #d9dfdc; margin-top:8px; padding-top:12px; }
 .od-totals-final .lbl { display:flex; align-items:center; gap:10px; font-weight:700; font-size:17.5px; color:#14323a; }
 .od-totals-final .amt { font-weight:800; font-size:24.5px; color:var(--gold); }

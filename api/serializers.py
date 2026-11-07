@@ -173,6 +173,9 @@ class OrderItemSerializer(serializers.ModelSerializer):
 class OrderSerializer(serializers.ModelSerializer):
     items = OrderItemSerializer(many=True, read_only=True)
     order_number = serializers.CharField(read_only=True)
+    # Who is delivering (or delivered) the order. Name only: never the
+    # courier's username/email or contact details.
+    courier_name = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -181,10 +184,22 @@ class OrderSerializer(serializers.ModelSerializer):
             'full_name', 'email', 'phone', 'address', 'city', 'province',
             'zip_code', 'notes', 'payment_proof', 'payment_submitted_at',
             'subtotal', 'shipping_fee', 'total', 'items',
+            'courier_name', 'delivery_confirmed_at',
             'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'user', 'subtotal', 'shipping_fee', 'total',
+                             'courier_name', 'delivery_confirmed_at',
                              'created_at', 'updated_at']
+
+    def get_courier_name(self, obj):
+        courier = obj.assigned_courier
+        if courier is None:
+            return None
+        # Full name, else first name, else the account's username — so a
+        # courier whose profile has no name filled in still shows up.
+        return ((courier.get_full_name() or '').strip()
+                or (courier.first_name or '').strip()
+                or courier.get_username())
 
 
 class OrderStatusUpdateSerializer(serializers.ModelSerializer):

@@ -427,6 +427,33 @@ input.material-locked { background: #f5f3ee; cursor: not-allowed; }
               {% if form.target_budget.errors %}<div class="text-danger small mt-1">{{ form.target_budget.errors.0 }}</div>{% endif %}
             </div>
 
+            {# ---------- reference_image (Product & Custom Orders only, always optional) ---------- #}
+            <div class="col-12 dynamic-field-group" data-field="reference_image" data-show-for="custom_order">
+              <style>
+                .ref-upload-btn { display:inline-flex; align-items:center; gap:8px; border:1.5px dashed #cfc8b8; border-radius:10px; padding:9px 16px; font-size:13.5px; font-weight:600; color:var(--teal); background:#faf8f3; cursor:pointer; transition:border-color .15s, background .15s; }
+                .ref-upload-btn:hover { border-color:var(--teal); background:#f3f8f7; }
+                #ref-image-input { display:none; }
+                .ref-hint { font-size:11.5px; color:#8b9490; margin-top:4px; }
+                .ref-preview { display:none; align-items:center; gap:12px; margin-top:10px; }
+                .ref-preview.show { display:flex; }
+                .ref-preview-box { position:relative; width:96px; height:96px; border-radius:12px; overflow:hidden; border:1px solid #e6e1d6; box-shadow:0 1px 4px rgba(0,0,0,.08); background:#f1f4f3; }
+                .ref-preview-box img { width:100%; height:100%; object-fit:cover; display:block; }
+                .ref-remove { display:inline-flex; align-items:center; gap:6px; border:1.5px solid #e0334c; background:#fff; color:#e0334c; border-radius:10px; padding:6px 12px; font-size:13px; font-weight:700; cursor:pointer; }
+                .ref-remove:hover { background:#fdecef; }
+              </style>
+              <label class="form-label fw-semibold small">Product Image <span class="field-optional-tag">(Optional)</span></label>
+              <div>
+                <label class="ref-upload-btn" for="ref-image-input"><i class="fas fa-camera"></i><span id="ref-image-label">Add image</span></label>
+                <input type="file" name="reference_image" id="ref-image-input" accept="image/jpeg,image/png,image/webp">
+                <div class="ref-hint">A photo or sketch of what you want. JPG, PNG or WEBP, up to 5 MB.</div>
+                <div class="ref-preview" id="ref-image-preview">
+                  <div class="ref-preview-box"><img id="ref-image-img" alt="Selected image"></div>
+                  <button type="button" class="ref-remove" id="ref-image-remove"><i class="fas fa-trash-can"></i>Delete image</button>
+                </div>
+              </div>
+              {% if form.reference_image.errors %}<div class="text-danger small mt-1">{{ form.reference_image.errors.0 }}</div>{% endif %}
+            </div>
+
             {# ---------- organization_name: optional for Bulk Orders, required for Partnership ---------- #}
             <div class="col-6 dynamic-field-group" data-field="organization_name" data-show-for="bulk_order partnership">
               <label class="form-label fw-semibold small" id="label_organization_name" for="{{ form.organization_name.id_for_label }}">Organization / Business Name</label>
@@ -492,6 +519,35 @@ input.material-locked { background: #f5f3ee; cursor: not-allowed; }
 {% block extra_js %}
 <script>
 (function () {
+  // Product & Custom Orders: reference image picker with preview + delete
+  (function () {
+    var input = document.getElementById('ref-image-input');
+    if (!input) return;
+    var box = document.getElementById('ref-image-preview');
+    var img = document.getElementById('ref-image-img');
+    var label = document.getElementById('ref-image-label');
+    var url = null;
+    function clear() {
+      input.value = '';
+      if (url) { URL.revokeObjectURL(url); url = null; }
+      img.removeAttribute('src');
+      box.classList.remove('show');
+      label.textContent = 'Add image';
+    }
+    input.addEventListener('change', function () {
+      var f = input.files && input.files[0];
+      if (!f) { clear(); return; }
+      if (['image/jpeg', 'image/png', 'image/webp'].indexOf(f.type) === -1) { alert('Please choose a JPG, PNG or WEBP image.'); clear(); return; }
+      if (f.size > 5 * 1048576) { alert('The image must be 5 MB or smaller.'); clear(); return; }
+      if (url) URL.revokeObjectURL(url);
+      url = URL.createObjectURL(f);
+      img.src = url;
+      box.classList.add('show');
+      label.textContent = 'Change image';
+    });
+    document.getElementById('ref-image-remove').addEventListener('click', clear);
+  })();
+
   const FIELD_CONFIG = {
     item_name: {
       custom_order:      { label: 'Product',       required: true, placeholder: 'e.g. Woven Rattan Bag' },
