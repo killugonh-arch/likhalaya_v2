@@ -160,12 +160,18 @@ class Product(models.Model):
     def total_stock(self):
         if self.pk and self.has_variants:
             return sum(s.total_stock for s in self.sizes.filter(is_active=True))
+        if self.pk and self.has_direct_designs:
+            return sum(d.stock for d in self.direct_designs.filter(is_active=True))
         return self.stock
 
     def recalculate_stock(self):
-        if not self.has_variants:
+        if self.has_variants:
+            total = sum(s.total_stock for s in self.sizes.filter(is_active=True))
+        elif self.pk and self.direct_designs.exists():
+            # No sizes: stock is the sum of the product's own designs
+            total = sum(d.stock for d in self.direct_designs.filter(is_active=True))
+        else:
             return
-        total = sum(s.total_stock for s in self.sizes.filter(is_active=True))
         if total != self.stock:
             self.stock = total
             self.save(update_fields=['stock'])
@@ -203,7 +209,19 @@ class Product(models.Model):
                 product_size__is_active=True,
                 is_active=True
             ).exists()
-        return False
+        return self.has_direct_designs
+
+    @property
+    def has_direct_designs(self):
+        """Designs attached straight to the product (a product with no sizes)."""
+        if not self.pk:
+            return False
+        return self.direct_designs.filter(is_active=True).exists()
+
+    @property
+    def uses_variant_picker(self):
+        """True when the storefront picker must open (sizes and/or designs)."""
+        return self.has_variants or self.has_direct_designs
 
     @property
     def has_variants(self):
@@ -220,10 +238,20 @@ class Product(models.Model):
             first_design = first_size.designs.filter(is_active=True).order_by('order', 'id').first()
             if first_design and first_design.image:
                 return first_design.image.url
+        elif self.pk:
+            d = self.direct_designs.filter(is_active=True).exclude(image='').order_by('order', 'id').first()
+            if d and d.image:
+                return d.image.url
         return ''
 
     @property
     def variant_json(self):
+        if not self.has_variants and self.has_direct_designs:
+            direct = [{
+                'id': d.id, 'title': d.title,
+                'image': d.image.url if d.image else '', 'stock': d.stock,
+            } for d in self.direct_designs.filter(is_active=True).order_by('order', 'id')]
+            return _json_for_script({'sizes': [], 'designs': direct, 'default_image': self.default_variant_image})
         sizes = []
         for size in self.sizes.filter(is_active=True).order_by('order', 'id'):
             designs = []
@@ -310,6 +338,8 @@ class ProductSize(models.Model):
 
 class ProductDesign(models.Model):
     product_size = models.ForeignKey(ProductSize, on_delete=models.CASCADE, related_name='designs', null=True, blank=True)
+    # Set only for products WITHOUT sizes; a design then belongs straight to the product.
+    parent_product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='direct_designs', null=True, blank=True)
     title = models.CharField(max_length=100, default='', blank=True, help_text="e.g. Ocean Blue")
     color = models.CharField(max_length=50, blank=True, default='', help_text="e.g. Blue")
     image = models.ImageField(upload_to='products/designs/', blank=True, null=True)
@@ -322,11 +352,11 @@ class ProductDesign(models.Model):
         ordering = ['order', 'id']
 
     def __str__(self):
-        return f"{self.product_size} — {self.title}"
+        return f"{self.product_size or self.parent_product} — {self.title}"
 
     @property
     def product(self):
-        return self.product_size.product
+        return self.parent_product if self.parent_product_id else self.product_size.product
 
     @property
     def name(self):

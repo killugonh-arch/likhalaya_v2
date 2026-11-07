@@ -119,6 +119,55 @@ def _parse_variant_post(post):
     return sizes, errors
 
 
+def _parse_direct_designs(post):
+    """Designs for a product WITHOUT sizes: fields sdesign-<j>-title/color/stock/is_active/id/DELETE."""
+    errors, designs = [], []
+    idx = sorted(set(int(m.group(1)) for k in post
+                     for m in [re.match(r'^sdesign-(\d+)-title$', k)] if m))
+    for di in idx:
+        p = f'sdesign-{di}-'
+        d_delete = bool(post.get(p + 'DELETE'))
+        title = (post.get(p + 'title') or '').strip()
+        raw = (post.get(p + 'stock') or '').strip()
+        try:
+            stock = max(0, int(raw)) if raw else 0
+        except (TypeError, ValueError):
+            stock = 0
+            if not d_delete:
+                errors.append(f'"{title or "design"}": quantity must be a whole number.')
+        if not d_delete and not title:
+            errors.append('Every design needs a title.')
+        designs.append({'index': di, 'id': post.get(p + 'id') or None, 'title': title,
+                        'color': (post.get(p + 'color') or '').strip(),
+                        'is_active': bool(post.get(p + 'is_active')),
+                        'delete': d_delete, 'stock': stock})
+    return designs, errors
+
+
+def _apply_direct_designs(product, designs, files):
+    """Create/update/delete the product's own designs (no-size mode), then
+    recalculate total stock as the sum of the active designs."""
+    for d in designs:
+        if d['delete']:
+            if d['id']:
+                ProductDesign.objects.filter(pk=d['id'], parent_product=product).delete()
+            continue
+        image_file = files.get(f"sdesign-{d['index']}-image")
+        if d['id']:
+            obj = get_object_or_404(ProductDesign, pk=d['id'], parent_product=product)
+            obj.title, obj.color = d['title'], d['color']
+            obj.is_active, obj.order, obj.stock = d['is_active'], d['index'], d['stock']
+            if image_file:
+                obj.image = image_file
+            obj.save()
+        else:
+            ProductDesign.objects.create(
+                parent_product=product, title=d['title'], color=d['color'], image=image_file,
+                is_active=d['is_active'], order=d['index'], stock=d['stock'],
+            )
+    product.recalculate_stock()
+
+
 def _size_panels(product):
     """Always return exactly 3 panels — Small, Medium, Large — in that
     fixed order, each paired with its existing ProductSize (or None if the
@@ -804,10 +853,12 @@ def product_create(request):
         simple_stock = _simple_stock(request.POST)
         form = ProductForm(request.POST, request.FILES, user=request.user)
         image_formset = ProductImageFormSet(request.POST, request.FILES, prefix='images')
+        direct_designs = []
         if uses_sizes:
             variant_sizes, variant_errors = _parse_variant_post(request.POST)
         else:
-            variant_sizes, variant_errors = [], []
+            variant_sizes = []
+            direct_designs, variant_errors = _parse_direct_designs(request.POST)
         if form.is_valid() and image_formset.is_valid() and not variant_errors:
             with transaction.atomic():
                 product = form.save(commit=False)
@@ -821,6 +872,8 @@ def product_create(request):
                 image_formset.save()
                 if uses_sizes:
                     _apply_variants(product, variant_sizes, request.FILES)
+                else:
+                    _apply_direct_designs(product, direct_designs, request.FILES)
             log_activity(request, 'create', f'Created product "{product.name}"',
                          resource='Product', resource_label=product.name,
                          new_value=f'{product.price_display} · stock {product.stock}')
@@ -833,7 +886,7 @@ def product_create(request):
         image_formset = ProductImageFormSet(prefix='images')
     return render(request, 'dashboard/products/form.html', {
         'form': form, 'image_formset': image_formset, 'title': 'Add Product',
-        'size_panels': _size_panels(None),
+        'size_panels': _size_panels(None), 'direct_designs': [],
         'uses_sizes': uses_sizes, 'simple_stock': simple_stock,
     })
 
@@ -864,10 +917,12 @@ def product_edit(request, pk):
         }
         form = ProductForm(request.POST, request.FILES, instance=product, user=request.user)
         image_formset = ProductImageFormSet(request.POST, request.FILES, instance=product, prefix='images')
+        direct_designs = []
         if uses_sizes:
             variant_sizes, variant_errors = _parse_variant_post(request.POST)
         else:
-            variant_sizes, variant_errors = [], []
+            variant_sizes = []
+            direct_designs, variant_errors = _parse_direct_designs(request.POST)
         if form.is_valid() and image_formset.is_valid() and not variant_errors:
             with transaction.atomic():
                 obj = form.save(commit=False)
@@ -881,8 +936,10 @@ def product_edit(request, pk):
                 image_formset.save()
                 if uses_sizes:
                     _apply_variants(product, variant_sizes, request.FILES)
+                    ProductDesign.objects.filter(parent_product=product).update(is_active=False)
                 else:
                     ProductSize.objects.filter(product=product).update(is_active=False)
+                    _apply_direct_designs(product, direct_designs, request.FILES)
 
             new_values = {
                 'name': product.name,
@@ -962,6 +1019,7 @@ def product_edit(request, pk):
         'form': form, 'image_formset': image_formset,
         'title': 'Edit Product', 'product': product,
         'size_panels': _size_panels(product),
+        'direct_designs': product.direct_designs.all().order_by('order', 'id'),
         'uses_sizes': uses_sizes, 'simple_stock': simple_stock,
     })
 
