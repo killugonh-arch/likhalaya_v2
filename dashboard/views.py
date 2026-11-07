@@ -134,6 +134,19 @@ def _size_panels(product):
     return [{'code': code, 'label': label, 'size': existing.get(code)} for code, label in codes]
 
 
+def _simple_stock(post):
+    """Plain stock number typed for a product that does NOT use sizes."""
+    try:
+        return max(0, int((post.get('simple_stock') or '').strip() or 0))
+    except (TypeError, ValueError):
+        return 0
+
+
+def _uses_sizes_initial(product):
+    """Does this existing product currently use the size picker?"""
+    return bool(product.has_variants or product.has_size_pricing)
+
+
 def _apply_variants(product, sizes, files):
     """Create/update/delete ProductSize + ProductDesign rows for `product`
     from the parsed `sizes` structure (see _parse_variant_post). Must run
@@ -785,16 +798,29 @@ def product_detail(request, pk):
 
 @staff_required
 def product_create(request):
+    uses_sizes, simple_stock = True, 0
     if request.method == 'POST':
+        uses_sizes = request.POST.get('uses_sizes') == '1'
+        simple_stock = _simple_stock(request.POST)
         form = ProductForm(request.POST, request.FILES, user=request.user)
         image_formset = ProductImageFormSet(request.POST, request.FILES, prefix='images')
-        variant_sizes, variant_errors = _parse_variant_post(request.POST)
+        if uses_sizes:
+            variant_sizes, variant_errors = _parse_variant_post(request.POST)
+        else:
+            variant_sizes, variant_errors = [], []
         if form.is_valid() and image_formset.is_valid() and not variant_errors:
             with transaction.atomic():
-                product = form.save()
+                product = form.save(commit=False)
+                if not uses_sizes:
+                    # Simple product: one price, one stock number, no size picker.
+                    product.price_medium = None
+                    product.price_max = None
+                    product.stock = simple_stock
+                product.save()
                 image_formset.instance = product
                 image_formset.save()
-                _apply_variants(product, variant_sizes, request.FILES)
+                if uses_sizes:
+                    _apply_variants(product, variant_sizes, request.FILES)
             log_activity(request, 'create', f'Created product "{product.name}"',
                          resource='Product', resource_label=product.name,
                          new_value=f'{product.price_display} · stock {product.stock}')
@@ -808,13 +834,17 @@ def product_create(request):
     return render(request, 'dashboard/products/form.html', {
         'form': form, 'image_formset': image_formset, 'title': 'Add Product',
         'size_panels': _size_panels(None),
+        'uses_sizes': uses_sizes, 'simple_stock': simple_stock,
     })
 
 
 @staff_required
 def product_edit(request, pk):
     product = get_object_or_404(Product, pk=pk)
+    uses_sizes, simple_stock = _uses_sizes_initial(product), product.stock
     if request.method == 'POST':
+        uses_sizes = request.POST.get('uses_sizes') == '1'
+        simple_stock = _simple_stock(request.POST)
         # Snapshot every trackable field before the form overwrites them,
         # so the activity log reports whichever ones actually changed
         # (not just price/stock — description, active status,
@@ -834,12 +864,25 @@ def product_edit(request, pk):
         }
         form = ProductForm(request.POST, request.FILES, instance=product, user=request.user)
         image_formset = ProductImageFormSet(request.POST, request.FILES, instance=product, prefix='images')
-        variant_sizes, variant_errors = _parse_variant_post(request.POST)
+        if uses_sizes:
+            variant_sizes, variant_errors = _parse_variant_post(request.POST)
+        else:
+            variant_sizes, variant_errors = [], []
         if form.is_valid() and image_formset.is_valid() and not variant_errors:
             with transaction.atomic():
-                form.save()
+                obj = form.save(commit=False)
+                if not uses_sizes:
+                    # Simple product: one price, one stock number. Existing
+                    # sizes/designs are kept but switched off (not deleted).
+                    obj.price_medium = None
+                    obj.price_max = None
+                    obj.stock = simple_stock
+                obj.save()
                 image_formset.save()
-                _apply_variants(product, variant_sizes, request.FILES)
+                if uses_sizes:
+                    _apply_variants(product, variant_sizes, request.FILES)
+                else:
+                    ProductSize.objects.filter(product=product).update(is_active=False)
 
             new_values = {
                 'name': product.name,
@@ -919,6 +962,7 @@ def product_edit(request, pk):
         'form': form, 'image_formset': image_formset,
         'title': 'Edit Product', 'product': product,
         'size_panels': _size_panels(product),
+        'uses_sizes': uses_sizes, 'simple_stock': simple_stock,
     })
 
 

@@ -267,6 +267,19 @@ body.dark-mode .pe-leave {
 @keyframes pe-shake { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
 .pe-alert.shake { animation: pe-shake .3s ease; }
 .pe-toast button { border: 0; background: none; color: #ffd27a; font-weight: 700; cursor: pointer; padding: 0; }
+/* ── "This product has sizes" switch / simple mode ── */
+.pe-mode { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:12px 14px; margin-bottom:12px; border:1.5px solid var(--pe-line); border-radius:13px; background:var(--pe-soft); cursor:pointer; }
+.pe-mode b { display:block; font-size:14px; }
+.pe-mode small { color:var(--pe-mute); font-size:12px; }
+.t-simple { display:none; }
+.pe-card.simple .t-size { display:none; }
+.pe-card.simple .t-simple { display:inline; }
+.pe-card.simple .pe-size[data-code="M"], .pe-card.simple .pe-size[data-code="L"],
+.pe-card.simple .pe-size-body, .pe-card.simple .pe-chev,
+.pe-card.simple [data-size-badge], .pe-card.simple .pe-size-thumb { display:none !important; }
+.pe-card.simple .pe-size-head { cursor:default; }
+#simpleBox { margin-top:12px; padding:12px 14px; border:1.5px solid var(--pe-line); border-radius:13px; background:var(--pe-surface); }
+#simpleBox label { font-size:12px; font-weight:700; color:var(--pe-mute); text-transform:uppercase; margin-bottom:6px; display:block; }
 </style>
 
 <div class="pe">
@@ -407,12 +420,16 @@ body.dark-mode .pe-leave {
     <div class="pe-col">
 
       <!-- SIZES, PRICES & STOCK -->
-      <div class="pe-card">
+      <div class="pe-card{% if not uses_sizes %} simple{% endif %}" id="sizesCard">
         <div class="pe-card-h">
           <div class="pe-ico"><i class="fas fa-layer-group"></i></div>
           <div class="grow"><h6>Sizes, Prices &amp; Stock</h6></div>
         </div>
         <div class="pe-card-b">
+          <label class="pe-mode" for="usesSizes">
+            <span><b>This product has sizes</b><small>Turn off for a single price and stock. Customers then only choose a quantity.</small></span>
+            <span class="form-check form-switch"><input type="checkbox" class="form-check-input" id="usesSizes" name="uses_sizes" value="1" {% if uses_sizes %}checked{% endif %}></span>
+          </label>
           <div id="sizeList">
           {% for panel in size_panels %}{% with si=forloop.counter0 %}
             <div class="pe-size {% if si == 0 and not product %}open{% endif %}" data-i="{{ si }}" data-code="{{ panel.code }}">
@@ -421,7 +438,7 @@ body.dark-mode .pe-leave {
               <div class="pe-size-head" data-toggle>
                 <div class="pe-size-thumb" data-size-thumb><i class="fas fa-image"></i></div>
                 <div class="pe-size-main">
-                  <div class="pe-size-title">{{ panel.label }} <span class="pe-badge out" data-size-badge>Out of stock</span></div>
+                  <div class="pe-size-title"><span class="t-size">{{ panel.label }}</span>{% if panel.code == 'S' %}<span class="t-simple">Price</span>{% endif %} <span class="pe-badge out" data-size-badge>Out of stock</span></div>
                 </div>
                 <div class="pe-price" data-stop>
                   <span>₱</span>
@@ -435,7 +452,7 @@ body.dark-mode .pe-leave {
 
               <div class="pe-size-body">
                 <div class="pe-size-tools">
-                  <label class="pe-sw"><span class="form-check form-switch"><input type="checkbox" class="form-check-input size-active" name="size-{{ si }}-is_active" {% if not panel.size or panel.size.is_active %}checked{% endif %}></span>Offer this size</label>
+                  <label class="pe-sw"><span class="form-check form-switch"><input type="checkbox" class="form-check-input size-active" name="size-{{ si }}-is_active" {% if not panel.size or panel.size.is_active or not uses_sizes %}checked{% endif %}></span>Offer this size</label>
                 </div>
                 <div class="pe-design-list" id="designGrid{{ si }}">
                   {% if panel.size %}{% for d in panel.size.designs.all %}
@@ -460,11 +477,15 @@ body.dark-mode .pe-leave {
             </div>
           {% endwith %}{% endfor %}
           </div>
+          <div id="simpleBox" {% if uses_sizes %}style="display:none"{% endif %}>
+            <label for="simpleStock">Stock (units available)</label>
+            <input type="number" min="0" step="1" class="form-control" id="simpleStock" name="simple_stock" value="{{ simple_stock|default:0 }}">
+          </div>
         </div>
       </div>
 
       <!-- STOCK -->
-      <div class="pe-card">
+      <div class="pe-card" id="stockCard" {% if not uses_sizes %}style="display:none"{% endif %}>
         <div class="pe-card-h"><div class="pe-ico"><i class="fas fa-boxes-stacked"></i></div><div class="grow"><h6>Stock Management</h6></div></div>
         <div class="pe-card-b">
           <div class="pe-stock-total"><b id="stockTotal">0</b><span>units in stock</span></div>
@@ -779,6 +800,18 @@ body.dark-mode .pe-leave {
   });
   sizeList.addEventListener('input', function () { renderSizes(); });
 
+  /* ───────── "This product has sizes" switch ───────── */
+  var usesSizes = $('#usesSizes');
+  function isSimple() { return !usesSizes.checked; }
+  function applyMode() {
+    var simple = isSimple();
+    $('#sizesCard').classList.toggle('simple', simple);
+    $('#simpleBox').style.display = simple ? '' : 'none';
+    $('#stockCard').style.display = simple ? 'none' : '';
+  }
+  usesSizes.addEventListener('change', applyMode);
+  applyMode();
+
   /* ───────── prices, description, misc ───────── */
   var ph = { S: '0.00', M: '0.00', L: '0.00' };
   CODES.forEach(function (c) {
@@ -822,10 +855,15 @@ body.dark-mode .pe-leave {
     if (sv === null) flag(s, 'Small price is required.', errs, sHead);
     else if (sv <= 0) flag(s, 'Small price must be more than ₱0.', errs, sHead);
     else if (sv % 1 !== 0) flag(s, 'Small price must be a whole number.', errs, sHead);
-    if (m && m.value.trim() !== '' && (mv === null || mv < 0 || mv % 1 !== 0)) flag(m, 'Medium price must be a whole number.', errs, mHead);
-    if (l && l.value.trim() !== '' && (lv === null || lv < 0 || lv % 1 !== 0)) flag(l, 'Large price must be a whole number.', errs, lHead);
+    var simple = isSimple();
+    if (simple) {
+      var ss = $('#simpleStock');
+      if (ss && ss.value.trim() !== '' && !/^\d+$/.test(ss.value.trim())) flag(ss, 'Stock must be a whole number.', errs);
+    }
+    if (!simple && m && m.value.trim() !== '' && (mv === null || mv < 0 || mv % 1 !== 0)) flag(m, 'Medium price must be a whole number.', errs, mHead);
+    if (!simple && l && l.value.trim() !== '' && (lv === null || lv < 0 || lv % 1 !== 0)) flag(l, 'Large price must be a whole number.', errs, lHead);
 
-    CODES.forEach(function (c) {
+    if (!simple) CODES.forEach(function (c) {
       var block = $('.pe-size[data-code="' + c + '"]');
       liveDesigns(block).forEach(function (d) {
         var t = $('.pe-dname', d);
