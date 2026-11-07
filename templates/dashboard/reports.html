@@ -107,6 +107,16 @@
 /* Reports-specific: filter toolbar + financial hierarchy */
 .reports-toolbar { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-3); margin-bottom: var(--space-4); }
 .reports-filter-form { display: inline-flex; gap: 8px; align-items: center; }
+/* Centered tables. Selector is scoped to .ds-table so it out-ranks
+   ".ds-table thead th { text-align: left }" (which was overriding the old rule). */
+.ds-table.tbl-center thead th,
+.ds-table.tbl-center tbody td,
+.ds-table.tbl-center tfoot td { text-align: center; }
+.view-switch { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--bg-muted, #efece5); border: 1px solid var(--border); }
+.view-switch a { padding: 6px 16px; border-radius: 8px; font-size: 13px; font-weight: 700; color: var(--text-muted); text-decoration: none; transition: background .15s, color .15s; }
+.view-switch a:hover { color: var(--text-primary); }
+.view-switch a.active { background: var(--brand-green); color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
+body.dark-mode .view-switch { background: rgba(255,255,255,.06); }
 .reports-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
 .data-note { display: flex; align-items: flex-start; gap: 10px; background: var(--warning-bg); border: 1px solid rgba(183,121,31,.25); color: var(--warning); border-radius: var(--radius-md); padding: 12px 16px; font-size: 12.5px; margin-bottom: var(--space-4); }
@@ -334,8 +344,8 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
   <div class="print-org-name">LIKHALAYA</div>
   <div class="print-doc-title">Financial Report</div>
   <div class="print-doc-meta">
-    Period: {{ period_label }}
-    {% if pdl.is_locked %}&nbsp;·&nbsp;Status: Finalized{% else %}&nbsp;·&nbsp;Status: Open{% endif %}
+    {% if view_mode == 'year' %}Yearly report{% else %}Monthly report{% endif %} &nbsp;·&nbsp; Period: {{ period_label }}
+    {% if view_mode == 'month' %}{% if pdl.is_locked %}&nbsp;·&nbsp;Status: Finalized{% else %}&nbsp;·&nbsp;Status: Open{% endif %}{% endif %}
   </div>
   <div class="print-doc-generated">Generated {% now "F d, Y \a\t h:i A" %} by {{ request.user.get_full_name|default:request.user.username }}</div>
 </div>
@@ -344,26 +354,35 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
 <table class="print-summary-table ds-table">
   <thead><tr><th colspan="2">Summary</th></tr></thead>
   <tbody>
-    <tr><td>Product Sales (PDL basis)</td><td>₱{{ financials.product_income|floatformat:2|intcomma }}</td></tr>
-    <tr><td>Shipping Fees</td><td>₱{{ financials.shipping_income|floatformat:2|intcomma }}</td></tr>
-    <tr><td>GCash Sales</td><td>₱{{ gcash_product_income|default:0|floatformat:2|intcomma }}</td></tr>
-    <tr><td>COD Sales</td><td>₱{{ cod_product_income|default:0|floatformat:2|intcomma }}</td></tr>
-    <tr><td>Orders Delivered</td><td>{{ financials.order_count }}</td></tr>
+    <tr><td>Product Sales (PDL basis)</td><td>₱{{ kpi.product_income|floatformat:2|intcomma }}</td></tr>
+    <tr><td>Shipping Fees</td><td>₱{{ kpi.shipping_income|floatformat:2|intcomma }}</td></tr>
+    <tr><td>GCash Sales</td><td>₱{{ kpi.gcash_income|default:0|floatformat:2|intcomma }}</td></tr>
+    <tr><td>COD Sales</td><td>₱{{ kpi.cod_income|default:0|floatformat:2|intcomma }}</td></tr>
+    <tr><td>Orders Delivered</td><td>{{ kpi.order_count }}</td></tr>
   </tbody>
 </table>
 
 
 <div class="reports-toolbar">
-  <div>
-    <h1 class="dash-greeting-title">Financial Reports</h1>
+  <div class="d-flex align-items-center flex-wrap gap-3">
+    <h1 class="dash-greeting-title mb-0">Financial Reports</h1>
+    <div class="view-switch" role="group" aria-label="Report view">
+      <a href="?view=month&year={{ selected_year }}&month={{ selected_month }}" class="{% if view_mode == 'month' %}active{% endif %}" {% if view_mode == 'month' %}aria-current="true"{% endif %}>Monthly</a>
+      <a href="?view=year&year={{ selected_year }}&month={{ selected_month }}" class="{% if view_mode == 'year' %}active{% endif %}" {% if view_mode == 'year' %}aria-current="true"{% endif %}>Yearly</a>
+    </div>
   </div>
   <div class="reports-actions">
     <form method="get" class="reports-filter-form" id="periodFilterForm">
+      <input type="hidden" name="view" value="{{ view_mode }}">
+      {% if view_mode == 'month' %}
       <select name="month" class="ds-select" onchange="document.getElementById('periodFilterForm').submit()">
         {% for m_num, m_name in months %}
         <option value="{{ m_num }}" {% if m_num == selected_month %}selected{% endif %}>{{ m_name }}</option>
         {% endfor %}
       </select>
+      {% else %}
+      <input type="hidden" name="month" value="{{ selected_month }}">
+      {% endif %}
       <select name="year" class="ds-select" onchange="document.getElementById('periodFilterForm').submit()">
         {% for y in available_years %}
         <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
@@ -371,7 +390,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
       </select>
     </form>
     {% if request.user.is_admin_user %}
-    <a href="{% url 'dashboard:reports_export_excel' %}?year={{ selected_year }}&month={{ selected_month }}" class="ds-btn ds-btn-primary ds-btn-sm">
+    <a href="{% url 'dashboard:reports_export_excel' %}?view={{ view_mode }}&year={{ selected_year }}&month={{ selected_month }}" class="ds-btn ds-btn-primary ds-btn-sm">
       <i class="fas fa-file-excel me-2"></i>Export Excel
     </a>
     {% endif %}
@@ -381,7 +400,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
   </div>
 </div>
 
-{% if financials.legacy_fallback_count %}
+{% if view_mode == 'month' and financials.legacy_fallback_count %}
 <div class="data-note">
   <i class="fas fa-triangle-exclamation"></i>
   <div>
@@ -399,6 +418,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
 </div>
 
 <div class="reports-tab-panel active" id="tab-revenue" role="tabpanel" aria-labelledby="tabbtn-revenue">
+{% if view_mode == 'year' %}
 <div class="rpt-section-head first">
   <h5>Full year</h5>
   <span class="ds-badge ds-badge-neutral">{{ selected_year }}</span>
@@ -420,24 +440,17 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
   </div>
 </div>
 
-<div class="rpt-section-head">
-  <h5>Selected month</h5>
+{% endif %}
+
+<div class="rpt-section-head{% if view_mode == 'month' %} first{% endif %}">
+  <h5>{% if view_mode == 'year' %}Year totals{% else %}Selected month{% endif %}</h5>
   <span class="ds-badge ds-badge-neutral">{{ period_label }}</span>
 </div>
 
-{% if awaiting_count %}
-<div class="d-flex align-items-start gap-2 mb-3" style="background:#eaf3fb;color:#2b6cb0;border-radius:10px;padding:12px 16px;font-size:13px;">
-  <i class="fas fa-circle-info mt-1"></i>
-  <div>
-    <strong>{{ awaiting_count }} order{{ awaiting_count|pluralize }} worth ₱{{ awaiting_value|floatformat:2|intcomma }}</strong>
-    {{ awaiting_count|pluralize:"is,are" }} still in progress for {{ period_label }}.
-    {% if not financials.order_count %}That is why everything below shows ₱0.00. {% endif %}They will be counted here once marked <strong>Delivered</strong>.
-  </div>
-</div>
-{% elif not financials.order_count %}
+{% if not kpi.order_count %}
 <div class="d-flex align-items-start gap-2 mb-3" style="background:#f3f0ea;color:#6b6558;border-radius:10px;padding:12px 16px;font-size:13px;">
   <i class="fas fa-circle-info mt-1"></i>
-  <div>No delivered orders in {{ period_label }} yet, so all figures show ₱0.00. Pick another month above to see past results.</div>
+  <div>No delivered orders in {{ period_label }} yet, so all figures show ₱0.00. Pick another {% if view_mode == 'year' %}year{% else %}month{% endif %} above to see past results.</div>
 </div>
 {% endif %}
 
@@ -449,7 +462,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         <div class="kpi-label">Product Sales</div>
         <div class="dash-kpi-icon icon-product"><i class="fas fa-box"></i></div>
       </div>
-      <div class="kpi-value">₱{{ financials.product_income|floatformat:2|intcomma }}</div>
+      <div class="kpi-value">₱{{ kpi.product_income|floatformat:2|intcomma }}</div>
     </div>
   </div>
   <div class="col-6 col-lg-4 col-xl">
@@ -458,7 +471,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         <div class="kpi-label">Shipping Fees</div>
         <div class="dash-kpi-icon icon-shipping"><i class="fas fa-truck"></i></div>
       </div>
-      <div class="kpi-value">₱{{ financials.shipping_income|floatformat:2|intcomma }}</div>
+      <div class="kpi-value">₱{{ kpi.shipping_income|floatformat:2|intcomma }}</div>
     </div>
   </div>
   <div class="col-6 col-lg-4 col-xl">
@@ -467,7 +480,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         <div class="kpi-label">GCash Sales</div>
         <div class="dash-kpi-icon icon-gcash"><i class="fas fa-mobile-screen-button"></i></div>
       </div>
-      <div class="kpi-value">₱{{ gcash_product_income|default:0|floatformat:2|intcomma }}</div>
+      <div class="kpi-value">₱{{ kpi.gcash_income|default:0|floatformat:2|intcomma }}</div>
     </div>
   </div>
   <div class="col-6 col-lg-4 col-xl">
@@ -476,7 +489,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         <div class="kpi-label">COD Sales</div>
         <div class="dash-kpi-icon icon-cod"><i class="fas fa-hand-holding-dollar"></i></div>
       </div>
-      <div class="kpi-value">₱{{ cod_product_income|default:0|floatformat:2|intcomma }}</div>
+      <div class="kpi-value">₱{{ kpi.cod_income|default:0|floatformat:2|intcomma }}</div>
     </div>
   </div>
   <div class="col-12 col-lg-4 col-xl">
@@ -485,44 +498,45 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         <div class="kpi-label">Orders</div>
         <div class="dash-kpi-icon icon-orders"><i class="fas fa-shopping-bag"></i></div>
       </div>
-      <div class="kpi-value">{{ financials.order_count }}</div>
+      <div class="kpi-value">{{ kpi.order_count }}</div>
     </div>
   </div>
 </div>
 
 <!-- Monthly Financial Summary + Month-End Closing -->
 <div class="row g-4 mb-4">
-  <div class="col-lg-7">
+  <div class="{% if view_mode == 'month' %}col-lg-7{% else %}col-12{% endif %}">
     <div class="dash-panel h-100">
       <div class="dash-panel-header">
-        <h6>Monthly Financial Summary</h6>
+        <h6>{% if view_mode == 'year' %}Yearly{% else %}Monthly{% endif %} Financial Summary</h6>
       </div>
       <div class="dash-panel-body">
         <div class="financial-row">
           <span class="fr-label">Product Revenue</span>
-          <span class="fr-value">₱{{ financials.product_income|floatformat:2|intcomma }}</span>
+          <span class="fr-value">₱{{ kpi.product_income|floatformat:2|intcomma }}</span>
         </div>
         <div class="financial-row">
           <span class="fr-label">Shipping Fee Income</span>
-          <span class="fr-value">₱{{ financials.shipping_income|floatformat:2|intcomma }}</span>
+          <span class="fr-value">₱{{ kpi.shipping_income|floatformat:2|intcomma }}</span>
         </div>
         <div class="financial-row fr-total">
           <span class="fr-label">Gross Order Value</span>
-          <span class="fr-value">₱{{ financials.gross_total|floatformat:2|intcomma }}</span>
+          <span class="fr-value">₱{{ kpi.gross_total|floatformat:2|intcomma }}</span>
         </div>
         <div class="financial-divider"></div>
         <div class="financial-row">
           <span class="fr-label">Approved Expenses</span>
-          <span class="fr-value">₱{{ pdl.approved_expenses|floatformat:2|intcomma }}</span>
+          <span class="fr-value">₱{{ kpi.approved_expenses|floatformat:2|intcomma }}</span>
         </div>
         <div class="financial-row fr-total fr-highlight">
           <span class="fr-label">Net Product Income</span>
-          <span class="fr-value">₱{{ pdl.net_product_income|floatformat:2|intcomma }}</span>
+          <span class="fr-value">₱{{ kpi.net_product_income|floatformat:2|intcomma }}</span>
         </div>
       </div>
     </div>
   </div>
 
+  {% if view_mode == 'month' %}
   <div class="col-lg-5">
     <div class="dash-panel h-100">
       <div class="dash-panel-header">
@@ -572,13 +586,49 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
       </div>
     </div>
   </div>
+  {% endif %}
+</div>
+
+{% if view_mode == 'month' %}
+<!-- Weekly breakdown of the selected month -->
+<div class="dash-panel mb-4">
+  <div class="dash-panel-header">
+    <h6>Weekly Breakdown — {{ period_label }}</h6>
+    <span class="ds-badge ds-badge-neutral">By week</span>
+  </div>
+  <div class="table-responsive">
+    <table class="ds-table no-stack tbl-center mb-0">
+      <thead><tr><th>Week</th><th>Dates</th><th>Orders</th><th>Product Sales</th><th>Shipping Fees</th><th>Total</th></tr></thead>
+      <tbody>
+        {% for w in weekly_rows %}
+        <tr>
+          <td class="fw-semibold">Week {{ w.week }}</td>
+          <td>{{ w.range_label }}</td>
+          <td>{{ w.order_count }}</td>
+          <td>₱{{ w.product_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ w.shipping_income|floatformat:2|intcomma }}</td>
+          <td class="fw-semibold" style="color:var(--brand-green);">₱{{ w.gross_total|floatformat:2|intcomma }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="row-total">
+          <td colspan="2">TOTAL</td>
+          <td>{{ kpi.order_count }}</td>
+          <td>₱{{ kpi.product_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ kpi.shipping_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ kpi.gross_total|floatformat:2|intcomma }}</td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
 </div>
 
 <!-- Income by Payment Method -->
 <div class="dash-panel mb-4">
   <div class="dash-panel-header"><h6>Income by Payment Method</h6></div>
   <div class="table-responsive">
-    <table class="ds-table no-stack mb-0">
+    <table class="ds-table no-stack tbl-center mb-0">
       <thead><tr><th>Payment Method</th><th>Product Sales</th><th>Shipping Fees</th><th>Total</th><th>Orders</th></tr></thead>
       <tbody>
         {% for row in financials.payment_breakdown %}
@@ -626,7 +676,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         {% endif %}
       </div>
       <div class="table-responsive">
-        <table class="ds-table no-stack mb-0">
+        <table class="ds-table no-stack tbl-center mb-0">
           <thead><tr><th>Description</th><th>Category</th><th>Amount</th><th>Status</th>{% if request.user.is_admin_user %}<th>Actions</th>{% endif %}</tr></thead>
           <tbody>
             {% for exp in expenses %}
@@ -676,14 +726,17 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
 </div>
 
 
+{% endif %}{# /month-only sections #}
+
+{% if view_mode == 'year' %}
 <!-- Monthly History — table (kept separate, at the bottom) -->
 <div class="dash-panel mb-4">
   <div class="dash-panel-header">
-    <h6>Monthly History Table — {{ selected_year }}</h6>
-    <span class="ds-badge ds-badge-neutral">Full year</span>
+    <h6>Monthly Breakdown — {{ selected_year }}</h6>
+    <span class="ds-badge ds-badge-neutral">By month</span>
   </div>
   <div class="table-responsive" id="mhTable">
-    <table class="ds-table no-stack sticky-first mb-0">
+    <table class="ds-table no-stack sticky-first tbl-center mb-0">
       <thead>
         <tr>
           <th>Month</th><th>Product Income</th><th>Shipping Fees</th><th>GCash</th><th>COD</th>
@@ -694,7 +747,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         {% for row in monthly_history %}
         <tr{% if row.month == selected_month %} class="row-selected"{% endif %}>
           <td class="fw-semibold">
-            <a href="?year={{ selected_year }}&month={{ row.month }}" style="color:var(--text-primary); text-decoration:none;{% if row.month == selected_month %}color:var(--brand-green);{% endif %}">
+            <a href="?view=month&year={{ selected_year }}&month={{ row.month }}" title="Open {{ row.month_name }} by week" style="color:var(--text-primary); text-decoration:none;{% if row.month == selected_month %}color:var(--brand-green);{% endif %}">
               {{ row.month_name }}
             </a>
           </td>
@@ -714,9 +767,22 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         </tr>
         {% endfor %}
       </tbody>
+      <tfoot>
+        <tr class="row-total">
+          <td>TOTAL</td>
+          <td>₱{{ kpi.product_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ kpi.shipping_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ kpi.gcash_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ kpi.cod_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ kpi.approved_expenses|floatformat:2|intcomma }}</td>
+          <td>₱{{ kpi.net_product_income|floatformat:2|intcomma }}</td>
+          <td></td>
+        </tr>
+      </tfoot>
     </table>
   </div>
 </div>
+{% endif %}
 </div><!-- /#tab-revenue -->
 
 <div class="reports-tab-panel" id="tab-analytics" role="tabpanel" aria-labelledby="tabbtn-analytics">
@@ -750,7 +816,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         <h6>Orders by Status in Details</h6>
       </div>
       <div class="table-responsive">
-        <table class="ds-table no-stack mb-0">
+        <table class="ds-table no-stack tbl-center mb-0">
           <thead><tr><th>Status</th><th>Orders</th><th>Order Value</th></tr></thead>
           <tbody>
             {% for row in sales_by_status %}
@@ -790,7 +856,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
     <h6>Top Products by Units Sold</h6>
   </div>
   <div class="table-responsive">
-    <table class="ds-table no-stack mb-0">
+    <table class="ds-table no-stack tbl-center mb-0">
       <thead><tr><th>Product</th><th>Units</th><th>Revenue</th></tr></thead>
       <tbody>
         {% for p in top_products %}
@@ -887,6 +953,22 @@ function showTab(name) {
   (window.__reportsCharts || []).forEach(c => c.resize());
 }
 document.querySelectorAll('.reports-tab-btn').forEach(btn => btn.addEventListener('click', () => showTab(btn.dataset.tab)));
+
+// Monthly/Yearly switch: remember the current tab and restore it on the next page.
+// Done here (before the chart code) so a chart error can never skip it.
+document.querySelectorAll('.view-switch a').forEach(a => a.addEventListener('click', () => {
+  try {
+    const cur = document.querySelector('.reports-tab-btn.active');
+    if (cur) sessionStorage.setItem(TAB_KEY, cur.dataset.tab);
+    sessionStorage.setItem('reportsKeepTab', '1');
+  } catch (e) {}
+}));
+try {
+  const keep = sessionStorage.getItem('reportsKeepTab') === '1';
+  sessionStorage.removeItem('reportsKeepTab');
+  const saved = sessionStorage.getItem(TAB_KEY);
+  if ((__fromReports || keep) && saved && document.getElementById('tab-' + saved)) showTab(saved);
+} catch (e) {}
 
 const mhLabels = [{% for row in monthly_history %}"{{ row.month_name|slice:':3' }}",{% endfor %}];
 const mhFull = [{% for row in monthly_history %}"{{ row.month_name }}",{% endfor %}];
@@ -1022,7 +1104,7 @@ if (typeof Chart === 'undefined') {
           const pts = chart.getElementsAtEventForMode(evt, 'index', { intersect: false }, true);
           if (!pts.length) return;
           const m = mhMonths[pts[0].index];
-          if (m && m !== mhSelected) window.location.href = '?year=' + mhYear + '&month=' + m;
+          if (m && m !== mhSelected) window.location.href = '?view=month&year=' + mhYear + '&month=' + m;
         }
       },
       plugins: [bestBand, barValues]
@@ -1134,12 +1216,6 @@ if (typeof Chart === 'undefined') {
     row.firstElementChild.appendChild(badge);
   }
 })();
-
-// Restore the tab the user was on (after changing month/year, finalizing, adding an expense…)
-try {
-  const saved = sessionStorage.getItem(TAB_KEY);
-  if (__fromReports && saved && document.getElementById('tab-' + saved)) showTab(saved);
-} catch (e) {}
 
 // Canvas charts don't print reliably, so right before printing both tabs are shown,
 // each chart is re-measured and captured as a static image for the print layout.

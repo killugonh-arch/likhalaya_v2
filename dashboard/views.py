@@ -2319,7 +2319,11 @@ def reports(request):
     selected_year, selected_month = _resolve_selected_period(request)
     if selected_year not in available_years:
         available_years = sorted(set(available_years + [selected_year]), reverse=True)
-    period_label = date(selected_year, selected_month, 1).strftime('%B %Y')
+    # Monthly / Yearly switch. Monthly shows one month broken down by week;
+    # Yearly shows the whole year broken down by month.
+    view_mode = 'year' if (request.GET.get('view') or request.POST.get('view')) == 'year' else 'month'
+    month_label = date(selected_year, selected_month, 1).strftime('%B %Y')
+    period_label = str(selected_year) if view_mode == 'year' else month_label
 
     financials = _financial_summary(selected_year, selected_month)
     pdl = _pdl_calculation(selected_year, selected_month, financials['product_income'])
@@ -2332,12 +2336,21 @@ def reports(request):
     cod_product_income = cod_row['product_income'] if cod_row else Decimal('0')
 
     # ── Secondary "Sales Analytics" section — order activity within the
-    # selected month, scoped by created_at (when the order was placed),
-    # kept separate from delivery-based revenue recognition above.
-    orders_created_qs = Order.objects.filter(
-        created_at__year=selected_year, created_at__month=selected_month
-    )
-    items_qs = OrderItem.objects.filter(order__in=orders_created_qs)
+    # selected period, scoped by created_at (when the order was placed).
+    # EXCEPT anything that says "Delivered": that is counted by the date it
+    # was delivered (same rule as the revenue figures above).
+    orders_created_qs = Order.objects.filter(created_at__year=selected_year)
+    if view_mode == 'month':
+        orders_created_qs = orders_created_qs.filter(created_at__month=selected_month)
+
+    # Delivered orders recognized in the selected period (by delivery date).
+    if view_mode == 'year':
+        _delivered_qs = (Order.objects.filter(status='delivered')
+                         .annotate(revenue_date=Coalesce('delivery_confirmed_at', 'created_at'))
+                         .filter(revenue_date__year=selected_year))
+    else:
+        _delivered_qs = financials['orders_qs']
+
     # Every status is listed (in workflow order), even when it has 0 orders this month.
     _status_rows = {r['status']: r for r in orders_created_qs.values('status').annotate(
         count=Count('id'), revenue=Sum('total'))}
@@ -2347,8 +2360,17 @@ def reports(request):
          'revenue': _status_rows.get(key, {}).get('revenue') or 0}
         for key, _label in Order.STATUS_CHOICES
     ]
+    # The Delivered row uses the delivery date instead of the order date.
+    for r in sales_by_status:
+        if r['status'] == 'delivered':
+            d = _delivered_qs.aggregate(c=Count('id'), v=Sum('total'))
+            r['count'] = d['c'] or 0
+            r['revenue'] = d['v'] or 0
     sales_total_orders = sum(r['count'] for r in sales_by_status)
-    top_products = (items_qs.filter(order__status='delivered').values('product_name')
+
+    # Top products: only delivered orders, counted by delivery date.
+    top_items_qs = OrderItem.objects.filter(order__in=_delivered_qs.values('pk'))
+    top_products = (top_items_qs.values('product_name')
                     .annotate(units=Sum('quantity'),
                               revenue=Sum(ExpressionWrapper(
                                   F('product_price') * F('quantity'),
@@ -2359,13 +2381,27 @@ def reports(request):
                               n_product_gone=Count('id', filter=Q(product__isnull=True)),
                               n_product_archived=Count('id', filter=Q(product__is_deleted=True)),
                               n_category_archived=Count('id', filter=Q(product__category__is_deleted=True)))
-                    .order_by('-units')[:10])
+                    .order_by('-units'))
     top_products = list(top_products)
     for tp in top_products:
         # permanently deleted (row gone) or moved to Archive
         tp['product_deleted'] = tp['n_product_gone'] == tp['n_items'] or tp['n_product_archived'] > 0
         tp['product_deleted_permanent'] = tp['n_product_gone'] == tp['n_items']
         tp['category_deleted'] = tp['n_category_archived'] > 0
+
+    # Also list every other active product that had no delivered sales in
+    # this period, with 0 units and ₱0.00 revenue, after the sellers.
+    sold_names = {(tp['product_name'] or '').strip().lower() for tp in top_products}
+    for name in (Product.objects.filter(is_active=True)
+                 .order_by('name').values_list('name', flat=True)):
+        if (name or '').strip().lower() in sold_names:
+            continue
+        sold_names.add((name or '').strip().lower())
+        top_products.append({
+            'product_name': name, 'units': 0, 'revenue': Decimal('0'),
+            'product_deleted': False, 'product_deleted_permanent': False,
+            'category_deleted': False,
+        })
 
     # Trend chart is anchored to the selected YEAR (Jan–Dec) rather than a
     # rolling window that could bleed across years, so it never mixes data
@@ -2389,6 +2425,7 @@ def reports(request):
             'month_name': calendar.month_name[m],
             'product_income': m_fin['product_income'],
             'shipping_income': m_fin['shipping_income'],
+            'gross_total': m_fin['gross_total'],
             'order_count': m_fin['order_count'],
             'gcash_income': next((r['product_income'] for r in m_fin['payment_breakdown'] if r['payment_method'] == 'gcash'), Decimal('0')),
             'cod_income': next((r['product_income'] for r in m_fin['payment_breakdown'] if r['payment_method'] == 'cod'), Decimal('0')),
@@ -2398,9 +2435,60 @@ def reports(request):
             'is_finalized': m_period.is_finalized if m_period else False,
         })
 
+    # Figures shown in the KPI cards / summary: one month, or the whole year.
+    if view_mode == 'year':
+        kpi = {
+            'product_income': sum((r['product_income'] for r in monthly_history), Decimal('0')),
+            'shipping_income': sum((r['shipping_income'] for r in monthly_history), Decimal('0')),
+            'gross_total': sum((r['gross_total'] for r in monthly_history), Decimal('0')),
+            'gcash_income': sum((r['gcash_income'] for r in monthly_history), Decimal('0')),
+            'cod_income': sum((r['cod_income'] for r in monthly_history), Decimal('0')),
+            'order_count': sum(r['order_count'] for r in monthly_history),
+            'approved_expenses': sum((r['approved_expenses'] for r in monthly_history), Decimal('0')),
+            'net_product_income': sum((r['net_product_income'] for r in monthly_history), Decimal('0')),
+        }
+    else:
+        kpi = {
+            'product_income': financials['product_income'],
+            'shipping_income': financials['shipping_income'],
+            'gross_total': financials['gross_total'],
+            'gcash_income': gcash_product_income,
+            'cod_income': cod_product_income,
+            'order_count': financials['order_count'],
+            'approved_expenses': pdl['approved_expenses'],
+            'net_product_income': pdl['net_product_income'],
+        }
+
+    # Weekly breakdown of the selected month (delivered orders, same revenue
+    # date rule as the rest of the report). Weeks are days 1-7, 8-14, 15-21,
+    # 22-28 and 29-end, so every week has a clear date range.
+    weekly_rows = []
+    if view_mode == 'month':
+        days_in_month = calendar.monthrange(selected_year, selected_month)[1]
+        month_abbr = calendar.month_abbr[selected_month]
+        for i, start in enumerate(range(1, days_in_month + 1, 7), start=1):
+            end = min(start + 6, days_in_month)
+            weekly_rows.append({
+                'week': i,
+                'start': start,
+                'end': end,
+                'range_label': f'{month_abbr} {start}–{end}',
+                'order_count': 0,
+                'product_income': Decimal('0'),
+                'shipping_income': Decimal('0'),
+                'gross_total': Decimal('0'),
+            })
+        for o in financials['orders_qs'].values('revenue_date', 'subtotal', 'shipping_fee', 'total'):
+            day = o['revenue_date'].astimezone(timezone.get_current_timezone()).day \
+                if timezone.is_aware(o['revenue_date']) else o['revenue_date'].day
+            row = weekly_rows[min((day - 1) // 7, len(weekly_rows) - 1)]
+            row['order_count'] += 1
+            row['product_income'] += o['subtotal'] or Decimal('0')
+            row['shipping_income'] += o['shipping_fee'] or Decimal('0')
+            row['gross_total'] += o['total'] or Decimal('0')
+
     # Orders placed this period that are still on their way (not yet delivered, not
-    # cancelled). They are NOT in the "money received" cards until delivered — the
-    # Revenue tab shows this so zeros don't look like a bug.
+    # cancelled). They are NOT in the "money received" cards until delivered.
     in_progress = [r for r in sales_by_status
                    if r['status'] in ('pending', 'processing', 'confirmed', 'shipped')]
     awaiting_count = sum(r['count'] for r in in_progress)
@@ -2412,6 +2500,10 @@ def reports(request):
         'selected_year': selected_year,
         'selected_month': selected_month,
         'period_label': period_label,
+        'month_label': month_label,
+        'view_mode': view_mode,
+        'kpi': kpi,
+        'weekly_rows': weekly_rows,
         'financials': financials,
         'gcash_product_income': gcash_product_income,
         'cod_product_income': cod_product_income,
