@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 
 from chats.models import ChatMessage, Conversation
 from store.models import ContactMessage
+from store.views import _validate_reply_image
 
 from .chat_helpers import chat_inbox
 from .views import staff_required
@@ -23,7 +24,11 @@ def chat_detail(request, pk):
 
     if request.method == 'POST':
         body = request.POST.get('body', '').strip()
-        if not body:
+        image = request.FILES.get('image')
+        image_error = _validate_reply_image(image) if image else None
+        if image_error:
+            messages.error(request, image_error)
+        elif not body and not image:
             messages.error(request, 'Reply cannot be empty.')
         elif len(body) > MAX_MESSAGE_LENGTH:
             messages.error(request, f'Reply is too long (max {MAX_MESSAGE_LENGTH} characters).')
@@ -33,6 +38,7 @@ def chat_detail(request, pk):
                 sender=request.user,
                 from_customer=False,
                 body=body,
+                image=image,
                 read=False,
             )
         return redirect('dashboard:chat_detail', pk=convo.pk)
