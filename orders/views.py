@@ -1,3 +1,6 @@
+from datetime import timedelta
+from django.db.models import Q
+from django.db.models.functions import Coalesce
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
@@ -29,6 +32,9 @@ GCASH_QR_CACHE_SECONDS = 30  # short: amount/reference can change (cart edits)
 # Cap on receipt-upload attempts per user per hour (each attempt decodes and
 # re-encodes an image up to 2 MB, so unlimited attempts are a CPU/disk risk).
 PROOF_UPLOAD_MAX_PER_HOUR = 20
+
+# Delivered orders stay in the customer's My Orders list this many days.
+MY_ORDERS_DELIVERED_DAYS = 30
 
 
 def _proof_upload_allowed(request):
@@ -811,6 +817,13 @@ def my_orders(request):
     if not request.user.is_authenticated:
         return redirect('accounts:login')
     orders = Order.objects.filter(user=request.user).prefetch_related('items').order_by('-created_at')
+    # Delivered orders drop off the customer's list 30 days after delivery
+    # (counted from the delivery date). Other statuses always stay. The orders
+    # are only hidden here, not deleted, so reports and admin are unaffected.
+    hide_before = timezone.now() - timedelta(days=MY_ORDERS_DELIVERED_DAYS)
+    orders = (orders
+              .annotate(done_at=Coalesce('delivery_confirmed_at', 'updated_at'))
+              .exclude(Q(status='delivered') & Q(done_at__lt=hide_before)))
     status_filter = request.GET.get('status', '')
     if status_filter:
         orders = orders.filter(status=status_filter)
