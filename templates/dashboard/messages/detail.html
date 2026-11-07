@@ -345,7 +345,7 @@ body.dark-mode .chat-input-bar { background: var(--dm-surface); }
               </div>
               {% endif %}
             </div>
-            {% if not entry.is_staff_reply and account_thread_count > 1 and message.customer and entry.starts_thread or not entry.is_staff_reply and account_thread_count > 1 and message.customer and entry.show_time %}
+            {% if not entry.is_staff_reply and message.customer and entry.starts_thread or not entry.is_staff_reply and message.customer and entry.show_time %}
               <a href="#" class="chat-reply-link" data-thread="{{ entry.thread_pk }}" data-subject="{{ entry.subject }}" data-body="{{ entry.body }}" data-time="{{ entry.created_at|date:'M d, H:i' }}" title="Reply to this message"><i class="fas fa-reply"></i> Reply</a>
             {% endif %}
           </div>
