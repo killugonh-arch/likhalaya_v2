@@ -144,6 +144,7 @@ a.thread-header-id:hover .inbox-avatar { box-shadow: 0 0 0 3px var(--brand-green
 .chat-inquiry-badge.is-current { background: var(--brand-green-light); color: var(--brand-green); }
 .chat-sender-label .chat-inquiry-badge:first-child { margin-left: 0; }
 .chat-reply-target-note { font-size: 11.5px; color: var(--text-muted); text-align: center; padding: 6px 16px 0; }
+.chat-reply-target-note:empty { display: none; }
 
 .chat-input-bar { border-top: 1px solid var(--border); padding: 10px 16px; min-height: 56px; background: #fff; display: flex; align-items: center; gap: 8px; }
 .chat-icon-btn { border: none; background: transparent; color: var(--text-muted); font-size: 16px; width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
@@ -331,14 +332,14 @@ body.dark-mode .chat-input-bar { background: var(--dm-surface); }
                 {% if entry.quote.time %}<div class="chat-quote-time">{{ entry.quote.time }}</div>{% endif %}
               </div>
               {% endif %}
-              {% if entry.body and entry.show_body and entry.type_display != 'General Inquiry' %}<div class="chat-bubble-text">{{ entry.body }}</div>{% endif %}
+              {% if entry.body and entry.show_body and not entry.starts_thread %}<div class="chat-bubble-text">{{ entry.body }}</div>{% endif %}
               {% if entry.reply_image_url %}<a href="{{ entry.reply_image_url }}" target="_blank" rel="noopener"><img src="{{ entry.reply_image_url }}" alt="Attached image" class="chat-msg-img"></a>{% endif %}
-              {% if entry.details or entry.image_url or entry.body and entry.show_body and entry.type_display == 'General Inquiry' %}
+              {% if entry.details or entry.image_url or entry.body and entry.show_body and entry.starts_thread %}
               <div class="chat-details">
                 {% for label, value in entry.details %}
                 <div class="chat-detail-row"><span class="chat-detail-label">{{ label }}</span><span class="chat-detail-value">{{ value }}</span></div>
                 {% endfor %}
-                {% if entry.body and entry.show_body and entry.type_display == 'General Inquiry' %}
+                {% if entry.body and entry.show_body and entry.starts_thread %}
                 <div class="chat-detail-row"><span class="chat-detail-label">Message</span><span class="chat-detail-value">{{ entry.body }}</span></div>
                 {% endif %}
                 {% if entry.image_url %}<a href="{{ entry.image_url }}" target="_blank" rel="noopener"><img src="{{ entry.image_url }}" alt="Reference image" class="chat-detail-img"></a>{% endif %}
@@ -364,9 +365,7 @@ body.dark-mode .chat-input-bar { background: var(--dm-surface); }
       {% endfor %}
     </div>
 
-    {% if account_thread_count > 1 %}
-    <div class="chat-reply-target-note" id="replyTargetNote">Your reply below will be sent on the <strong>{{ message.subject }}</strong> inquiry.</div>
-    {% endif %}
+    <div class="chat-reply-target-note" id="replyTargetNote">{% if account_thread_count > 1 %}Your reply below will be sent on the <strong>{{ message.display_subject }}</strong> inquiry.{% endif %}</div>
 
     {% if message.customer %}
     <form method="post" class="chat-input-bar" enctype="multipart/form-data" id="inquiryReplyForm">

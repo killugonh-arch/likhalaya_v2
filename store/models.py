@@ -409,6 +409,11 @@ class Personnel(models.Model):
         return f"{self.rank} {self.name}"
 
 
+def clean_subject(subject):
+    """Subject without the old " — item name" suffix (display only)."""
+    return (subject or '').split(' — ')[0].strip()
+
+
 class ContactMessage(models.Model):
     INQUIRY_GENERAL = 'general'
     INQUIRY_PRODUCT_INQUIRY = 'product_inquiry'
@@ -551,6 +556,10 @@ class ContactMessage(models.Model):
     class Meta:
         ordering = ['-created_at']
         base_manager_name = 'all_objects'
+
+    @property
+    def display_subject(self):
+        return clean_subject(self.subject)
 
     def __str__(self):
         return f"{self.subject} - {self.name}"

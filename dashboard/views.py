@@ -41,7 +41,7 @@ def _safe_next(request, next_url, fallback):
         return next_url
     return fallback
 
-from store.models import Product, Category, ContactMessage, LivelihoodVideo, ProductImage, ProductSize, ProductDesign, MessageReply
+from store.models import Product, Category, ContactMessage, LivelihoodVideo, ProductImage, ProductSize, ProductDesign, MessageReply, clean_subject
 from store.forms import ProductForm, ProductImageFormSet
 from likhalaya_project.rate_limit import throttle
 
@@ -517,7 +517,7 @@ def _parse_quote(raw):
         data = json.loads(raw)
         if isinstance(data, dict):
             return {
-                'subject': data.get('s', ''),
+                'subject': clean_subject(data.get('s', '')),
                 'body': data.get('b', ''),
                 'time': data.get('t', ''),
             }
@@ -627,7 +627,7 @@ def message_detail(request, pk):
             'sender_name': thread.name,
             'body': thread.message,
             'created_at': thread.created_at,
-            'subject': thread.subject,
+            'subject': thread.display_subject,
             'thread_pk': thread.pk,
             'is_current': thread.pk == msg.pk,
             'starts_thread': True,
@@ -654,7 +654,7 @@ def message_detail(request, pk):
                 'sender_name': sender_name,
                 'body': reply.body,
                 'created_at': reply.created_at,
-                'subject': thread.subject,
+                'subject': thread.display_subject,
                 'thread_pk': thread.pk,
                 'is_current': thread.pk == msg.pk,
                 'is_read_by_customer': reply.is_read_by_customer,

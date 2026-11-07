@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.utils import timezone
-from .models import Product, Category, Personnel, ContactMessage, LivelihoodVideo, ProductDesign, MessageReply
+from .models import Product, Category, Personnel, ContactMessage, LivelihoodVideo, ProductDesign, MessageReply, clean_subject
 from .forms import ContactForm
 
 # Cooldown between messages a customer sends in a conversation thread, to
@@ -217,7 +217,7 @@ def contact(request):
                 initial['product'] = context_product.pk
                 initial['item_name'] = context_product.name
                 initial['inquiry_type'] = ContactMessage.INQUIRY_CUSTOM_ORDER
-                initial['subject'] = f'Product & Custom Order Inquiry — {context_product.name}'
+                initial['subject'] = 'Product & Custom Order Inquiry'
 
         form = ContactForm(initial=initial, user=request.user)
     return render(request, 'store/contact.html', {
@@ -237,7 +237,7 @@ def _parse_quote(raw):
         data = json.loads(raw)
         if isinstance(data, dict):
             return {
-                'subject': data.get('s', ''),
+                'subject': clean_subject(data.get('s', '')),
                 'body': data.get('b', ''),
                 'time': data.get('t', ''),
             }
@@ -344,7 +344,7 @@ def my_messages(request):
             'body': t.message,
             'created_at': t.created_at,
             'thread_pk': t.pk,
-            'subject': t.subject,
+            'subject': t.display_subject,
             'inquiry_type': t.inquiry_type,
             'type_display': t.get_inquiry_type_display(),
             'starts_thread': True,
@@ -359,7 +359,7 @@ def my_messages(request):
                 'body': r.body,
                 'created_at': r.created_at,
                 'thread_pk': t.pk,
-                'subject': t.subject,
+                'subject': t.display_subject,
                 'starts_thread': False,
                 'quote': _parse_quote(r.quoted_text),
                 'image_url': r.image.url if r.image else '',
