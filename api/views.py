@@ -13,7 +13,8 @@ from store.views import _customer_reply_cooldown_remaining
 from orders.models import Order, OrderItem, Notification
 from orders.validators import validate_payment_proof
 from orders.shipping import get_shipping_quote
-from reviews.forms import ReviewForm
+from accounts.activity import log_activity
+from reviews.forms import ReviewForm, ReviewReplyForm
 from reviews.models import Review, public_name_for, review_stats, user_has_purchased
 
 from .serializers import (
@@ -112,6 +113,8 @@ class ProductViewSet(viewsets.ModelViewSet):
             return [IsStaffRole()]
         if self.action == 'reviews' and self.request.method == 'POST':
             return [permissions.IsAuthenticated()]
+        if self.action == 'review_reply':
+            return [IsStaffRole()]
         return [permissions.AllowAny()]
 
     def get_queryset(self):
@@ -142,6 +145,7 @@ class ProductViewSet(viewsets.ModelViewSet):
                 'created_at': r.created_at.isoformat(),
                 'is_mine': bool(user and r.user_id == user.pk),
                 'staff_reply': r.staff_reply,
+                'replied_at': r.replied_at.isoformat() if r.replied_at else None,
             }
 
         mine = Review.objects.filter(product=product, user=user).first() if user else None
@@ -151,6 +155,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             'distribution': {str(r['stars']): r['count'] for r in stats['rows']},
             'reviews': [row(r) for r in visible],
             'can_review': bool(user and (mine is not None or user_has_purchased(user, product))),
+            'can_reply': bool(user and user.is_staff_user()),
             'my_review': row(mine) if mine else None,
         }
 
@@ -203,6 +208,35 @@ class ProductViewSet(viewsets.ModelViewSet):
             code = status.HTTP_201_CREATED
 
         return Response(self._reviews_payload(request, product), status=code)
+
+    @action(detail=True, methods=['post'], url_path=r'reviews/(?P<review_id>\d+)/reply')
+    def review_reply(self, request, slug=None, review_id=None):
+        """POST /api/products/<slug>/reviews/<id>/reply/  {"reply": "..."}
+        Staff / admin answer a review. A review can be replied to only once
+        from the app; changing or removing a reply stays in the dashboard."""
+        product = self.get_object()
+        review = Review.objects.filter(pk=review_id, product=product).first()
+        if review is None:
+            return Response({'detail': 'Review not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+        form = ReviewReplyForm({'staff_reply': request.data.get('reply', '')})
+        if not form.is_valid():
+            return Response({'detail': 'Reply is too long (max 1000 characters).'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        text = form.cleaned_data['staff_reply']
+        if not text:
+            return Response({'detail': 'Please write a reply.'}, status=status.HTTP_400_BAD_REQUEST)
+        if review.staff_reply:
+            return Response({'detail': 'This review already has a reply.'},
+                            status=status.HTTP_409_CONFLICT)
+
+        review.staff_reply = text
+        review.replied_by = request.user
+        review.replied_at = timezone.now()
+        review.save(update_fields=['staff_reply', 'replied_by', 'replied_at', 'updated_at'])
+        log_activity(request, 'update', f'Replied to review on "{product.name}"',
+                     resource='Review', resource_label=f'{review.display_name} – {product.name}')
+        return Response(self._reviews_payload(request, product))
 
 
 # ── Orders ────────────────────────────────────────────────────────
@@ -291,7 +325,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def upload_payment_proof(self, request, pk=None):
         """POST multipart /api/orders/{id}/upload_payment_proof/ with a
-        payment_proof file — mirrors orders.views.gcash_payment's upload
+        `payment_proof` file — mirrors orders.views.gcash_payment's upload
         step. Only the order's own customer may attach a receipt."""
         order = self.get_object()
         if order.user_id != request.user.pk:
