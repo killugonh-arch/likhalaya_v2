@@ -25,6 +25,41 @@
     .rv-textarea:focus { outline: none; border-color: var(--teal); }
     .rv-count { font-size: 11px; color: #9a9a9a; text-align: right; }
 
+    /* Photo upload */
+    .rv-upload { margin-top: 8px; }
+    .rv-upload-btn { display: inline-flex; align-items: center; gap: 8px; border: 1.5px dashed #cfc8b8; border-radius: 10px; padding: 8px 14px; font-size: 13px; font-weight: 600; color: var(--teal); background: #faf8f3; cursor: pointer; transition: border-color .15s, background .15s; }
+    .rv-upload-btn:hover { border-color: var(--teal); background: #f3f8f7; }
+    .rv-upload input[type=file] { display: none; }
+    .rv-hint { font-size: 11.5px; color: #8b9490; margin-top: 4px; }
+    .rv-thumbs { display: flex; flex-wrap: wrap; gap: 0 10px; }
+    .rv-thumb { position: relative; margin-top: 10px; width: 84px; height: 84px; border-radius: 10px; overflow: hidden; border: 1px solid #ece7dc; background: #f1f4f3; }
+    .rv-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .rv-thumb .rv-x { position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%; border: 0; background: #e0334c; color: #fff; font-size: 13px; line-height: 1; cursor: pointer; }
+    .rv-clear-btn { display: none; align-items: center; gap: 6px; margin-top: 10px; border: 1.5px solid #e0334c; background: #fff; color: #e0334c; border-radius: 10px; padding: 6px 12px; font-size: 13px; font-weight: 700; cursor: pointer; transition: background .15s; }
+    .rv-clear-btn:hover { background: #fdecef; }
+    .rv-keep { cursor: pointer; }
+    .rv-keep input { position: absolute; opacity: 0; pointer-events: none; }
+    .rv-keep .rv-keep-x { position: absolute; top: 3px; right: 3px; width: 22px; height: 22px; border-radius: 50%; background: #e0334c; color: #fff; font-size: 12px; display: flex; align-items: center; justify-content: center; }
+    .rv-keep-mask { display: none; position: absolute; inset: 0; background: rgba(255,255,255,.85); align-items: center; justify-content: center; text-align: center; font-size: 10.5px; font-weight: 700; color: #c0392b; padding: 4px; }
+    .rv-keep input:checked ~ .rv-keep-mask { display: flex; }
+    .rv-current-note { font-size: 12px; color: #6b6b6b; margin-top: 8px; }
+
+    .rv-delete-btn { display: flex; align-items: center; justify-content: center; width: 100%; background: #e0334c; color: #fff; border: 0; border-radius: 10px; padding: 9px 16px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background .15s; }
+    .rv-delete-btn:hover { background: #c52a41; }
+    /* Delete confirmation popup */
+    .rv-dlg { position: fixed; inset: 0; z-index: 2100; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(10,18,17,.55); }
+    .rv-dlg.show { display: flex; }
+    .rv-dlg-box { width: 100%; max-width: 380px; background: #fff; border-radius: 18px; padding: 26px 24px 22px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,.25); animation: rvDlgIn .18s ease-out; }
+    @keyframes rvDlgIn { from { opacity: 0; transform: translateY(10px) scale(.97); } to { opacity: 1; transform: none; } }
+    .rv-dlg-icon { width: 56px; height: 56px; margin: 0 auto 14px; border-radius: 50%; background: #fdecef; color: #e0334c; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+    .rv-dlg-box h5 { font-weight: 700; margin-bottom: 6px; color: #1f2d2b; }
+    .rv-dlg-box p { font-size: 14px; color: #6b6b6b; margin-bottom: 20px; }
+    .rv-dlg-actions { display: flex; gap: 10px; }
+    .rv-dlg-actions button { flex: 1; border: 0; border-radius: 10px; padding: 10px 14px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background .15s; }
+    .rv-dlg-cancel { background: #f1f4f3; color: #3b4a47; }
+    .rv-dlg-cancel:hover { background: #e4eae8; }
+    .rv-dlg-ok { background: #e0334c; color: #fff; }
+    .rv-dlg-ok:hover { background: #c52a41; }
     .rv-sort { border: 1.5px solid #ddd; border-radius: 8px; padding: 6px 10px; font-size: 13px; background: #fff; }
     .rv-item { padding: 18px 0; border-bottom: 1px solid #f0ebe0; }
     .rv-item:last-child { border-bottom: none; }
@@ -35,6 +70,19 @@
     .rv-mine { font-size: 10.5px; font-weight: 700; background: rgba(30,95,90,.1); color: var(--teal); padding: 2px 8px; border-radius: 20px; }
     .rv-hidden-note { font-size: 12px; background: #fff6e5; color: #a8700f; border-radius: 8px; padding: 6px 10px; display: inline-block; }
     .rv-comment { margin: 8px 0 0; line-height: 1.7; color: #444; white-space: pre-line; word-break: break-word; }
+    .rv-media { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+    .rv-photo { display: inline-block; }
+    .rv-photo img { width: 120px; height: 120px; object-fit: cover; border-radius: 12px; border: 1px solid #ece7dc; cursor: zoom-in; transition: transform .15s; display: block; }
+    .rv-photo img:hover { transform: scale(1.03); }
+    /* Photo lightbox */
+    .rv-lb { position: fixed; inset: 0; z-index: 2000; display: none; flex-direction: column; background: rgba(10,18,17,.92); }
+    .rv-lb.show { display: flex; }
+    .rv-lb-bar { display: flex; align-items: center; justify-content: flex-end; gap: 8px; padding: 10px 14px; }
+    .rv-lb-bar button { width: 40px; height: 40px; border-radius: 10px; border: 0; background: rgba(255,255,255,.14); color: #fff; font-size: 16px; cursor: pointer; }
+    .rv-lb-bar button:hover { background: rgba(255,255,255,.28); }
+    .rv-lb-stage { flex: 1; overflow: auto; display: flex; padding: 0 12px 16px; cursor: zoom-in; }
+    .rv-lb-stage.zoomed { cursor: zoom-out; }
+    .rv-lb-stage img { margin: auto; max-width: 100%; max-height: 82vh; border-radius: 8px; user-select: none; -webkit-user-drag: none; }
     .rv-reply { margin-top: 10px; background: #f3f8f7; border-left: 3px solid var(--teal); border-radius: 0 10px 10px 0; padding: 10px 14px; font-size: 13.5px; }
     .rv-reply .who { font-weight: 700; color: var(--teal); font-size: 12px; margin-bottom: 2px; }
     @media (max-width: 575.98px) {
@@ -58,12 +106,16 @@
       .rv-form-card .btn { font-size: 13px; padding-top: 6px; padding-bottom: 6px; }
       .rv-picker label { font-size: 26px; }
       .rv-textarea { font-size: 13px; min-height: 80px; }
+      .rv-upload-btn { font-size: 12px; padding: 6px 12px; }
+      .rv-delete-btn { font-size: 13px; padding: 7px 14px; }
+      .rv-thumb { width: 72px; height: 72px; }
       .rv-item { padding: 12px 0; }
       .rv-avatar { width: 32px; height: 32px; font-size: 13px; }
       .rv-name { font-size: 13px; }
       .rv-date { font-size: 11px; }
       .rv-verified, .rv-mine { font-size: 9.5px; padding: 2px 6px; }
       .rv-comment { font-size: 13px; line-height: 1.6; }
+      .rv-photo img { width: 88px; height: 88px; }
       .rv-reply { font-size: 12px; padding: 8px 10px; }
       #reviews .fw-bold:not(.rv-name) { font-size: 14px; }
     }
@@ -100,15 +152,11 @@
         {% endif %}
       </div>
 
-      <div class="rv-form-card">
+      <div class="rv-form-card" id="rvFormCard">
         {% if user.is_authenticated %}
         {% if has_purchased or my_review %}
-        <h6>{% if my_review %}Your review{% else %}Write a review{% endif %}</h6>
-        <div class="text-muted small mb-3">
-          {% if my_review %}You can update your rating and comment anytime.{% else %}Share your experience with this product.{% endif %}
-          {% if has_purchased %}<span class="rv-verified ms-1"><i class="fas fa-circle-check me-1"></i>Verified purchase</span>{% endif %}
-        </div>
-        <form method="post" action="{% url 'reviews:submit' product.slug %}">
+        <h6 class="mb-3">{% if my_review %}Your review{% else %}Write a review{% endif %}</h6>
+        <form method="post" id="rvReviewForm" action="{% url 'reviews:submit' product.slug %}" enctype="multipart/form-data">
           {% csrf_token %}
           <div class="mb-3">
             <div class="rv-picker" role="radiogroup" aria-label="Star rating">
@@ -118,16 +166,28 @@
               {% endfor %}
             </div>
           </div>
-          <textarea name="comment" id="rvComment" class="rv-textarea" maxlength="1000" placeholder="Tell others what you think (optional)">{% if my_review %}{{ my_review.comment }}{% endif %}</textarea>
-          <div class="rv-count"><span id="rvCommentCount">{% if my_review %}{{ my_review.comment|length }}{% else %}0{% endif %}</span>/1000</div>
-          <div class="d-flex gap-2 mt-2">
+          <textarea name="comment" id="rvComment" class="rv-textarea" maxlength="1000" placeholder="Your comment..."></textarea>
+          <div class="rv-count"><span id="rvCommentCount">0</span>/1000</div>
+
+          <!-- Photo upload (up to 3) -->
+          <div class="rv-upload">
+            <label class="rv-upload-btn" for="rvMedia"><i class="fas fa-camera"></i><span id="rvMediaLabel">Add photos</span></label>
+            <input type="file" name="media" id="rvMedia" accept="image/*" multiple>
+            <div class="rv-hint">Up to 3 photos, 5 MB each.</div>
+
+            <div class="rv-thumbs" id="rvNewThumbs">
+            </div>
+            <button type="button" class="rv-clear-btn" id="rvClearPhotos"><i class="fas fa-trash-can"></i><span id="rvClearLabel">Delete photo</span></button>
+          </div>
+
+          <div class="d-flex gap-2 mt-3">
             <button type="submit" class="btn btn-teal rounded-3 px-4 flex-grow-1"><i class="fas fa-paper-plane me-2"></i>{% if my_review %}Update Review{% else %}Post Review{% endif %}</button>
           </div>
         </form>
         {% if my_review %}
-        <form method="post" action="{% url 'reviews:delete_mine' my_review.pk %}" class="mt-2" onsubmit="return confirm('Delete your review?');">
+        <form method="post" id="rvDeleteForm" action="{% url 'reviews:delete_mine' my_review.pk %}" class="mt-2">
           {% csrf_token %}
-          <button type="submit" class="btn btn-link text-danger btn-sm p-0 text-decoration-none"><i class="fas fa-trash-can me-1"></i>Delete my review</button>
+          <button type="button" class="rv-delete-btn" id="rvDeleteOpen"><i class="fas fa-trash-can me-2"></i>Delete my review</button>
         </form>
         {% endif %}
         {% else %}
@@ -178,6 +238,18 @@
               {% for s in r.stars %}{% if s == 'full' %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}{% endfor %}
             </div>
             {% if r.comment %}<p class="rv-comment">{{ r.comment }}</p>{% endif %}
+            {% with media=r.media.all %}
+            {% if r.image or media %}
+            <div class="rv-media">
+              {% if r.image %}
+              <a href="{{ r.image.url }}" target="_blank" rel="noopener" class="rv-photo" data-rv-zoom><img src="{{ r.image.url }}" alt="Photo from {{ r.display_name }}" loading="lazy"></a>
+              {% endif %}
+              {% for m in media %}
+              <a href="{{ m.image.url }}" target="_blank" rel="noopener" class="rv-photo" data-rv-zoom><img src="{{ m.image.url }}" alt="Photo from {{ r.display_name }}" loading="lazy"></a>
+              {% endfor %}
+            </div>
+            {% endif %}
+            {% endwith %}
             {% if r.staff_reply %}
             <div class="rv-reply">
               <div class="who"><i class="fas fa-store me-1"></i>Response from Likhalaya</div>
@@ -208,11 +280,223 @@
     </div>
   </div>
 
+  <!-- Delete review popup -->
+  <div class="rv-dlg" id="rvDeleteDlg" role="dialog" aria-modal="true" aria-labelledby="rvDlgTitle">
+    <div class="rv-dlg-box">
+      <div class="rv-dlg-icon"><i class="fas fa-trash-can"></i></div>
+      <h5 id="rvDlgTitle">Delete your review?</h5>
+      <p>Your rating, comment and photos will be permanently removed. This can't be undone.</p>
+      <div class="rv-dlg-actions">
+        <button type="button" class="rv-dlg-cancel" id="rvDlgCancel">Cancel</button>
+        <button type="button" class="rv-dlg-ok" id="rvDlgOk"><i class="fas fa-trash-can me-1"></i>Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Photo lightbox -->
+  <div class="rv-lb" id="rvLightbox" role="dialog" aria-modal="true" aria-label="Review photo">
+    <div class="rv-lb-bar">
+      <button type="button" id="rvLbOut" title="Zoom out" aria-label="Zoom out"><i class="fas fa-magnifying-glass-minus"></i></button>
+      <button type="button" id="rvLbReset" title="Reset zoom" aria-label="Reset zoom"><i class="fas fa-magnifying-glass"></i></button>
+      <button type="button" id="rvLbIn" title="Zoom in" aria-label="Zoom in"><i class="fas fa-magnifying-glass-plus"></i></button>
+      <button type="button" id="rvLbClose" title="Close" aria-label="Close"><i class="fas fa-xmark"></i></button>
+    </div>
+    <div class="rv-lb-stage" id="rvLbStage"><img id="rvLbImg" alt="Review photo"></div>
+  </div>
+
   <script>
     (function () {
       var ta = document.getElementById('rvComment');
       var cnt = document.getElementById('rvCommentCount');
       if (ta && cnt) ta.addEventListener('input', function () { cnt.textContent = ta.value.length; });
+
+    })();
+
+    // After Update/Post, keep the review form in view
+    (function () {
+      var card = document.getElementById('rvFormCard');
+      if (card && location.hash === '#reviews') {
+        window.addEventListener('load', function () {
+          setTimeout(function () { card.scrollIntoView({ block: 'center' }); }, 60);
+        });
+      }
+    })();
+
+    // Send review forms in the background, then reload IN PLACE so the
+    // browser's Back button still goes to the page the customer came from
+    // (shop / home) instead of the product page again.
+    window.rvSendForm = function (form) {
+      fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        credentials: 'same-origin',
+        redirect: 'manual'
+      }).then(function () {
+        location.replace(location.pathname + '#reviews');
+        location.reload();
+      }).catch(function () {
+        HTMLFormElement.prototype.submit.call(form);
+      });
+    };
+    (function () {
+      var f = document.getElementById('rvReviewForm');
+      if (!f) return;
+      f.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var btn = f.querySelector('button[type=submit]');
+        if (btn) btn.disabled = true;
+        window.rvSendForm(f);
+      });
+    })();
+
+    // Delete review popup
+    (function () {
+      var dlg = document.getElementById('rvDeleteDlg');
+      var openBtn = document.getElementById('rvDeleteOpen');
+      var form = document.getElementById('rvDeleteForm');
+      if (!dlg || !openBtn || !form) return;
+      function show() { dlg.classList.add('show'); document.body.style.overflow = 'hidden'; document.getElementById('rvDlgCancel').focus(); }
+      function hide() { dlg.classList.remove('show'); document.body.style.overflow = ''; openBtn.focus(); }
+      openBtn.addEventListener('click', show);
+      document.getElementById('rvDlgCancel').addEventListener('click', hide);
+      document.getElementById('rvDlgOk').addEventListener('click', function () { this.disabled = true; window.rvSendForm(form); });
+      dlg.addEventListener('click', function (e) { if (e.target === dlg) hide(); });
+      document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && dlg.classList.contains('show')) hide(); });
+    })();
+
+    // Photo picker (up to 3)
+    (function () {
+      var input = document.getElementById('rvMedia');
+      var thumbs = document.getElementById('rvNewThumbs');
+      var label = document.getElementById('rvMediaLabel');
+      var clearBtn = document.getElementById('rvClearPhotos');
+      var clearLabel = document.getElementById('rvClearLabel');
+      if (!input) return;
+      var MAX = 3, MAX_MB = 5;
+      var picked = [];
+
+      function keptCount() {
+        var n = 0;
+        document.querySelectorAll('.rv-keep').forEach(function (el) {
+          var cb = el.querySelector('input[type=checkbox]');
+          if (!cb || !cb.checked) n++;
+        });
+        return n;
+      }
+      function check(files) {
+        for (var i = 0; i < files.length; i++) {
+          if (files[i].type.indexOf('image/') !== 0) return 'Only photos are allowed.';
+          if (files[i].size > MAX_MB * 1048576) return 'Each photo must be ' + MAX_MB + ' MB or smaller.';
+        }
+        if (files.length + keptCount() > MAX) return 'You can add up to ' + MAX + ' photos.';
+        return '';
+      }
+      function sync() {
+        var dt = new DataTransfer();
+        picked.forEach(function (f) { dt.items.add(f); });
+        input.files = dt.files;
+        render();
+      }
+      function render() {
+        thumbs.querySelectorAll('.rv-new').forEach(function (n) { n.remove(); });
+        picked.forEach(function (f, idx) {
+          var box = document.createElement('div');
+          box.className = 'rv-thumb rv-new';
+          var im = document.createElement('img');
+          im.src = URL.createObjectURL(f);
+          im.alt = 'Selected photo';
+          box.appendChild(im);
+          var x = document.createElement('button');
+          x.type = 'button';
+          x.className = 'rv-x';
+          x.setAttribute('aria-label', 'Remove photo');
+          x.innerHTML = '&times;';
+          x.addEventListener('click', function () { picked.splice(idx, 1); sync(); });
+          box.appendChild(x);
+          thumbs.appendChild(box);
+        });
+        label.textContent = picked.length ? 'Add more' : 'Add photos';
+        if (clearBtn) {
+          clearBtn.style.display = picked.length ? 'inline-flex' : 'none';
+          clearLabel.textContent = picked.length > 1 ? 'Delete photos' : 'Delete photo';
+        }
+      }
+
+      if (clearBtn) clearBtn.addEventListener('click', function () { picked = []; sync(); });
+
+      input.addEventListener('change', function () {
+        var combined = picked.concat(Array.prototype.slice.call(input.files));
+        var err = check(combined);
+        if (err) { alert(err); sync(); return; }
+        picked = combined;
+        sync();
+      });
+    })();
+
+    // Photo lightbox with zoom
+    (function () {
+      var lb = document.getElementById('rvLightbox');
+      if (!lb) return;
+      var stage = document.getElementById('rvLbStage');
+      var img = document.getElementById('rvLbImg');
+      var scale = 1, base = 0, MIN = 1, MAX = 4, STEP = 0.5;
+
+      function apply() {
+        if (scale === 1) {
+          img.style.width = '';
+          img.style.maxWidth = '100%';
+          img.style.maxHeight = '82vh';
+          stage.classList.remove('zoomed');
+        } else {
+          img.style.maxWidth = 'none';
+          img.style.maxHeight = 'none';
+          img.style.width = (base * scale) + 'px';
+          stage.classList.add('zoomed');
+        }
+      }
+      function setScale(v) {
+        if (scale === 1) base = img.clientWidth;
+        scale = Math.min(MAX, Math.max(MIN, v));
+        apply();
+      }
+      function open(src) {
+        scale = 1; apply();
+        img.src = src;
+        lb.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        stage.scrollTop = 0; stage.scrollLeft = 0;
+      }
+      function close() {
+        lb.classList.remove('show');
+        document.body.style.overflow = '';
+        img.removeAttribute('src');
+        scale = 1; apply();
+      }
+
+      document.querySelectorAll('[data-rv-zoom]').forEach(function (a) {
+        a.addEventListener('click', function (e) {
+          e.preventDefault();
+          open(a.getAttribute('href'));
+        });
+      });
+      document.getElementById('rvLbIn').addEventListener('click', function () { setScale(scale + STEP); });
+      document.getElementById('rvLbOut').addEventListener('click', function () { setScale(scale - STEP); });
+      document.getElementById('rvLbReset').addEventListener('click', function () { setScale(1); stage.scrollTop = 0; stage.scrollLeft = 0; });
+      document.getElementById('rvLbClose').addEventListener('click', close);
+      img.addEventListener('click', function (e) { e.stopPropagation(); setScale(scale > 1 ? 1 : 2); });
+      stage.addEventListener('click', function (e) { if (e.target === stage) close(); });
+      stage.addEventListener('wheel', function (e) {
+        if (!e.ctrlKey && scale === 1 && e.deltaY > 0) return;
+        e.preventDefault();
+        setScale(scale + (e.deltaY < 0 ? STEP : -STEP));
+      }, { passive: false });
+      document.addEventListener('keydown', function (e) {
+        if (!lb.classList.contains('show')) return;
+        if (e.key === 'Escape') close();
+        else if (e.key === '+' || e.key === '=') setScale(scale + STEP);
+        else if (e.key === '-') setScale(scale - STEP);
+      });
     })();
   </script>
+
 </section>

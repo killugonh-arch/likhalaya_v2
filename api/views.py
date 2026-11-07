@@ -13,6 +13,8 @@ from store.views import _customer_reply_cooldown_remaining
 from orders.models import Order, OrderItem, Notification
 from orders.validators import validate_payment_proof
 from orders.shipping import get_shipping_quote
+from reviews.forms import ReviewForm
+from reviews.models import Review, public_name_for, review_stats, user_has_purchased
 
 from .serializers import (
     CustomTokenObtainPairSerializer, UserSerializer, RegisterSerializer,
@@ -108,6 +110,8 @@ class ProductViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['create', 'update', 'partial_update', 'destroy']:
             return [IsStaffRole()]
+        if self.action == 'reviews' and self.request.method == 'POST':
+            return [permissions.IsAuthenticated()]
         return [permissions.AllowAny()]
 
     def get_queryset(self):
@@ -120,6 +124,85 @@ class ProductViewSet(viewsets.ModelViewSet):
         if search:
             qs = qs.filter(name__icontains=search)
         return qs
+
+    # ── Ratings & reviews (same data and rules as the website) ──────
+
+    def _reviews_payload(self, request, product):
+        user = request.user if request.user.is_authenticated else None
+        stats = review_stats(product)
+        visible = Review.objects.filter(product=product, is_visible=True)\
+            .select_related('user').order_by('-created_at')[:50]
+
+        def row(r):
+            return {
+                'id': r.id,
+                'user_name': r.display_name,
+                'rating': r.rating,
+                'comment': r.comment,
+                'created_at': r.created_at.isoformat(),
+                'is_mine': bool(user and r.user_id == user.pk),
+                'staff_reply': r.staff_reply,
+            }
+
+        mine = Review.objects.filter(product=product, user=user).first() if user else None
+        return {
+            'average': stats['average'],
+            'count': stats['total'],
+            'distribution': {str(r['stars']): r['count'] for r in stats['rows']},
+            'reviews': [row(r) for r in visible],
+            'can_review': bool(user and (mine is not None or user_has_purchased(user, product))),
+            'my_review': row(mine) if mine else None,
+        }
+
+    @action(detail=True, methods=['get', 'post'], url_path='reviews')
+    def reviews(self, request, slug=None):
+        """GET  /api/products/<slug>/reviews/  -> rating summary + reviews.
+        POST /api/products/<slug>/reviews/  -> create / update my review.
+        Mirrors reviews.views.submit_review on the website."""
+        product = self.get_object()
+
+        if request.method == 'GET':
+            return Response(self._reviews_payload(request, product))
+
+        form = ReviewForm(request.data)
+        if not form.is_valid():
+            first = next(iter(form.errors.values()))[0]
+            return Response({'detail': str(first)}, status=status.HTTP_400_BAD_REQUEST)
+
+        rating = form.cleaned_data['rating']
+        comment = form.cleaned_data['comment']
+        user = request.user
+        purchased = user_has_purchased(user, product)
+        existing = Review.objects.filter(product=product, user=user).first()
+
+        # Only customers with a delivered order for this product can post
+        # a new review (an existing one can always be edited).
+        if not existing and not purchased:
+            return Response(
+                {'detail': 'Only customers who received this product can review it.'},
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
+        if existing:
+            existing.rating = rating
+            existing.comment = comment
+            existing.reviewer_name = public_name_for(user)
+            existing.is_verified_purchase = existing.is_verified_purchase or purchased
+            existing.save()
+            code = status.HTTP_200_OK
+        else:
+            Review.objects.update_or_create(
+                product=product, user=user,
+                defaults={
+                    'reviewer_name': public_name_for(user),
+                    'rating': rating,
+                    'comment': comment,
+                    'is_verified_purchase': purchased,
+                },
+            )
+            code = status.HTTP_201_CREATED
+
+        return Response(self._reviews_payload(request, product), status=code)
 
 
 # ── Orders ────────────────────────────────────────────────────────
@@ -208,7 +291,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def upload_payment_proof(self, request, pk=None):
         """POST multipart /api/orders/{id}/upload_payment_proof/ with a
-        `payment_proof` file — mirrors orders.views.gcash_payment's upload
+        payment_proof file — mirrors orders.views.gcash_payment's upload
         step. Only the order's own customer may attach a receipt."""
         order = self.get_object()
         if order.user_id != request.user.pk:

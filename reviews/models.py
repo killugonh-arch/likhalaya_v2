@@ -39,6 +39,8 @@ class Review(models.Model):
         validators=[MinValueValidator(1), MaxValueValidator(5)],
     )
     comment = models.TextField(blank=True, max_length=1000)
+    # Legacy single photo. New uploads go to ReviewMedia (up to 3 photos).
+    image = models.ImageField(upload_to='reviews/%Y/%m/', blank=True, null=True)
     is_verified_purchase = models.BooleanField(
         default=False,
         help_text="Customer has a delivered order containing this product."
@@ -107,6 +109,19 @@ class Review(models.Model):
     @property
     def stars(self):
         return star_list(self.rating)
+
+
+class ReviewMedia(models.Model):
+    """A photo attached to a review (up to 3 per review)."""
+    review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name='media')
+    image = models.ImageField(upload_to='reviews/%Y/%m/')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['id']
+
+    def __str__(self):
+        return f"photo for review {self.review_id}"
 
 
 def public_name_for(user):

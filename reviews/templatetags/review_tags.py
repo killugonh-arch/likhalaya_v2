@@ -76,12 +76,11 @@ def card_rating(product):
     if total:
         tip = f"{average} out of 5 · {total} review{'s' if total != 1 else ''}"
         label = format_html(
-            '<span style="font-size:12px;font-weight:700;color:#2b2b2b;">{}</span>'
-            '<span style="font-size:11px;color:#8a8a8a;">({})</span>',
-            average, total)
+            '<span style="font-size:12px;font-weight:700;color:#2b2b2b;">{}</span>',
+            average)
     else:
-        tip = 'No reviews yet'
-        label = format_html('<span style="font-size:11px;color:#8a8a8a;">No reviews yet</span>')
+        tip = ''
+        label = ''
 
     return format_html(
         '<div title="{}" style="display:flex;align-items:center;gap:5px;line-height:1;'
