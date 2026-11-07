@@ -10,7 +10,7 @@ from urllib.parse import urlsplit, urlunsplit, urlencode, parse_qsl
 from django.core.cache import cache
 from django.db import transaction
 from store.models import Product, ProductDesign
-from .cart import Cart, _max_purchasable, BUY_NOW_SESSION_ID
+from .cart import Cart, _max_purchasable, find_design, BUY_NOW_SESSION_ID
 from .pending import stash_pending_action
 from .shipping import get_shipping_quote
 from .forms import CheckoutForm
@@ -214,10 +214,8 @@ def cart_add(request, product_id):
         pending_design = None
         pending_design_id = request.POST.get('design_id')
         if pending_design_id:
-            pending_design = ProductDesign.objects.filter(
-                id=pending_design_id, product_size__product=product, is_active=True
-            ).first()
-            if pending_design and not pending_size:
+            pending_design = find_design(product, pending_design_id)
+            if pending_design and not pending_size and pending_design.product_size_id:
                 pending_size = pending_design.product_size.name
         origin = ''
         ref = request.META.get('HTTP_REFERER', '')
@@ -243,10 +241,8 @@ def cart_add(request, product_id):
     design = None
     design_id = request.POST.get('design_id')
     if design_id:
-        design = ProductDesign.objects.filter(
-            id=design_id, product_size__product=product, is_active=True
-        ).first()
-        if design and not size:
+        design = find_design(product, design_id)
+        if design and not size and design.product_size_id:
             size = design.product_size.name
 
     if buy_now:

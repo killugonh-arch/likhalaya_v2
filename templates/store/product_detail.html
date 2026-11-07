@@ -157,7 +157,7 @@
             data-price-l="{{ product.price_large }}"
             data-preselect-size="{{ selected_size_default|default:'M' }}"
             data-images-id="imgs-detail"
-            data-has-variants="{% if product.has_variants %}1{% else %}0{% endif %}"
+            data-has-variants="{% if product.uses_variant_picker %}1{% else %}0{% endif %}"
             data-variants-id="variants-detail"
             id="detailAddToCartBtn">
             <i class="fas fa-shopping-cart me-2"></i>Add to Cart
@@ -174,7 +174,7 @@
             data-price-l="{{ product.price_large }}"
             data-preselect-size="{{ selected_size_default|default:'M' }}"
             data-images-id="imgs-detail"
-            data-has-variants="{% if product.has_variants %}1{% else %}0{% endif %}"
+            data-has-variants="{% if product.uses_variant_picker %}1{% else %}0{% endif %}"
             data-variants-id="variants-detail"
             id="detailBuyNowBtn">
             <i class="fas fa-bolt me-2"></i>Buy Now

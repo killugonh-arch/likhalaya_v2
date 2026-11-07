@@ -3,6 +3,7 @@ from urllib.parse import urlsplit, urlunsplit, urlencode, parse_qsl
 from django.contrib import messages
 
 from store.models import Product, ProductDesign
+from .cart import find_design
 
 PENDING_CART_SESSION_KEY = 'pending_cart_action'
 
@@ -37,9 +38,7 @@ def apply_pending_action(request):
 
     design = None
     if data.get('design_id'):
-        design = ProductDesign.objects.filter(
-            id=data['design_id'], product_size__product=product, is_active=True
-        ).first()
+        design = find_design(product, data['design_id'])
     size = data.get('size') or None
     quantity = max(1, int(data.get('quantity') or 1))
     origin = data.get('next') or ''  # page the visitor clicked from (home, shop, product...)

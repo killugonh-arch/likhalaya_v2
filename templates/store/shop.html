@@ -262,7 +262,7 @@
                     data-price-l="{{ product.price_large }}"
                     data-preselect-size="M"
                     data-images-id="imgs-{{ product.pk }}"
-                    data-has-variants="{% if product.has_variants %}1{% else %}0{% endif %}"
+                    data-has-variants="{% if product.uses_variant_picker %}1{% else %}0{% endif %}"
                     data-variants-id="variants-{{ product.pk }}">
                     <i class="fas fa-cart-plus"></i>
                   </button>
@@ -278,7 +278,7 @@
                     data-price-l="{{ product.price_large }}"
                     data-preselect-size="M"
                     data-images-id="imgs-{{ product.pk }}"
-                    data-has-variants="{% if product.has_variants %}1{% else %}0{% endif %}"
+                    data-has-variants="{% if product.uses_variant_picker %}1{% else %}0{% endif %}"
                     data-variants-id="variants-{{ product.pk }}">
                     Buy Now
                   </button>

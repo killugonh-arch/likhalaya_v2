@@ -1,16 +1,28 @@
 from decimal import Decimal
 from django.conf import settings
+from django.db.models import Q
 from store.models import Product, ProductDesign
 
 # separate session key for buy now, never mixed with the cart
 BUY_NOW_SESSION_ID = 'buy_now_item'
 
 
+def find_design(product, design_id):
+    """A design that belongs to this product: either under one of its sizes,
+    or attached straight to the product (a product with no sizes)."""
+    if not design_id:
+        return None
+    return ProductDesign.objects.filter(
+        Q(product_size__product=product) | Q(parent_product=product),
+        id=design_id, is_active=True,
+    ).first()
+
+
 def _max_purchasable(product, design):
     """Returns actual purchasable stock for a product/design combo."""
     if design:
         return max(0, design.stock_for_size(None))
-    if product.has_variants:
+    if product.has_variants or product.has_direct_designs:
         return 0
     return max(0, product.stock)
 

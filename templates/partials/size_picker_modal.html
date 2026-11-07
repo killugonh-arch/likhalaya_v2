@@ -897,6 +897,7 @@
   }
 
   function renderSizeCards() {
+    if (!state.hasSizes) return;
     sizeOptionsEl.innerHTML = '';
     state.sizeList.forEach(function(s) {
       var stock = sizeAvailableStock(s);
@@ -948,7 +949,7 @@
     var sizeObj = getSizeObj(state.size);
     var designs = sizeObj ? (sizeObj.designs || []) : [];
 
-    designContextChipEl.textContent = sizeObj ? (sizeObj.name + ' · ' + fmt(sizeObj.price)) : '';
+    designContextChipEl.textContent = (sizeObj && state.hasSizes) ? (sizeObj.name + ' · ' + fmt(sizeObj.price)) : '';
 
     designOptionsEl.innerHTML = '';
     if (!designs.length) {
@@ -1237,6 +1238,8 @@
 
       var hasVariants = btn.dataset.hasVariants === '1';
       var sizeList = [];
+      var directDesigns = [];
+      state.noSizeDesigns = false;
       if (hasVariants) {
         try {
           var vDataEl = btn.dataset.variantsId ? document.getElementById(btn.dataset.variantsId) : null;
@@ -1250,8 +1253,14 @@
               designs: s.designs || []
             });
           });
+          directDesigns = vdata.designs || [];
         } catch (e) {
           console.error('Product configurator: failed to parse product variants', e);
+        }
+        // No sizes but designs: treat them as one hidden "size" so the Design step works unchanged
+        if (!sizeList.length && directDesigns.length) {
+          sizeList = [{ code: '', name: '', dimensions: '', price: parseFloat(btn.dataset.priceS) || parseFloat(btn.dataset.priceM) || 0, designs: directDesigns }];
+          state.noSizeDesigns = true;
         }
         // Safety net: server says this product has variants but we
         // couldn't read any real ones — fall back to the plain flow.
@@ -1259,7 +1268,7 @@
       }
 
       var hasSizePricing = btn.dataset.hasSizePricing === '1';
-      var hasSizes = hasSizePricing || hasVariants;
+      var hasSizes = (hasSizePricing || hasVariants) && !state.noSizeDesigns;
 
       if (hasSizePricing && !hasVariants) {
         var legacyNames = { S: 'Small', M: 'Medium', L: 'Large' };
@@ -1293,7 +1302,7 @@
         descWrapEl.style.display = '';
       }
 
-      subtitleEl.textContent = hasSizes ? 'Choose your size and design.' : 'Confirm your order.';
+      subtitleEl.textContent = hasSizes ? 'Choose your size and design.' : (state.noSizeDesigns ? 'Choose your design.' : 'Confirm your order.');
 
       // Pick the initial size: prefer the server's preselect hint if it
       // actually has stock, otherwise the first in-stock size, otherwise
@@ -1309,6 +1318,8 @@
           preselect = firstAvailable ? firstAvailable.code : (sizeList[0] ? sizeList[0].code : null);
         }
         if (preselect) selectSize(preselect); // selectSize also sets initial design + calls render()
+      } else if (state.noSizeDesigns) {
+        selectSize('');
       }
 
       // Build this product's step flow: size only when it has sizes,
@@ -1354,6 +1365,10 @@
         var d = (sizeObj.designs || []).find(function(x) { return String(x.id) === String(design); });
         if (d && (d.stock || 0) > 0) selectDesign(d);
       }
+    }
+    if (state.noSizeDesigns && design) {
+      var d0 = (state.sizeList[0].designs || []).find(function(x) { return String(x.id) === String(design); });
+      if (d0 && (d0.stock || 0) > 0) selectDesign(d0);
     }
     if (qty > 1) setQty(qty);
   })();

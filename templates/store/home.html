@@ -469,7 +469,7 @@ body { background-color: #F7F5EE; }
               data-price-l="{{ product.price_large }}"
               data-preselect-size="M"
               data-images-id="imgs-{{ product.pk }}"
-              data-has-variants="{% if product.has_variants %}1{% else %}0{% endif %}"
+              data-has-variants="{% if product.uses_variant_picker %}1{% else %}0{% endif %}"
               data-variants-id="variants-{{ product.pk }}">
               <i class="fas fa-cart-plus"></i> Add to Cart
             </button>

@@ -279,7 +279,7 @@ body.dark-mode .pe-leave {
 .pe-card.simple [data-size-badge], .pe-card.simple .pe-size-thumb { display:none !important; }
 .pe-card.simple .pe-size-head { cursor:default; }
 #simpleBox { margin-top:12px; padding:12px 14px; border:1.5px solid var(--pe-line); border-radius:13px; background:var(--pe-surface); }
-#simpleBox label { font-size:12px; font-weight:700; color:var(--pe-mute); text-transform:uppercase; margin-bottom:6px; display:block; }
+#simpleStockWrap label { font-size:12px; font-weight:700; color:var(--pe-mute); text-transform:uppercase; margin-bottom:6px; display:block; }
 </style>
 
 <div class="pe">
@@ -477,9 +477,33 @@ body.dark-mode .pe-leave {
             </div>
           {% endwith %}{% endfor %}
           </div>
+
+          <!-- NO-SIZE MODE: single stock, or designs (stock then adds up from the designs) -->
           <div id="simpleBox" {% if uses_sizes %}style="display:none"{% endif %}>
-            <label for="simpleStock">Stock (units available)</label>
-            <input type="number" min="0" step="1" class="form-control" id="simpleStock" name="simple_stock" value="{{ simple_stock|default:0 }}">
+            <div id="simpleStockWrap">
+              <label for="simpleStock">Stock (units available)</label>
+              <input type="number" min="0" step="1" class="form-control" id="simpleStock" name="simple_stock" value="{{ simple_stock|default:0 }}">
+            </div>
+            <div class="hint" id="simpleStockNote" style="display:none"></div>
+            <div class="pe-design-list" id="sdesignGrid" style="margin-top:12px">
+              {% for d in direct_designs %}
+              <div class="pe-design" data-di="{{ forloop.counter0 }}">
+                <input type="hidden" name="sdesign-{{ forloop.counter0 }}-id" value="{{ d.pk }}">
+                <label class="pe-design-thumb" title="Add or change the design photo">
+                  {% if d.image %}<img src="{{ d.image.url }}" alt="">{% else %}<i class="fas fa-plus plus"></i><b>Add photo</b>{% endif %}<span class="cam"><i class="fas fa-camera"></i></span>
+                  <input type="file" accept="image/*" hidden name="sdesign-{{ forloop.counter0 }}-image" data-design-file>
+                </label>
+                <span class="form-check form-switch pe-dsw" title="Show this design"><input type="checkbox" class="form-check-input design-active" name="sdesign-{{ forloop.counter0 }}-is_active" {% if d.is_active %}checked{% endif %}></span>
+                <button type="button" class="pe-del" data-design-remove aria-label="Remove design"><i class="fas fa-trash"></i><input type="checkbox" class="d-none" name="sdesign-{{ forloop.counter0 }}-DELETE"></button>
+                <div class="pe-dbody">
+                  <input type="text" class="form-control pe-dname" placeholder="Design name" name="sdesign-{{ forloop.counter0 }}-title" value="{{ d.title }}" required>
+                  <input type="text" class="form-control" placeholder="Color (optional)" name="sdesign-{{ forloop.counter0 }}-color" value="{{ d.color }}">
+                  <div class="pe-qty"><span class="pe-stepper"><button type="button" data-step="-1" aria-label="Less">−</button><input type="number" min="0" step="1" class="form-control design-qty" name="sdesign-{{ forloop.counter0 }}-stock" value="{{ d.stock|default:0 }}"><button type="button" data-step="1" aria-label="More">+</button></span></div>
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+            <button type="button" class="pe-add-design" id="addSimpleDesign"><i class="fas fa-plus me-1"></i>Add design / color</button>
           </div>
         </div>
       </div>
@@ -800,6 +824,77 @@ body.dark-mode .pe-leave {
   });
   sizeList.addEventListener('input', function () { renderSizes(); });
 
+  /* ───────── designs for a product WITHOUT sizes ───────── */
+  var simpleBox = $('#simpleBox'), sGrid = $('#sdesignGrid');
+  function liveSimple() { return $$('.pe-design', sGrid).filter(function (d) { return !d.dataset.removed; }); }
+  function renderSimple() {
+    var ds = liveSimple(), units = 0;
+    ds.forEach(function (d) {
+      var q = qty(d);
+      $('.design-qty', d).classList.toggle('out', q <= 0);
+      if ($('.design-active', d).checked) units += q;
+    });
+    // with designs, the single stock box is hidden and total = sum of design quantities
+    $('#simpleStockWrap').style.display = ds.length ? 'none' : '';
+    var note = $('#simpleStockNote');
+    note.style.display = ds.length ? '' : 'none';
+    note.textContent = 'Total stock: ' + units + ' (adds up from the designs)';
+  }
+  function addSimpleDesign() {
+    var di = 0;
+    $$('.pe-design', sGrid).forEach(function (d) { di = Math.max(di, parseInt(d.dataset.di, 10) + 1); });
+    var p = 'sdesign-' + di + '-', d = document.createElement('div');
+    d.className = 'pe-design'; d.dataset.di = di;
+    d.innerHTML =
+      '<label class="pe-design-thumb" title="Add or change the design photo"><i class="fas fa-plus plus"></i><b>Add photo</b><span class="cam"><i class="fas fa-camera"></i></span>' +
+        '<input type="file" accept="image/*" hidden name="' + p + 'image" data-design-file></label>' +
+      '<span class="form-check form-switch pe-dsw" title="Show this design"><input type="checkbox" class="form-check-input design-active" name="' + p + 'is_active" checked></span>' +
+      '<button type="button" class="pe-del" data-design-remove aria-label="Remove design"><i class="fas fa-trash"></i><input type="checkbox" class="d-none" name="' + p + 'DELETE"></button>' +
+      '<div class="pe-dbody">' +
+        '<input type="text" class="form-control pe-dname" placeholder="Design name" name="' + p + 'title" required>' +
+        '<input type="text" class="form-control" placeholder="Color (optional)" name="' + p + 'color">' +
+        '<div class="pe-qty"><span class="pe-stepper"><button type="button" data-step="-1" aria-label="Less">−</button>' +
+          '<input type="number" min="0" step="1" class="form-control design-qty" name="' + p + 'stock" value="0">' +
+          '<button type="button" data-step="1" aria-label="More">+</button></span></div>' +
+      '</div>';
+    sGrid.appendChild(d);
+    $('input[type=text]', d).focus();
+    markDirty(); renderSimple();
+  }
+  simpleBox.addEventListener('click', function (e) {
+    var t = e.target;
+    if (t.closest('#addSimpleDesign')) { addSimpleDesign(); return; }
+    var rm = t.closest('[data-design-remove]');
+    if (rm) {
+      var d = rm.closest('.pe-design'), cb = $('input[type=checkbox]', rm);
+      cb.checked = true; d.dataset.removed = '1'; d.style.display = 'none';
+      markDirty(); renderSimple();
+      toast('Design removed', function () { cb.checked = false; delete d.dataset.removed; d.style.display = ''; renderSimple(); });
+      return;
+    }
+    var st = t.closest('[data-step]');
+    if (st) {
+      var inp = $('.design-qty', st.closest('.pe-design'));
+      inp.value = Math.max(0, (parseInt(inp.value, 10) || 0) + parseInt(st.dataset.step, 10));
+      markDirty(); renderSimple();
+    }
+  });
+  simpleBox.addEventListener('change', function (e) {
+    var f = e.target;
+    if (f.matches('[data-design-file]') && f.files[0]) {
+      if (f.files[0].size > MAX_BYTES) { f.value = ''; toast('Design photo is too big. Maximum is 5MB.', null, true); return; }
+      var th = f.closest('.pe-design-thumb'), r = new FileReader();
+      r.onload = function (ev) {
+        $$(':scope > img, :scope > i, :scope > b', th).forEach(function (n) { n.remove(); });
+        var im = document.createElement('img'); im.alt = ''; im.src = ev.target.result; th.insertBefore(im, th.firstChild);
+      };
+      r.readAsDataURL(f.files[0]);
+    }
+    renderSimple();
+  });
+  simpleBox.addEventListener('input', renderSimple);
+  renderSimple();
+
   /* ───────── "This product has sizes" switch ───────── */
   var usesSizes = $('#usesSizes');
   function isSimple() { return !usesSizes.checked; }
@@ -858,7 +953,13 @@ body.dark-mode .pe-leave {
     var simple = isSimple();
     if (simple) {
       var ss = $('#simpleStock');
-      if (ss && ss.value.trim() !== '' && !/^\d+$/.test(ss.value.trim())) flag(ss, 'Stock must be a whole number.', errs);
+      if (ss && !liveSimple().length && ss.value.trim() !== '' && !/^\d+$/.test(ss.value.trim())) flag(ss, 'Stock must be a whole number.', errs);
+      liveSimple().forEach(function (d) {
+        var t = $('.pe-dname', d);
+        if (t && !t.value.trim()) flag(t, 'Design name is required.', errs, t.parentNode);
+        var q = $('.design-qty', d);
+        if (q && q.value.trim() !== '' && !/^\d+$/.test(q.value.trim())) flag(q, 'Quantity must be a whole number.', errs, q.closest('.pe-dbody'));
+      });
     }
     if (!simple && m && m.value.trim() !== '' && (mv === null || mv < 0 || mv % 1 !== 0)) flag(m, 'Medium price must be a whole number.', errs, mHead);
     if (!simple && l && l.value.trim() !== '' && (lv === null || lv < 0 || lv % 1 !== 0)) flag(l, 'Large price must be a whole number.', errs, lHead);
