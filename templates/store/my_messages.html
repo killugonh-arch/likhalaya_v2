@@ -73,6 +73,7 @@
     .message-detail-page .msg-bubble-text { white-space: pre-wrap; word-break: break-word; }
     .message-detail-page .msg-details { display: grid; gap: 5px; }
     .message-detail-page .msg-bubble-text + .msg-details { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,.22); }
+    .message-detail-page .msg-bubble.staff .msg-bubble-text + .msg-details { border-top-color: #E6E8E4; }
     .message-detail-page .msg-detail-row { display: flex; gap: 10px; font-size: 12.5px; line-height: 1.45; }
     .message-detail-page .msg-detail-label { flex: 0 0 auto; min-width: 104px; font-weight: 700; opacity: .75; }
     .message-detail-page .msg-detail-value { white-space: pre-wrap; word-break: break-word; }
@@ -151,6 +152,27 @@
     .message-detail-page .reply-send-btn:disabled { background: #b7c2c0; cursor: not-allowed; }
     .message-detail-page .cooldown-note { font-size: 11.5px; color: #8b9490; margin-top: 6px; }
 
+    /* Attach image (paperclip) inside the reply box */
+    .message-detail-page .reply-tools { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+    .message-detail-page .reply-attach-btn {
+        display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
+        font-size: 12px; font-weight: 600; color: #14584A; margin: 0;
+        padding: 3px 10px; border-radius: 20px; background: #E3F3EC; transition: background .15s;
+    }
+    .message-detail-page .reply-attach-btn:hover { background: #d3ebe1; }
+    .message-detail-page #replyImageInput { display: none; }
+    .message-detail-page .reply-img-preview { display: none; align-items: center; gap: 8px; }
+    .message-detail-page .reply-img-preview.show { display: inline-flex; }
+    .message-detail-page .reply-img-thumb {
+        width: 44px; height: 44px; border-radius: 8px; object-fit: cover;
+        border: 1px solid #E6E8E4; display: block;
+    }
+    .message-detail-page .reply-img-remove {
+        border: 0; background: #fdecef; color: #e0334c; border-radius: 50%;
+        width: 22px; height: 22px; font-size: 14px; line-height: 1; cursor: pointer; padding: 0;
+    }
+    .message-detail-page .reply-img-remove:hover { background: #fbd5dc; }
+
     .message-detail-page .inbox-empty { text-align: center; padding: 64px 24px; background: #fff; border-radius: 22px; box-shadow: 0 10px 40px rgba(20,60,50,.10); }
 
     @media (max-width: 576px) {
@@ -219,6 +241,8 @@
         .message-detail-page .msg-quote-label { font-size: 10.5px; }
         .message-detail-page .msg-quote-time { font-size: 10px; }
         .message-detail-page .msg-bubble-time { font-size: 10px; }
+        .message-detail-page .reply-attach-btn { font-size: 11px; padding: 2px 9px; }
+        .message-detail-page .reply-img-thumb { width: 36px; height: 36px; }
     }
 
     /* All screens: the card fits the window — header on top, conversation scrolls, reply stays visible */
@@ -289,7 +313,7 @@
                 {% for label, value in e.details %}
                 <div class="msg-detail-row"><span class="msg-detail-label">{{ label }}</span><span class="msg-detail-value">{{ value }}</span></div>
                 {% endfor %}
-                {% if e.image_url %}<a href="{{ e.image_url }}" target="_blank" rel="noopener"><img src="{{ e.image_url }}" alt="Reference image" class="msg-detail-img"></a>{% endif %}
+                {% if e.image_url %}<a href="{{ e.image_url }}" target="_blank" rel="noopener"><img src="{{ e.image_url }}" alt="Attached image" class="msg-detail-img"></a>{% endif %}
                 {% if e.starts_thread %}
                 <div class="msg-detail-row"><span class="msg-detail-label">Message</span><span class="msg-detail-value">{% if e.body %}{{ e.body }}{% else %}None{% endif %}</span></div>
                 {% endif %}
@@ -305,7 +329,7 @@
     </div>
 
     <div class="thread-reply-area">
-      <form method="post" action="{% url 'store:my_messages' %}" id="replyForm">
+      <form method="post" action="{% url 'store:my_messages' %}" id="replyForm" enctype="multipart/form-data">
         {% csrf_token %}
         <input type="hidden" name="reply_to" id="replyToInput" value="">
         <input type="hidden" name="reply_quote" id="replyQuoteInput" value="">
@@ -314,6 +338,14 @@
         <div class="reply-form-row">
           <div class="reply-box">
             <textarea name="body" class="reply-textarea" rows="2" placeholder="Type your reply…" required></textarea>
+            <div class="reply-tools">
+              <label class="reply-attach-btn" for="replyImageInput" title="Attach an image"><i class="fas fa-paperclip"></i><span id="replyImageLabel">Attach image</span></label>
+              <input type="file" name="image" id="replyImageInput" accept="image/jpeg,image/png,image/webp">
+              <span class="reply-img-preview" id="replyImagePreview">
+                <img id="replyImageThumb" class="reply-img-thumb" alt="Selected image">
+                <button type="button" class="reply-img-remove" id="replyImageRemove" aria-label="Remove image">&times;</button>
+              </span>
+            </div>
           </div>
           <button type="submit" class="reply-send-btn" id="replySendBtn"><i class="fas fa-paper-plane"></i><span id="replySendBtnLabel">Send</span></button>
         </div>
@@ -369,6 +401,38 @@
       if (rArea) rArea.focus();
     });
   });
+
+  // Attach an image to the reply: preview + remove. With an image attached
+  // the text becomes optional.
+  (function () {
+    var input = document.getElementById('replyImageInput');
+    if (!input) return;
+    var box = document.getElementById('replyImagePreview');
+    var thumb = document.getElementById('replyImageThumb');
+    var label = document.getElementById('replyImageLabel');
+    var url = null;
+    function clear() {
+      input.value = '';
+      if (url) { URL.revokeObjectURL(url); url = null; }
+      thumb.removeAttribute('src');
+      box.classList.remove('show');
+      label.textContent = 'Attach image';
+      if (rArea) rArea.required = true;
+    }
+    input.addEventListener('change', function () {
+      var f = input.files && input.files[0];
+      if (!f) { clear(); return; }
+      if (['image/jpeg', 'image/png', 'image/webp'].indexOf(f.type) === -1) { alert('Please choose a JPG, PNG or WEBP image.'); clear(); return; }
+      if (f.size > 5 * 1048576) { alert('The image must be 5 MB or smaller.'); clear(); return; }
+      if (url) URL.revokeObjectURL(url);
+      url = URL.createObjectURL(f);
+      thumb.src = url;
+      box.classList.add('show');
+      label.textContent = 'Change image';
+      if (rArea) rArea.required = false;
+    });
+    document.getElementById('replyImageRemove').addEventListener('click', clear);
+  })();
 
   // 20s cooldown between messages: disable Send and count down.
   var sendBtn = document.getElementById('replySendBtn');

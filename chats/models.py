@@ -33,7 +33,9 @@ class ChatMessage(models.Model):
         help_text='The staff member who sent this, when from_customer=False. Null for customer messages.',
     )
     from_customer = models.BooleanField(default=True)
-    body = models.TextField(max_length=2000)
+    # Blank is allowed so a message can be just an image.
+    body = models.TextField(max_length=2000, blank=True, default='')
+    image = models.ImageField(upload_to='chat_images/%Y/%m/', blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     read = models.BooleanField(
         default=False,
@@ -46,4 +48,4 @@ class ChatMessage(models.Model):
 
     def __str__(self):
         who = 'customer' if self.from_customer else (self.sender or 'staff')
-        return f"[{self.conversation_id}] {who}: {self.body[:40]}"
+        return f"[{self.conversation_id}] {who}: {(self.body or '[image]')[:40]}"

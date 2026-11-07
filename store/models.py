@@ -553,6 +553,8 @@ class MessageReply(models.Model):
     )
     is_staff_reply = models.BooleanField(default=False)
     body = EncryptedTextField()
+    # Optional picture attached to the reply (customer or staff).
+    image = models.ImageField(upload_to='message_replies/%Y/%m/', blank=True, null=True)
     # Snapshot of the message this reply was answering ("Replying to ..."),
     # copied at send time. Encrypted like body since it holds message text.
     quoted_text = EncryptedTextField(blank=True, default='')

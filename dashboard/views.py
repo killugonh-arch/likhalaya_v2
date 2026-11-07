@@ -470,6 +470,14 @@ def message_detail(request, pk):
     if request.method == 'POST':
         if request.POST.get('form') == 'reply':
             body = request.POST.get('reply_body', '').strip()
+            image = request.FILES.get('image')
+            if image:
+                if image.content_type not in ('image/jpeg', 'image/png', 'image/webp'):
+                    messages.error(request, 'Please choose a JPG, PNG or WEBP image.')
+                    return redirect('dashboard:message_detail', pk=pk)
+                if image.size > 5 * 1024 * 1024:
+                    messages.error(request, 'The image must be 5 MB or smaller.')
+                    return redirect('dashboard:message_detail', pk=pk)
             # Staff can pick which of this customer's inquiries the reply goes on
             # (the "Reply" button on a message). Only the same customer's own
             # inquiries are allowed; anything else falls back to the opened one.
@@ -487,13 +495,14 @@ def message_detail(request, pk):
                     'b': request.POST.get('reply_quote', '').strip()[:300],
                     't': request.POST.get('reply_quote_time', '').strip()[:40],
                 })
-            if body:
+            if body or image:
                 MessageReply.objects.create(
                     thread=target,
                     staff=request.user,
                     is_staff_reply=True,
                     quoted_text=quoted_text,
                     body=body,
+                    image=image,
                     is_read_by_staff=True,
                     is_read_by_customer=False,
                 )
@@ -563,6 +572,7 @@ def message_detail(request, pk):
             'type_display': thread.get_inquiry_type_display(),
             'details': details,
             'image_url': image_url,
+            'reply_image_url': '',
             'quote': None,
             'show_body': show_body,
         })
@@ -571,6 +581,12 @@ def message_detail(request, pk):
                 sender_name = (reply.staff.get_full_name() if reply.staff else '') or (reply.staff.username if reply.staff else 'Staff')
             else:
                 sender_name = thread.name
+            reply_image_url = ''
+            if reply.image:
+                try:
+                    reply_image_url = reply.image.url
+                except ValueError:
+                    reply_image_url = ''
             timeline.append({
                 'is_staff_reply': reply.is_staff_reply,
                 'sender_name': sender_name,
@@ -584,6 +600,7 @@ def message_detail(request, pk):
                 'type_display': '',
                 'details': [],
                 'image_url': '',
+                'reply_image_url': reply_image_url,
                 'quote': _parse_quote(reply.quoted_text),
                 'show_body': True,
             })
@@ -646,8 +663,23 @@ def message_detail(request, pk):
 def message_delete(request, pk):
     msg = get_object_or_404(ContactMessage, pk=pk)
     if request.method == 'POST':
-        msg.archive(by_user=request.user)
-        messages.success(request, 'Message moved to the Archive.')
+        # From the Messages list, scope=all archives the whole conversation
+        # shown in that row: every message from the same sender email (the
+        # list groups rows by email). Otherwise only this one message.
+        if request.POST.get('scope') == 'all':
+            email = (msg.email or '').strip()
+            group_qs = ContactMessage.objects.filter(Q(pk=msg.pk) | Q(email__iexact=email)) if email else ContactMessage.objects.filter(pk=msg.pk)
+            archived = 0
+            for m in list(group_qs):
+                m.archive(by_user=request.user)
+                archived += 1
+            if archived > 1:
+                messages.success(request, f'{archived} messages moved to the Archive.')
+            else:
+                messages.success(request, 'Message moved to the Archive.')
+        else:
+            msg.archive(by_user=request.user)
+            messages.success(request, 'Message moved to the Archive.')
         return redirect('dashboard:message_list')
     return redirect('dashboard:message_detail', pk=pk)
 

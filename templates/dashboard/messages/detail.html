@@ -125,6 +125,11 @@ a.thread-header-id:hover .inbox-avatar { box-shadow: 0 0 0 3px var(--brand-green
 .chat-row.from-customer .chat-quote { border-left-color: var(--brand-green); background: var(--brand-green-light); }
 .chat-detail-img { display: block; margin-top: 6px; max-width: 160px; max-height: 120px; border-radius: 10px; object-fit: cover; }
 
+/* Picture sent inside a bubble (App Chat and inquiry replies) */
+.chat-msg-img { display: block; max-width: 240px; max-height: 240px; border-radius: 12px; object-fit: cover; }
+.chat-bubble-text + a .chat-msg-img { margin-top: 8px; }
+.chat-quote + a .chat-msg-img { margin-top: 2px; }
+
 .chat-reply-preview { display: flex; align-items: flex-start; gap: 10px; text-align: left; background: var(--brand-green-light); border-left: 4px solid var(--brand-green); border-radius: 8px; padding: 8px 12px; }
 .chat-reply-preview .rp-text { flex: 1; min-width: 0; }
 .chat-reply-preview .rp-title { font-size: 12px; font-weight: 700; color: var(--brand-green); }
@@ -148,6 +153,15 @@ a.thread-header-id:hover .inbox-avatar { box-shadow: 0 0 0 3px var(--brand-green
 .chat-send-btn { width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--brand-green); color: #fff; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 .chat-send-btn:hover { background: var(--brand-green-hover); }
 .chat-no-account { padding: 16px 22px; font-size: 12.5px; color: var(--text-muted); text-align: center; }
+
+/* Attach image in the reply bar */
+.chat-attach-btn { cursor: pointer; margin: 0; }
+.chat-input-bar input[type=file] { display: none; }
+.chat-img-preview { display: none; align-items: center; gap: 6px; flex-shrink: 0; }
+.chat-img-preview.show { display: inline-flex; }
+.chat-img-thumb { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; border: 1px solid var(--border); display: block; }
+.chat-img-remove { border: 0; background: var(--danger-bg); color: var(--danger); border-radius: 50%; width: 20px; height: 20px; font-size: 13px; line-height: 1; cursor: pointer; padding: 0; }
+.chat-img-remove:hover { background: #f6d3cf; }
 
 /* Conversation details panel */
 .conv-details { background: var(--brand-green-light); border-radius: var(--radius-md); padding: var(--space-4); margin-top: 16px; display: flex; align-items: center; gap: 24px; flex-wrap: wrap; }
@@ -227,7 +241,10 @@ body.dark-mode .chat-input-bar { background: var(--dm-surface); }
         <div class="chat-avatar">{% if m.from_customer %}{{ convo.customer.get_full_name|default:convo.customer.username|first|upper }}{% else %}{{ m.sender.get_full_name|default:m.sender.username|default:"L"|first|upper }}{% endif %}</div>
         <div class="chat-bubble-wrap">
           <div class="chat-sender-label">{% if m.from_customer %}{{ convo.customer.get_full_name|default:convo.customer.username }}{% else %}{{ m.sender.get_full_name|default:m.sender.username|default:"Likhalaya Team" }}{% endif %}</div>
-          <div class="chat-bubble"><div class="chat-bubble-text">{{ m.body }}</div></div>
+          <div class="chat-bubble">
+            {% if m.body %}<div class="chat-bubble-text">{{ m.body }}</div>{% endif %}
+            {% if m.image %}<a href="{{ m.image.url }}" target="_blank" rel="noopener"><img src="{{ m.image.url }}" alt="Attached image" class="chat-msg-img"></a>{% endif %}
+          </div>
           <div class="chat-meta">
             <span>{{ m.created_at|date:"M d, H:i" }}</span>
             {% if not m.from_customer %}{% if m.read %}<i class="fas fa-check-double" style="color:#4fa9e8;"></i>{% else %}<i class="fas fa-check"></i>{% endif %}{% endif %}
@@ -239,9 +256,15 @@ body.dark-mode .chat-input-bar { background: var(--dm-surface); }
       {% endfor %}
     </div>
 
-    <form method="post" class="chat-input-bar">
+    <form method="post" class="chat-input-bar" enctype="multipart/form-data" id="chatReplyForm">
       {% csrf_token %}
-      <textarea name="body" rows="1" maxlength="2000" placeholder="Type your reply…" required
+      <label class="chat-icon-btn chat-attach-btn" for="chatImageInput" title="Attach an image"><i class="fas fa-paperclip"></i></label>
+      <input type="file" name="image" id="chatImageInput" accept="image/jpeg,image/png,image/webp">
+      <span class="chat-img-preview" id="chatImagePreview">
+        <img id="chatImageThumb" class="chat-img-thumb" alt="Selected image">
+        <button type="button" class="chat-img-remove" id="chatImageRemove" aria-label="Remove image">&times;</button>
+      </span>
+      <textarea name="body" id="chatBodyInput" rows="1" maxlength="2000" placeholder="Type your reply…" required
                 oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px';"></textarea>
       <button type="submit" class="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
     </form>
@@ -301,6 +324,7 @@ body.dark-mode .chat-input-bar { background: var(--dm-surface); }
               </div>
               {% endif %}
               {% if entry.body and entry.show_body and entry.type_display != 'General Inquiry' %}<div class="chat-bubble-text">{{ entry.body }}</div>{% endif %}
+              {% if entry.reply_image_url %}<a href="{{ entry.reply_image_url }}" target="_blank" rel="noopener"><img src="{{ entry.reply_image_url }}" alt="Attached image" class="chat-msg-img"></a>{% endif %}
               {% if entry.details or entry.image_url or entry.body and entry.show_body and entry.type_display == 'General Inquiry' %}
               <div class="chat-details">
                 {% for label, value in entry.details %}
@@ -337,15 +361,19 @@ body.dark-mode .chat-input-bar { background: var(--dm-surface); }
     {% endif %}
 
     {% if message.customer %}
-    <form method="post" class="chat-input-bar">
+    <form method="post" class="chat-input-bar" enctype="multipart/form-data" id="inquiryReplyForm">
       {% csrf_token %}
       <input type="hidden" name="form" value="reply">
       <input type="hidden" name="reply_to" id="replyToInput" value="">
       <input type="hidden" name="reply_quote" id="replyQuoteInput" value="">
       <input type="hidden" name="reply_quote_time" id="replyQuoteTimeInput" value="">
-      <button type="button" class="chat-icon-btn" title="Attach file"><i class="fas fa-paperclip"></i></button>
-      <button type="button" class="chat-icon-btn" title="Emoji"><i class="far fa-smile"></i></button>
-      <textarea name="reply_body" rows="1" placeholder="Type your reply…" required
+      <label class="chat-icon-btn chat-attach-btn" for="replyImageInput" title="Attach an image"><i class="fas fa-paperclip"></i></label>
+      <input type="file" name="image" id="replyImageInput" accept="image/jpeg,image/png,image/webp">
+      <span class="chat-img-preview" id="replyImagePreview">
+        <img id="replyImageThumb" class="chat-img-thumb" alt="Selected image">
+        <button type="button" class="chat-img-remove" id="replyImageRemove" aria-label="Remove image">&times;</button>
+      </span>
+      <textarea name="reply_body" id="replyBodyInput" rows="1" placeholder="Type your reply…" required
                 oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight,100)+'px';"></textarea>
       <button type="submit" class="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
     </form>
@@ -397,6 +425,40 @@ body.dark-mode .chat-input-bar { background: var(--dm-surface); }
     });
   });
 })();
+
+// Attach an image to a reply (preview + remove). With an image attached,
+// the text becomes optional. Used by both the App Chat bar and the
+// inquiry reply bar.
+function setupImageAttach(fileId, boxId, thumbId, removeId, bodyId) {
+  var fileInput = document.getElementById(fileId);
+  if (!fileInput) return;
+  var box = document.getElementById(boxId);
+  var thumb = document.getElementById(thumbId);
+  var bodyInput = document.getElementById(bodyId);
+  var url = null;
+  function clear() {
+    fileInput.value = '';
+    if (url) { URL.revokeObjectURL(url); url = null; }
+    thumb.removeAttribute('src');
+    box.classList.remove('show');
+    if (bodyInput) bodyInput.required = true;
+  }
+  fileInput.addEventListener('change', function () {
+    var f = fileInput.files && fileInput.files[0];
+    if (!f) { clear(); return; }
+    if (['image/jpeg', 'image/png', 'image/webp'].indexOf(f.type) === -1) { alert('Please choose a JPG, PNG or WEBP image.'); clear(); return; }
+    if (f.size > 5 * 1048576) { alert('The image must be 5 MB or smaller.'); clear(); return; }
+    if (url) URL.revokeObjectURL(url);
+    url = URL.createObjectURL(f);
+    thumb.src = url;
+    box.classList.add('show');
+    if (bodyInput) bodyInput.required = false;
+  });
+  document.getElementById(removeId).addEventListener('click', clear);
+}
+setupImageAttach('chatImageInput', 'chatImagePreview', 'chatImageThumb', 'chatImageRemove', 'chatBodyInput');
+setupImageAttach('replyImageInput', 'replyImagePreview', 'replyImageThumb', 'replyImageRemove', 'replyBodyInput');
+
 var chatBox = document.getElementById('chatMessages');
 if (chatBox) { chatBox.scrollTop = chatBox.scrollHeight; }
 

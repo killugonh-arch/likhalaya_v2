@@ -177,11 +177,12 @@ body.dark-mode .msg-row:hover, body.dark-mode .msg-row.is-unread { background: v
           {% endif %}
           <div class="msg-date">{{ msg.created_at|date:"M d, Y H:i" }}</div>
           <div class="msg-actions">
-            {% if request.user.is_admin_user and g.count == 1 %}
+            {% if request.user.is_admin_user %}
             <button type="button" class="btn-icon-action btn-icon-delete" title="Delete" onclick="event.stopPropagation();"
                     data-bs-toggle="modal" data-bs-target="#deleteMsgModal"
                     data-delete-url="{% url 'dashboard:message_delete' msg.pk %}"
-                    data-msg-name="{{ msg.name }}">
+                    data-msg-name="{{ msg.name }}"
+                    data-msg-count="{{ g.count }}">
               <i class="fas fa-trash"></i>
             </button>
             {% endif %}
@@ -222,12 +223,13 @@ body.dark-mode .msg-row:hover, body.dark-mode .msg-row.is-unread { background: v
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
-        Move the message from <strong id="deleteMsgName"></strong> to the Archive? It will be hidden from the list, and an admin can restore it anytime from the Archive page.
+        Move <span id="deleteMsgWhat">the message</span> from <strong id="deleteMsgName"></strong> to the Archive? It will be hidden from the list, and an admin can restore it anytime from the Archive page.
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
         <form id="deleteMsgForm" method="post" action="">
           {% csrf_token %}
+          <input type="hidden" name="scope" value="all">
           <button type="submit" class="btn btn-sm btn-danger">Archive</button>
         </form>
       </div>
@@ -252,6 +254,8 @@ if (deleteMsgModal) {
     var name = btn.getAttribute('data-msg-name');
     document.getElementById('deleteMsgForm').setAttribute('action', url);
     document.getElementById('deleteMsgName').textContent = name;
+    var count = parseInt(btn.getAttribute('data-msg-count'), 10) || 1;
+    document.getElementById('deleteMsgWhat').textContent = count > 1 ? 'all ' + count + ' messages' : 'the message';
   });
 }
 

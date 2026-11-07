@@ -45,6 +45,25 @@ def _customer_reply_cooldown_remaining(thread, user):
     return max(0, int(remaining) + (1 if remaining % 1 else 0))
 
 
+REPLY_IMAGE_TYPES = ('image/jpeg', 'image/png', 'image/webp')
+REPLY_IMAGE_MAX_BYTES = 5 * 1024 * 1024
+
+
+def _validate_reply_image(f):
+    """Error message for a bad uploaded reply image, or None if it's fine."""
+    if f.content_type not in REPLY_IMAGE_TYPES:
+        return 'Please choose a JPG, PNG or WEBP image.'
+    if f.size > REPLY_IMAGE_MAX_BYTES:
+        return 'The image must be 5 MB or smaller.'
+    try:
+        from PIL import Image
+        Image.open(f).verify()
+    except Exception:
+        return 'That file is not a valid image.'
+    f.seek(0)
+    return None
+
+
 def home(request):
     latest_products = Product.objects.filter(is_active=True).select_related('category').order_by('-created_at')[:8]
     categories = Category.objects.filter(is_active=True).order_by('order', 'name')
@@ -201,7 +220,12 @@ def contact(request):
                 initial['subject'] = f'Product & Custom Order Inquiry — {context_product.name}'
 
         form = ContactForm(initial=initial, user=request.user)
-    return render(request, 'store/contact.html', {'form': form, 'context_product': context_product})
+    return render(request, 'store/contact.html', {
+        'form': form,
+        'context_product': context_product,
+        # Products listed in the Bulk Orders "Product" dropdown.
+        'shop_products': Product.objects.filter(is_active=True).order_by('name'),
+    })
 
 
 def _parse_quote(raw):
@@ -265,13 +289,17 @@ def my_messages(request):
         if latest is None:
             return redirect('store:contact')
         body = request.POST.get('body', '').strip()
+        image = request.FILES.get('image')
+        image_error = _validate_reply_image(image) if image else None
         cooldown_remaining = _customer_reply_cooldown_remaining(latest, request.user)
         if cooldown_remaining > 0:
             messages.error(
                 request,
                 f'Please wait {cooldown_remaining}s before sending another message.'
             )
-        elif body:
+        elif image_error:
+            messages.error(request, image_error)
+        elif body or image:
             # "Reply" button on a message: the reply goes on that message's
             # inquiry (only the customer's own), with a snapshot of the quoted
             # message. Without it, it goes on the most recent inquiry as before.
@@ -290,6 +318,7 @@ def my_messages(request):
                 is_staff_reply=False,
                 quoted_text=quoted_text,
                 body=body,
+                image=image,
                 is_read_by_customer=True,
                 is_read_by_staff=False,
             )
@@ -333,6 +362,7 @@ def my_messages(request):
                 'subject': t.subject,
                 'starts_thread': False,
                 'quote': _parse_quote(r.quoted_text),
+                'image_url': r.image.url if r.image else '',
                 'seen': r.is_read_by_staff,
             })
     timeline.sort(key=lambda e: e['created_at'])
