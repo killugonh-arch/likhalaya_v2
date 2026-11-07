@@ -2348,7 +2348,7 @@ def reports(request):
         for key, _label in Order.STATUS_CHOICES
     ]
     sales_total_orders = sum(r['count'] for r in sales_by_status)
-    top_products = (items_qs.exclude(order__status='cancelled').values('product_name')
+    top_products = (items_qs.filter(order__status='delivered').values('product_name')
                     .annotate(units=Sum('quantity'),
                               revenue=Sum(ExpressionWrapper(
                                   F('product_price') * F('quantity'),
