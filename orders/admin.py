@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Order, OrderItem, GCashQRCode, GCashQRRemovalRequest
+from .models import Order, OrderItem, GCashQRCode, GCashQRRemovalRequest, ShippingRate, ShippingSetting
 
 class OrderItemInline(admin.TabularInline):
     model = OrderItem
@@ -27,3 +27,15 @@ class GCashQRRemovalRequestAdmin(admin.ModelAdmin):
     list_display = ['id', 'qr_code', 'reason', 'status', 'requested_by', 'decided_by', 'created_at']
     list_filter = ['status', 'reason']
     readonly_fields = ['created_at']
+
+
+@admin.register(ShippingRate)
+class ShippingRateAdmin(admin.ModelAdmin):
+    list_display = ['province', 'city', 'barangay', 'base_fee', 'per_extra_item', 'is_active']
+    list_filter = ['is_active', 'province']
+    search_fields = ['province', 'city', 'barangay']
+
+
+@admin.register(ShippingSetting)
+class ShippingSettingAdmin(admin.ModelAdmin):
+    list_display = ['per_extra_item', 'max_item_surcharge', 'updated_at']

@@ -1,11 +1,12 @@
-"""Shipping fee = distance-based fee + item-count surcharge.
+"""Shipping fee = place-based fee only (the number of items never changes it).
 
 Origin is the workshop in Carigara, Leyte. The customer's province (and
 city, for nearby Leyte towns) is turned into an approximate distance in km,
 which picks a fee band. Each extra item beyond the first adds a small
 surcharge (capped), so bigger orders cost more to ship.
 
-All numbers are tunable in DISTANCE_BANDS / PER_EXTRA_ITEM / MAX_ITEM_SURCHARGE.
+Admin-defined ShippingRate rows (barangay / city / province) override the
+built-in distance bands. Bands are tunable in DISTANCE_BANDS.
 """
 from decimal import Decimal
 from math import radians, sin, cos, asin, sqrt
@@ -36,8 +37,9 @@ FALLBACK_BAND_INDEX = 4
 LEYTE_BASE_FEE = Decimal('5')
 LEYTE_PER_KM = Decimal('0.5')
 
-PER_EXTRA_ITEM = Decimal('10')        # each item after the first
-MAX_ITEM_SURCHARGE = Decimal('100')   # cap on the item surcharge
+# Quantity-based surcharge is switched off: shipping depends on place only.
+PER_EXTRA_ITEM = Decimal('0')
+MAX_ITEM_SURCHARGE = Decimal('0')
 
 # Province centroids (lat, lng), approximate.
 PROVINCE_COORDS = {
@@ -148,26 +150,73 @@ def _band_for(km):
     return DISTANCE_BANDS[-1]
 
 
-def item_surcharge(quantity):
-    extra = max(0, int(quantity or 0) - 1)
-    return min(PER_EXTRA_ITEM * extra, MAX_ITEM_SURCHARGE)
+def _item_rules(rate=None):
+    """Per-item surcharge is disabled: shipping is by place only."""
+    return Decimal('0'), Decimal('0')
+
+
+def item_surcharge(quantity=1, per_item=None, cap=None):
+    return Decimal('0')
+
+
+def _place_key(text):
+    return _match_province(text) or _clean(text)
+
+
+def find_rate(province='', city='', barangay=''):
+    """Most specific active admin-defined ShippingRate for this address, or None.
+    A rule matches when every field it fills in equals the address."""
+    try:
+        from .models import ShippingRate
+        rates = list(ShippingRate.objects.filter(is_active=True))
+    except Exception:
+        return None
+    prov, town, brgy = _place_key(province), _clean(city), _clean(barangay)
+    best, best_score = None, None
+    for r in rates:
+        if r.province and _place_key(r.province) != prov:
+            continue
+        if r.city and _clean(r.city) != town:
+            continue
+        if r.barangay and _clean(r.barangay) != brgy:
+            continue
+        score = (bool(r.barangay), bool(r.city), bool(r.province))
+        if best_score is None or score > best_score:
+            best, best_score = r, score
+    return best
 
 
 def _round5(value):
     return (value / 5).quantize(Decimal('1'), rounding='ROUND_HALF_UP') * 5
 
 
-def get_shipping_quote(quantity=1, province='', city=''):
+def get_shipping_quote(quantity=1, province='', city='', barangay=''):
     """Full breakdown, used by views/templates.
-    Returns dict: fee, base_fee, item_fee, distance_km, zone, estimated, free."""
+    Returns dict: fee, base_fee, item_fee, distance_km, zone, estimated, free.
+
+    An admin-defined ShippingRate (by barangay / city / province) wins over the
+    built-in distance bands; the per-item surcharge comes from the rate, then
+    the global setting, then the defaults."""
     km = estimate_distance_km(province, city)
+    per_item, cap = _item_rules()
     result = {
-        'per_item': PER_EXTRA_ITEM,
-        'max_item_fee': MAX_ITEM_SURCHARGE,
+        'per_item': per_item,
+        'max_item_fee': cap,
         'distance_km': km,
         'estimated': km is None,
         'free': False,
     }
+
+    rate = find_rate(province, city, barangay)
+    if rate is not None:
+        per_item, cap = _item_rules(rate)
+        base_fee = Decimal(rate.base_fee)
+        item_fee = item_surcharge(quantity, per_item, cap)
+        result.update(fee=base_fee + item_fee, base_fee=base_fee, item_fee=item_fee,
+                      per_item=per_item, max_item_fee=cap,
+                      zone=f'Custom rate - {rate.place_label}',
+                      free=(base_fee + item_fee) == 0, rate_id=rate.pk)
+        return result
 
     if _match_province(province) == 'leyte':
         if _clean(city) == 'carigara':
@@ -176,16 +225,16 @@ def get_shipping_quote(quantity=1, province='', city=''):
                           zone='Carigara - free shipping', free=True)
             return result
         base_fee = _round5(LEYTE_BASE_FEE + LEYTE_PER_KM * km)
-        item_fee = item_surcharge(quantity)
+        item_fee = item_surcharge(quantity, per_item, cap)
         result.update(fee=base_fee + item_fee, base_fee=base_fee, item_fee=item_fee,
                       zone='Within Leyte')
         return result
 
     _, base_fee, label = _band_for(km)
-    item_fee = item_surcharge(quantity)
+    item_fee = item_surcharge(quantity, per_item, cap)
     result.update(fee=base_fee + item_fee, base_fee=base_fee, item_fee=item_fee, zone=label)
     return result
 
 
-def calculate_shipping_fee(quantity=1, province='', city=''):
-    return get_shipping_quote(quantity, province, city)['fee']
+def calculate_shipping_fee(quantity=1, province='', city='', barangay=''):
+    return get_shipping_quote(quantity, province, city, barangay)['fee']

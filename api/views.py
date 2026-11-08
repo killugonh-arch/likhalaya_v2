@@ -279,6 +279,7 @@ class OrderViewSet(viewsets.ModelViewSet):
         ship_city = request.data.get('city', request.user.city)
         shipping_fee = get_shipping_quote(
             sum(q for _, _, q, _ in resolved_items), ship_province, ship_city,
+            request.data.get('barangay', getattr(request.user, 'barangay', '')),
         )['fee']
         order = Order.objects.create(
             user=request.user,

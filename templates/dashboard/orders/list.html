@@ -121,6 +121,74 @@
 @media (max-width: 576px) {
   .orders-filter-bar .row > div { margin-bottom: var(--space-2); }
 }
+
+/* Shipping fees panel */
+.ship-section { border: 1px solid var(--border); border-radius: var(--radius-md); padding: var(--space-3); margin-bottom: var(--space-3); }
+.ship-section h6 { font-size: 13px; font-weight: 700; margin: 0 0 4px; color: var(--text-primary); }
+.ship-hint { font-size: 12px; color: var(--text-muted); margin-bottom: var(--space-3); }
+#ship-form-title { margin-bottom: var(--space-3); }
+.ship-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-2) var(--space-3); align-items: end; }
+.ship-grid .ds-input { font-size: 13px; padding: 8px 10px; }
+.ship-peso { position: relative; }
+.ship-peso > span { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); font-size: 13px; color: var(--text-muted); pointer-events: none; }
+.ship-peso .ds-input { padding-left: 24px; }
+.ship-table { width: 100%; font-size: 13px; border-collapse: collapse; }
+.ship-table th { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+.ship-table td { padding: 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+.ship-table tr:last-child td { border-bottom: none; }
+.ship-table tr.is-off td { opacity: .5; }
+.ship-brgy-box { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-white); overflow: hidden; }
+.ship-brgy-head { display: flex; align-items: center; gap: 6px; padding: 6px; border-bottom: 1px solid var(--border); }
+.ship-brgy-head .ds-input { padding: 6px 8px; font-size: 12.5px; }
+.ship-link { background: none; border: none; color: var(--brand-green); font-size: 12px; font-weight: 700; cursor: pointer; padding: 4px 6px; border-radius: var(--radius-sm); }
+.ship-link:hover:not(:disabled) { background: var(--brand-green-light); }
+.ship-link:disabled { color: var(--text-muted); cursor: not-allowed; }
+.ship-brgy-list {
+  max-height: 220px; overflow-y: auto; padding: 4px 0;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+.ship-brgy-list label { display: flex; align-items: center; gap: 8px; padding: 6px 12px; font-size: 13px; cursor: pointer; margin: 0; }
+.ship-brgy-list label:hover { background: var(--surface-subtle); }
+.ship-brgy-list input { accent-color: var(--brand-green); }
+.ship-brgy-empty { grid-column: 1 / -1; padding: 12px; font-size: 12.5px; color: var(--text-muted); }
+.ship-brgy-count { padding: 6px 12px; font-size: 11.5px; color: var(--text-muted); border-top: 1px solid var(--border); background: var(--surface-subtle); }
+.ship-grid-top { grid-template-columns: 1fr; align-items: start; }
+@media (max-width: 576px) { .ship-grid-top { grid-template-columns: 1fr; } }
+/* City and Barangay sit side by side on one row */
+#ship-place-fields { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); gap: var(--space-3); align-items: start; }
+@media (max-width: 767px) { #ship-place-fields { grid-template-columns: 1fr; } }
+.ship-fee-row { display: flex; align-items: flex-end; gap: var(--space-3); flex-wrap: wrap; }
+.ship-fee-row > div:first-child { flex: 1 1 110px; min-width: 0; }
+.ship-fee-row .ds-input { font-size: 13px; padding: 8px 10px; }
+.ship-fee-row .ship-peso .ds-input { padding-left: 24px; }
+.ship-fee-row .ds-btn { height: 36px; }
+.ship-flash { border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; font-weight: 600; margin-bottom: var(--space-3); }
+.ship-flash.ok { background: var(--brand-green-light); color: var(--brand-green); }
+.ship-flash.err { background: var(--danger-bg); color: var(--danger); }
+.ship-status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 12px; color: var(--text-muted); }
+.ship-actions { display: flex; gap: 6px; justify-content: flex-end; }
+.ship-actions form { margin: 0; }
+.ship-icon-btn { width: 30px; height: 30px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface-white); color: var(--text-secondary); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; }
+.ship-icon-btn:hover { background: var(--surface-subtle); color: var(--brand-green); }
+.ship-icon-btn.danger:hover { color: var(--danger); }
+.ds-btn-danger { background: var(--danger); color: #fff; }
+.ds-btn-danger:hover { background: #a62d24; color: #fff; box-shadow: var(--shadow-sm); }
+.ship-confirm { display: flex; align-items: center; flex-direction: column; justify-content: center; text-align: center; gap: var(--space-3); background: var(--danger-bg); border: 1px solid var(--danger); border-radius: var(--radius-sm); padding: 12px 14px; margin-bottom: var(--space-3); }
+.ship-confirm[hidden] { display: none; }
+.ship-confirm-msg { display: flex; align-items: center; justify-content: center; gap: 10px; font-size: 13px; font-weight: 600; color: var(--danger); }
+.ship-confirm-actions { display: flex; justify-content: center; gap: 8px; }
+.ship-pager { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); flex-wrap: wrap; margin-top: 4px; padding-top: 12px; border-top: 1px solid var(--border); }
+.ship-pager:empty { display: none; }
+.ship-pager .result-count { font-size: 12px; color: var(--text-muted); }
+button.ds-page-btn { border: 0; background: transparent; cursor: pointer; padding: 0; }
+button.ds-page-btn:disabled { opacity: .4; cursor: not-allowed; }
+
+/* Grouped barangay rates: "A, B and 5 others" with a hover / click list */
+.ship-more { background: none; border: none; padding: 0; font: inherit; font-weight: 700; color: var(--brand-green); cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.ship-more:hover, .ship-more:focus-visible { color: var(--brand-green-hover); outline: none; }
+.ship-pop { position: fixed; z-index: 2000; background: var(--surface-white); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); padding: 10px 12px; width: min(420px, calc(100vw - 16px)); }
+.ship-pop-head { font-size: 12px; font-weight: 700; color: var(--text-primary); margin-bottom: 8px; }
+.ship-pop-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 4px 12px; max-height: 200px; overflow-y: auto; font-size: 12.5px; color: var(--text-secondary); }
 </style>
 {% endblock %}
 
@@ -130,12 +198,131 @@
   <div>
     <h1 class="dash-greeting-title" style="font-size:25px;">Orders Management</h1>
   </div>
-  <a href="{% url 'dashboard:order_export_csv' %}" class="ds-btn ds-btn-primary ds-btn-sm">
-    <i class="fas fa-file-excel me-2"></i>Export Excel
-  </a>
+  {% if request.user.is_admin_user %}
+  <button type="button" class="ds-btn ds-btn-primary ds-btn-sm" data-bs-toggle="modal" data-bs-target="#shippingModal">
+    <i class="fas fa-truck me-2"></i>Shipping Fees
+  </button>
+  {% endif %}
 </div>
 
-<!-- Filters: reuses ds-input across all three fields, single search action per approved spec -->
+{% if request.user.is_admin_user %}
+<!-- Shipping fee manager: place-based rates (barangay / city / province) -->
+<div class="modal fade" id="shippingModal" tabindex="-1" aria-labelledby="shippingModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="shippingModalLabel"><i class="fas fa-truck me-2" style="color:var(--brand-green);"></i>Shipping Fees</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <div id="ship-flash" class="ship-flash" role="status" aria-live="polite" hidden></div>
+
+        <div id="ship-confirm" class="ship-confirm" role="alertdialog" aria-labelledby="ship-confirm-text" hidden>
+          <div class="ship-confirm-msg"><i class="fas fa-triangle-exclamation"></i><span id="ship-confirm-text"></span></div>
+          <div class="ship-confirm-actions">
+            <button type="button" class="ds-btn ds-btn-secondary ds-btn-sm" id="ship-confirm-no">Cancel</button>
+            <button type="button" class="ds-btn ds-btn-danger ds-btn-sm" id="ship-confirm-yes"><i class="fas fa-trash me-2"></i>Delete</button>
+          </div>
+        </div>
+
+        <div class="ship-section">
+          <h6 id="ship-form-title">Add a rate by place</h6>
+          <form method="post" action="{% url 'dashboard:shipping_rate_save' %}" id="ship-rate-form">
+            {% csrf_token %}
+            <input type="hidden" name="rate_id" id="ship-rate-id" value="">
+
+            <div class="ship-hint" id="ship-group-note" hidden></div>
+            <div id="ship-place-fields">
+            <div class="ship-left">
+            <div class="ship-grid ship-grid-top mb-3">
+              <input id="ship-province" type="hidden" name="province" value="Leyte">
+              <div>
+                <label class="ds-label" for="ship-city">City / Municipality</label>
+                <select id="ship-city" class="ds-input" disabled><option value="">Loading…</option></select>
+                <input id="ship-city-text" class="ds-input" type="text" maxlength="100" placeholder="Type city / municipality" hidden>
+                <input type="hidden" name="city" id="ship-city-val" value="">
+              </div>
+            </div>
+
+            <!-- Delivery fee + actions, right under the city -->
+            <div class="ship-fee-row">
+              <div>
+                <label class="ds-label" for="ship-base">Delivery fee</label>
+                <div class="ship-peso"><span>₱</span><input id="ship-base" class="ds-input" type="number" name="base_fee" min="0" step="1" inputmode="numeric" required></div>
+              </div>
+              <div class="d-flex gap-2">
+                <button type="submit" class="ds-btn ds-btn-primary ds-btn-sm" id="ship-save-btn">Add rate</button>
+                <button type="button" class="ds-btn ds-btn-secondary ds-btn-sm" id="ship-cancel-edit" hidden>Cancel</button>
+              </div>
+            </div>
+            </div>
+
+            <!-- Barangay picker, to the right -->
+            <div class="mb-3">
+              <label class="ds-label" id="ship-brgy-label">Barangay <span class="text-muted fw-normal">(pick one or many)</span></label>
+              <div class="ship-brgy-box" id="ship-brgy-box" aria-labelledby="ship-brgy-label">
+                <div class="ship-brgy-head">
+                  <input type="search" id="ship-brgy-search" class="ds-input" placeholder="Search barangay…" autocomplete="off" disabled>
+                  <button type="button" class="ship-link" id="ship-brgy-all" disabled>All</button>
+                  <button type="button" class="ship-link" id="ship-brgy-none" disabled>None</button>
+                </div>
+                <div class="ship-brgy-list" id="ship-brgy-list"><div class="ship-brgy-empty">Select a city first</div></div>
+                              </div>
+              <input id="ship-brgy-text" class="ds-input" type="text" maxlength="150" placeholder="Type barangay (optional)" hidden>
+              <input type="hidden" name="barangay" id="ship-brgy-val" value="">
+            </div>
+
+            </div>
+          </form>
+        </div>
+
+        <div class="ship-section" style="margin-bottom:0;" id="ship-rates-section">
+          <h6>Your place rates</h6>
+          <div class="table-responsive mt-2">
+            <table class="ship-table">
+              <thead><tr><th>Place</th><th>Delivery fee</th><th>Version</th><th>Status</th><th></th></tr></thead>
+              <tbody>
+                {% for r in shipping_rates %}
+                <tr class="{% if not r.is_active %}is-off{% endif %}" data-rate-row data-id="{{ r.pk }}" data-province="{{ r.province }}" data-city="{{ r.city }}" data-barangay="{{ r.barangay }}" data-base="{{ r.base_fee|stringformat:'d' }}" data-active="{% if r.is_active %}1{% else %}0{% endif %}" data-edited="{% if r.was_edited %}1{% else %}0{% endif %}" data-toggle-url="{% url 'dashboard:shipping_rate_toggle' r.pk %}" data-delete-url="{% url 'dashboard:shipping_rate_delete' r.pk %}">
+                  <td class="fw-semibold">{{ r.place_label }}
+                    {% if not r.barangay %}<div class="text-muted fw-normal" style="font-size:11px;">{% if r.city %}City / municipality{% else %}Province{% endif %} rate</div>{% endif %}
+                  </td>
+                  <td>₱{{ r.base_fee|floatformat:0|intcomma }}</td>
+                  <td>
+                    {% if r.was_edited %}<span class="ds-badge ds-badge-warning"><i class="fas fa-pen"></i> Edited</span>{% else %}<span class="ds-badge ds-badge-success"><i class="fas fa-circle-check"></i> Current</span>{% endif %}
+                    <div class="text-muted" style="font-size:11px;margin-top:3px;">{% if r.was_edited %}Edited {{ r.updated_at|date:"M d, Y g:i A" }}{% else %}Added {{ r.created_at|date:"M d, Y g:i A" }}{% endif %}</div>
+                  </td>
+                  <td><span class="ds-badge {% if r.is_active %}ds-badge-success{% else %}ds-badge-neutral{% endif %}">{% if r.is_active %}Active{% else %}Off{% endif %}</span></td>
+                  <td>
+                    <div class="ship-actions">
+                      <button type="button" class="ship-icon-btn ship-edit" title="Edit" aria-label="Edit rate for {{ r.place_label }}"
+                        data-id="{{ r.pk }}" data-province="{{ r.province }}" data-city="{{ r.city }}" data-barangay="{{ r.barangay }}"
+                        data-base="{{ r.base_fee|stringformat:'d' }}"><i class="fas fa-pen"></i></button>
+                      <form method="post" action="{% url 'dashboard:shipping_rate_toggle' r.pk %}">{% csrf_token %}
+                        <button type="submit" class="ship-icon-btn" title="{% if r.is_active %}Turn off{% else %}Turn on{% endif %}" aria-label="Toggle rate for {{ r.place_label }}"><i class="fas {% if r.is_active %}fa-toggle-on{% else %}fa-toggle-off{% endif %}"></i></button>
+                      </form>
+                      <form method="post" action="{% url 'dashboard:shipping_rate_delete' r.pk %}" data-confirm-place="{{ r.place_label }}">{% csrf_token %}
+                        <button type="submit" class="ship-icon-btn danger" title="Delete" aria-label="Delete rate for {{ r.place_label }}"><i class="fas fa-trash"></i></button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="5" class="text-muted text-center py-4">No place rates yet. Orders use the automatic distance-based fee.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          <div class="ship-pager" id="ship-rates-pager"></div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Filters -->
 <div class="dash-panel mb-4">
   <div class="orders-filter-bar">
     <form method="get" class="lk-filter-form">
@@ -170,8 +357,7 @@
   </div>
 </div>
 
-<!-- Orders table: same clickable-row JS behavior, ds-table styling (hover-highlight, no
-     zebra stripes, uppercase micro-label header) -->
+<!-- Orders table -->
 <div class="dash-panel">
   <div class="table-responsive">
     <table class="ds-table mb-0">
@@ -222,15 +408,15 @@
     <nav aria-label="Orders pagination">
       <div class="ds-pagination">
         {% if page_obj.has_previous %}
-        <a class="ds-page-btn" href="?page={{ page_obj.previous_page_number }}&status={{ status_filter }}&q={{ search }}" aria-label="Previous page">‹</a>
+        <a class="ds-page-btn" href="?page={{ page_obj.previous_page_number }}&status={{ status_filter }}&payment={{ payment_filter }}&q={{ search }}" aria-label="Previous page">‹</a>
         {% endif %}
         {% for n in page_obj.paginator.page_range %}
         <a class="ds-page-btn {% if n == page_obj.number %}active{% endif %}"
-           href="?page={{ n }}&status={{ status_filter }}&q={{ search }}"
+           href="?page={{ n }}&status={{ status_filter }}&payment={{ payment_filter }}&q={{ search }}"
            {% if n == page_obj.number %}aria-current="page"{% endif %}>{{ n }}</a>
         {% endfor %}
         {% if page_obj.has_next %}
-        <a class="ds-page-btn" href="?page={{ page_obj.next_page_number }}&status={{ status_filter }}&q={{ search }}" aria-label="Next page">›</a>
+        <a class="ds-page-btn" href="?page={{ page_obj.next_page_number }}&status={{ status_filter }}&payment={{ payment_filter }}&q={{ search }}" aria-label="Next page">›</a>
         {% endif %}
       </div>
     </nav>
@@ -253,5 +439,607 @@ document.querySelectorAll('.order-row').forEach(function (row) {
     }
   });
 });
+</script>
+
+<script>
+(function () {
+  var modalEl = document.getElementById('shippingModal');
+  if (!modalEl) return;
+
+  // Re-open the panel after a save/delete (views redirect to #shipping).
+  if (location.hash === '#shipping' && window.bootstrap) {
+    bootstrap.Modal.getOrCreateInstance(modalEl).show();
+    history.replaceState(null, '', location.pathname + location.search);
+  }
+
+  var form = document.getElementById('ship-rate-form');
+  var title = document.getElementById('ship-form-title');
+  var saveBtn = document.getElementById('ship-save-btn');
+  var cancelBtn = document.getElementById('ship-cancel-edit');
+  var f = {
+    id: document.getElementById('ship-rate-id'),
+    city: document.getElementById('ship-city'),
+    cityText: document.getElementById('ship-city-text'),
+    cityVal: document.getElementById('ship-city-val'),
+    brgyList: document.getElementById('ship-brgy-list'),
+    brgySearch: document.getElementById('ship-brgy-search'),
+    brgyAll: document.getElementById('ship-brgy-all'),
+    brgyNone: document.getElementById('ship-brgy-none'),
+    brgyCount: document.getElementById('ship-brgy-count'),
+    brgyBox: document.getElementById('ship-brgy-box'),
+    brgyText: document.getElementById('ship-brgy-text'),
+    brgyVal: document.getElementById('ship-brgy-val'),
+    base: document.getElementById('ship-base')
+  };
+
+  // City / barangay lists come from the public PSGC API (same source as the
+  // customer profile page). Province is fixed to Leyte.
+  var PSGC = 'https://psgc.gitlab.io/api';
+  // Only the towns around Carigara (within about 30 km) are offered.
+  var NEAR_CARIGARA = ['carigara', 'barugo', 'capoocan', 'tunga', 'jaro', 'san miguel',
+                       'leyte', 'alangalang', 'calubian', 'tabango'];
+  function normTown(t) {
+    return (t || '').toLowerCase().replace(/^(city of|municipality of)\s+/, '').replace(/\s+city$/, '').trim();
+  }
+  var cities = null;            // [{code, name}] near Carigara, once loaded
+  var citiesPromise = null;
+  var brgyCache = {};           // cityCode -> [names]
+
+  function labelOf(x) { return x.name || x.description || ''; }
+
+  function useTextFallback(which) {
+    // API unreachable: let the admin type the place instead.
+    if (which === 'city') { f.city.hidden = true; f.cityText.hidden = false; f.cityText.oninput = function () { f.cityVal.value = f.cityText.value; }; }
+    if (which === 'brgy') { f.brgyBox.hidden = true; f.brgyText.hidden = false; f.brgyText.oninput = function () { f.brgyVal.value = f.brgyText.value; }; }
+  }
+
+  function loadCities() {
+    if (citiesPromise) return citiesPromise;
+    citiesPromise = fetch(PSGC + '/provinces/').then(function (r) { return r.json(); }).then(function (provs) {
+      var leyte = (provs || []).filter(function (p) { return labelOf(p).toLowerCase() === 'leyte'; })[0];
+      if (!leyte) throw new Error('Leyte not found');
+      return fetch(PSGC + '/provinces/' + leyte.code + '/cities-municipalities/');
+    }).then(function (r) { return r.json(); }).then(function (data) {
+      cities = (data || []).filter(function (c) { return NEAR_CARIGARA.indexOf(normTown(labelOf(c))) !== -1; })
+        .map(function (c) { return { code: c.code, name: labelOf(c) }; })
+        .sort(function (a, b) { return a.name.localeCompare(b.name); });
+      f.city.innerHTML = '<option value="">All of Leyte (whole province)</option>' +
+        cities.map(function (c) { return '<option value="' + c.name.replace(/"/g, '&quot;') + '" data-code="' + c.code + '">' + c.name + '</option>'; }).join('');
+      f.city.disabled = false;
+      return cities;
+    }).catch(function () { useTextFallback('city'); useTextFallback('brgy'); return null; });
+    return citiesPromise;
+  }
+
+  function loadBarangays(code) {
+    if (brgyCache[code]) return Promise.resolve(brgyCache[code]);
+    return fetch(PSGC + '/cities-municipalities/' + code + '/barangays/')
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        var names = (data || []).map(labelOf).filter(Boolean).sort();
+        brgyCache[code] = names;
+        return names;
+      });
+  }
+
+  var editingOne = false;   // editing a saved rate = exactly one barangay
+
+  function checks() { return Array.prototype.slice.call(f.brgyList.querySelectorAll('input[type=checkbox]')); }
+  function updateCount() {
+    if (!f.brgyCount) return;   // the count line was removed from the UI
+    var n = checks().filter(function (c) { return c.checked; }).length;
+    f.brgyCount.textContent = n === 0 ? 'No barangay picked: the fee covers the whole city'
+      : n === 1 ? '1 barangay picked' : n + ' barangays picked, each gets this fee';
+  }
+  function resetBarangay(msg) {
+    f.brgyList.innerHTML = '<div class="ship-brgy-empty"></div>';
+    f.brgyList.firstChild.textContent = msg;
+    f.brgySearch.value = '';
+    f.brgySearch.disabled = f.brgyAll.disabled = f.brgyNone.disabled = true;
+    f.brgyVal.value = '';
+    updateCount();
+  }
+
+  function onCityChange() {
+    var opt = f.city.options[f.city.selectedIndex];
+    f.cityVal.value = f.city.value;
+    resetBarangay(f.city.value ? 'Loading barangays…' : 'Select a city first');
+    var code = opt && opt.getAttribute('data-code');
+    if (!code) return Promise.resolve();
+    return loadBarangays(code).then(function (names) {
+      f.brgyList.innerHTML = '';
+      names.forEach(function (n) {
+        var label = document.createElement('label');
+        var cb = document.createElement('input');
+        cb.type = 'checkbox'; cb.name = 'barangay'; cb.value = n;
+        label.appendChild(cb);
+        label.appendChild(document.createTextNode(n));
+        f.brgyList.appendChild(label);
+      });
+      f.brgySearch.disabled = false;
+      f.brgyAll.disabled = f.brgyNone.disabled = editingOne;
+      updateCount();
+    }).catch(function () { useTextFallback('brgy'); });
+  }
+
+  f.brgyList.addEventListener('change', function (e) {
+    if (editingOne && e.target.checked) {
+      checks().forEach(function (c) { if (c !== e.target) c.checked = false; });
+    }
+    updateCount();
+  });
+  f.brgySearch.addEventListener('input', function () {
+    var q = f.brgySearch.value.trim().toLowerCase();
+    Array.prototype.forEach.call(f.brgyList.querySelectorAll('label'), function (l) {
+      l.style.display = l.textContent.toLowerCase().indexOf(q) === -1 ? 'none' : '';
+    });
+  });
+  f.brgyAll.addEventListener('click', function () {
+    Array.prototype.forEach.call(f.brgyList.querySelectorAll('label'), function (l) {
+      if (l.style.display !== 'none') l.querySelector('input').checked = true;
+    });
+    updateCount();
+  });
+  f.brgyNone.addEventListener('click', function () { checks().forEach(function (c) { c.checked = false; }); updateCount(); });
+
+  f.city.addEventListener('change', onCityChange);
+  loadCities();
+
+  function resetForm() {
+    form.reset();
+    f.id.value = '';
+    f.cityVal.value = '';
+    f.brgyVal.value = '';
+    f.cityText.value = '';
+    f.brgyText.value = '';
+    editingOne = false;
+    if (!f.city.hidden) { f.city.value = ''; resetBarangay('Select a city first'); }
+    title.textContent = 'Add a rate by place';
+    saveBtn.textContent = 'Add rate';
+    cancelBtn.hidden = true;
+    exitGroupEdit();
+  }
+
+  function startEdit(btn) {
+    exitGroupEdit();
+    var d = btn.dataset;
+    f.id.value = d.id;
+    f.base.value = d.base;
+    editingOne = true;
+    title.textContent = 'Edit rate';
+    saveBtn.textContent = 'Save changes';
+    cancelBtn.hidden = false;
+    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    f.base.focus();
+    loadCities().then(function () {
+      if (!f.city.hidden) {
+        // Match the saved city to a dropdown option (ignoring "City of" / "City").
+        var norm = function (t) { return (t || '').toLowerCase().replace(/^city of\s+/, '').replace(/\s+city$/, '').trim(); };
+        var want = norm(d.city), found = '';
+        Array.prototype.forEach.call(f.city.options, function (o) { if (o.value && norm(o.value) === want) found = o.value; });
+        f.city.value = found;
+        f.cityVal.value = found;
+        return onCityChange().then(function () {
+          if (!f.brgyBox.hidden && d.barangay) {
+            checks().forEach(function (c) { c.checked = (c.value === d.barangay); });
+            updateCount();
+          }
+        });
+      }
+      f.cityText.value = d.city; f.cityVal.value = d.city;
+      f.brgyText.value = d.barangay; f.brgyVal.value = d.barangay;
+    });
+  }
+
+  // Rates table: show 5 per page, then page numbers. Re-run after every refresh.
+  var RATES_PER_PAGE = 5;
+  var ratePage = 1;
+  function paginateRates() {
+    var section = document.getElementById('ship-rates-section');
+    var pager = document.getElementById('ship-rates-pager');
+    if (!section || !pager) return;
+    var rows = Array.prototype.slice.call(section.querySelectorAll('tbody tr'))
+      .filter(function (r) { return !r.querySelector('td[colspan]'); });
+    var pages = Math.max(1, Math.ceil(rows.length / RATES_PER_PAGE));
+    if (ratePage > pages) ratePage = pages;
+    var start = (ratePage - 1) * RATES_PER_PAGE, end = start + RATES_PER_PAGE;
+    rows.forEach(function (r, i) { r.hidden = !(i >= start && i < end); });
+
+    pager.innerHTML = '';
+    if (rows.length <= RATES_PER_PAGE) return;
+
+    var count = document.createElement('span');
+    count.className = 'result-count';
+    count.textContent = 'Showing ' + (start + 1) + '–' + Math.min(end, rows.length) + ' of ' + rows.length;
+    pager.appendChild(count);
+
+    var nav = document.createElement('div');
+    nav.className = 'ds-pagination';
+    function addBtn(label, page, opts) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ds-page-btn' + (opts && opts.active ? ' active' : '');
+      b.textContent = label;
+      b.setAttribute('data-page', page);
+      if (opts && opts.label) b.setAttribute('aria-label', opts.label);
+      if (opts && opts.active) b.setAttribute('aria-current', 'page');
+      if (opts && opts.disabled) b.disabled = true;
+      nav.appendChild(b);
+    }
+    addBtn('‹', ratePage - 1, { disabled: ratePage === 1, label: 'Previous page' });
+    for (var n = 1; n <= pages; n++) addBtn(String(n), n, { active: n === ratePage });
+    addBtn('›', ratePage + 1, { disabled: ratePage === pages, label: 'Next page' });
+    pager.appendChild(nav);
+  }
+  modalEl.addEventListener('click', function (e) {
+    var b = e.target.closest('#ship-rates-pager button[data-page]');
+    if (!b || b.disabled) return;
+    ratePage = parseInt(b.getAttribute('data-page'), 10) || 1;
+    paginateRates();
+  });
+  // ---- Group barangay rates that share city + fee + on/off state into one row ----
+  var placeFields = document.getElementById('ship-place-fields');
+  var groupNote = document.getElementById('ship-group-note');
+  var groupEdit = null;      // members of the group whose fee is being edited
+  var pendingBatch = null;   // members of the group waiting for delete confirmation
+
+  function peso(n) { return '₱' + Number(n).toLocaleString('en-US'); }
+
+  function buildGroupRow(members) {
+    var d0 = members[0].dataset;
+    var data = members.map(function (m) {
+      var d = m.dataset;
+      return { id: d.id, province: d.province, city: d.city, barangay: d.barangay, base: d.base, toggle: d.toggleUrl, del: d.deleteUrl };
+    }).sort(function (a, b) { return a.barangay.localeCompare(b.barangay); });
+    var names = data.map(function (m) { return m.barangay; });
+    var place = d0.city + ', ' + d0.province;
+    var active = d0.active === '1';
+    var src = members.filter(function (m) { return m.dataset.edited === '1'; })[0] || members[0];
+
+    var tr = document.createElement('tr');
+    tr.className = members[0].className;
+    tr.setAttribute('data-group-row', '');
+    tr._members = data;
+    tr._place = place;
+    tr.innerHTML =
+      '<td class="fw-semibold"><div class="g-title"></div><div class="text-muted fw-normal g-sub" style="font-size:11px;"></div></td>' +
+      '<td class="g-fee"></td><td class="g-ver"></td><td class="g-status"></td>' +
+      '<td><div class="ship-actions">' +
+        '<button type="button" class="ship-icon-btn ship-g-edit" title="Edit fee" aria-label="Edit fee for ' + names.length + ' barangays"><i class="fas fa-pen"></i></button>' +
+        '<button type="button" class="ship-icon-btn ship-g-toggle" title="' + (active ? 'Turn off' : 'Turn on') + '" aria-label="Toggle rates"><i class="fas ' + (active ? 'fa-toggle-on' : 'fa-toggle-off') + '"></i></button>' +
+        '<button type="button" class="ship-icon-btn danger ship-g-delete" title="Delete" aria-label="Delete rates"><i class="fas fa-trash"></i></button>' +
+      '</div></td>';
+
+    tr.querySelector('.g-fee').textContent = peso(d0.base);
+    tr.querySelector('.g-ver').innerHTML = src.cells[2].innerHTML;
+    tr.querySelector('.g-status').innerHTML = members[0].cells[3].innerHTML;
+
+    var title = tr.querySelector('.g-title');
+    var sub = tr.querySelector('.g-sub');
+    var rest = names.length - 2;
+    if (rest <= 0) {
+      title.textContent = names.join(' and ');
+    } else {
+      title.appendChild(document.createTextNode(names.slice(0, 2).join(', ') + ' and '));
+      var more = document.createElement('button');
+      more.type = 'button';
+      more.className = 'ship-more';
+      more.textContent = rest + (rest === 1 ? ' other' : ' others');
+      title.appendChild(more);
+    }
+    sub.textContent = place;
+
+    // If the picked barangays are every barangay of the town, show just the town.
+    loadCities().then(function (list) {
+      if (!list) return;
+      var want = normTown(d0.city);
+      var c = list.filter(function (x) { return normTown(x.name) === want; })[0];
+      if (!c) return;
+      return loadBarangays(c.code).then(function (all) {
+        var have = {};
+        names.forEach(function (n) { have[n] = 1; });
+        if (all.length && all.every(function (n) { return have[n]; })) {
+          title.textContent = place;
+          sub.innerHTML = '';
+          var btn = document.createElement('button');
+          btn.type = 'button';
+          btn.className = 'ship-more';
+          btn.textContent = 'All ' + all.length + ' barangays';
+          sub.appendChild(btn);
+        }
+      });
+    }).catch(function () {});
+    return tr;
+  }
+
+  function groupRates() {
+    var section = document.getElementById('ship-rates-section');
+    if (!section) return;
+    var rows = Array.prototype.slice.call(section.querySelectorAll('tbody tr[data-rate-row]'));
+    var groups = {}, order = [];
+    rows.forEach(function (r) {
+      if (!r.dataset.barangay) return;   // town-wide / province rates stay as they are
+      var k = [r.dataset.province, r.dataset.city, r.dataset.base, r.dataset.active].join('|');
+      if (!groups[k]) { groups[k] = []; order.push(k); }
+      groups[k].push(r);
+    });
+    order.forEach(function (k) {
+      var members = groups[k];
+      if (members.length < 2) return;    // a single barangay stays specific
+      var tr = buildGroupRow(members);
+      members[0].parentNode.insertBefore(tr, members[0]);
+      members.forEach(function (m) { m.parentNode.removeChild(m); });
+    });
+  }
+
+  function renderRates() { groupRates(); paginateRates(); }
+  renderRates();
+
+  // ---- Hover / click list of every barangay in a group ----
+  var pop = document.createElement('div');
+  pop.className = 'ship-pop';
+  pop.hidden = true;
+  document.body.appendChild(pop);
+  var popTimer = null;
+
+  function showPop(btn) {
+    var tr = btn.closest('tr');
+    if (!tr || !tr._members) return;
+    clearTimeout(popTimer);
+    pop.innerHTML = '';
+    var head = document.createElement('div');
+    head.className = 'ship-pop-head';
+    head.textContent = tr._members.length + ' barangays · ' + tr._place;
+    var list = document.createElement('div');
+    list.className = 'ship-pop-list';
+    tr._members.forEach(function (m) {
+      var s = document.createElement('span');
+      s.textContent = m.barangay;
+      list.appendChild(s);
+    });
+    pop.appendChild(head);
+    pop.appendChild(list);
+    pop.hidden = false;
+    var r = btn.getBoundingClientRect();
+    var left = Math.min(Math.max(8, r.left), window.innerWidth - pop.offsetWidth - 8);
+    var top = r.bottom + 6;
+    if (top + pop.offsetHeight > window.innerHeight - 8) top = Math.max(8, r.top - pop.offsetHeight - 6);
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+  }
+  function hidePop(delay) {
+    clearTimeout(popTimer);
+    popTimer = setTimeout(function () { pop.hidden = true; }, delay || 0);
+  }
+  modalEl.addEventListener('mouseover', function (e) { var b = e.target.closest('.ship-more'); if (b) showPop(b); });
+  modalEl.addEventListener('mouseout', function (e) { if (e.target.closest('.ship-more')) hidePop(150); });
+  modalEl.addEventListener('focusin', function (e) { var b = e.target.closest('.ship-more'); if (b) showPop(b); });
+  modalEl.addEventListener('focusout', function (e) { if (e.target.closest('.ship-more')) hidePop(150); });
+  pop.addEventListener('mouseenter', function () { clearTimeout(popTimer); });
+  pop.addEventListener('mouseleave', function () { hidePop(150); });
+  document.addEventListener('click', function (e) {
+    if (e.target.closest('.ship-more')) { showPop(e.target.closest('.ship-more')); return; }
+    if (!e.target.closest('.ship-pop')) hidePop(0);
+  });
+  modalEl.querySelector('.modal-body').addEventListener('scroll', function () { hidePop(0); });
+  modalEl.addEventListener('hidden.bs.modal', function () { hidePop(0); });
+
+  // ---- Group actions: edit fee / turn on-off / delete apply to every barangay in the row ----
+  function tokenData() {
+    var fd = new FormData();
+    var t = form.querySelector('input[name=csrfmiddlewaretoken]');
+    fd.append('csrfmiddlewaretoken', t ? t.value : '');
+    return fd;
+  }
+
+  function runBatch(reqs, btn, doneMsg, after) {
+    if (btn) btn.disabled = true;
+    var last = '';
+    reqs.reduce(function (p, r, i) {
+      return p.then(function () {
+        if (reqs.length > 3) showFlash('Working… ' + (i + 1) + ' of ' + reqs.length, false);
+        return fetch(r.url, { method: 'POST', body: r.body, credentials: 'same-origin' })
+          .then(function (res) { return res.text(); })
+          .then(function (html) { last = html; });
+      });
+    }, Promise.resolve()).then(function () {
+      var doc = new DOMParser().parseFromString(last, 'text/html');
+      var fresh = doc.getElementById('ship-rates-section');
+      var current = document.getElementById('ship-rates-section');
+      if (fresh && current) { current.innerHTML = fresh.innerHTML; renderRates(); }
+      var toast = doc.querySelector('.toast .toast-body');
+      var isErr = !!doc.querySelector('.toast.bg-danger');
+      showFlash(isErr && toast ? toast.textContent.trim() : doneMsg, isErr);
+      if (after && !isErr) after();
+    }).catch(function () {
+      showFlash('Could not save. Check your connection and try again.', true);
+    }).then(function () { if (btn && document.body.contains(btn)) btn.disabled = false; });
+  }
+
+  function exitGroupEdit() {
+    groupEdit = null;
+    if (placeFields) placeFields.hidden = false;
+    if (groupNote) groupNote.hidden = true;
+  }
+
+  function startGroupEdit(tr) {
+    var ms = tr._members;
+    exitGroupEdit();
+    groupEdit = ms;
+    editingOne = false;
+    f.id.value = '';
+    f.base.value = ms[0].base;
+    groupNote.hidden = false;
+    groupNote.textContent = 'Editing ' + ms.length + ' barangays in ' + tr._place +
+      '. Change the town, or tick / untick barangays, to change where this fee applies.';
+    title.textContent = 'Edit rate for ' + ms.length + ' barangays';
+    saveBtn.textContent = 'Save changes';
+    cancelBtn.hidden = false;
+    form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    f.base.focus();
+
+    // Open the picker on the group's town with its barangays ticked.
+    loadCities().then(function () {
+      var city0 = ms[0].city;
+      if (!f.city.hidden) {
+        var found = '';
+        Array.prototype.forEach.call(f.city.options, function (o) {
+          if (o.value && normTown(o.value) === normTown(city0)) found = o.value;
+        });
+        f.city.value = found;
+        f.cityVal.value = found;
+        return onCityChange().then(function () {
+          if (!f.brgyBox.hidden) {
+            var have = {};
+            ms.forEach(function (m) { have[m.barangay] = 1; });
+            checks().forEach(function (c) { c.checked = !!have[c.value]; });
+            updateCount();
+          }
+        });
+      }
+      f.cityText.value = city0;
+      f.cityVal.value = city0;
+    });
+  }
+
+  // Save a group edit: keep + re-fee barangays still picked, add newly picked ones,
+  // then remove the ones that were unticked (or all of them if the town changed).
+  function bulkSaveFee() {
+    var fee = f.base.value;
+    if (fee === '') { f.base.focus(); return; }
+    var old = groupEdit;
+    var province = document.getElementById('ship-province').value;
+    var city = f.cityVal.value;
+    var picked = !f.brgyBox.hidden
+      ? checks().filter(function (c) { return c.checked; }).map(function (c) { return c.value; })
+      : (f.brgyVal.value ? [f.brgyVal.value] : []);
+    var sameCity = normTown(city) === normTown(old[0].city);
+    var want = picked.length ? picked : [''];   // none picked = whole-town fee
+
+    var byName = {};
+    old.forEach(function (m) { byName[m.barangay] = m; });
+    var kept = {}, toCreate = [], updates = [], creates = [], deletes = [];
+
+    want.forEach(function (b) {
+      var m = sameCity && b ? byName[b] : null;
+      if (m) {
+        kept[m.id] = true;
+        var fd = tokenData();
+        fd.append('rate_id', m.id);
+        fd.append('province', m.province);
+        fd.append('city', m.city);
+        fd.append('barangay', m.barangay);
+        fd.append('base_fee', fee);
+        updates.push({ url: form.action, body: fd });
+      } else {
+        toCreate.push(b);
+      }
+    });
+    if (toCreate.length) {
+      var cfd = tokenData();
+      cfd.append('rate_id', '');
+      cfd.append('province', province);
+      cfd.append('city', city);
+      toCreate.forEach(function (b) { cfd.append('barangay', b); });
+      cfd.append('base_fee', fee);
+      creates.push({ url: form.action, body: cfd });
+    }
+    old.forEach(function (m) {
+      if (!kept[m.id]) deletes.push({ url: m.del, body: tokenData() });
+    });
+    runBatch(updates.concat(creates, deletes), saveBtn, 'Saved the shipping rates.', resetForm);
+  }
+
+  modalEl.addEventListener('click', function (e) {
+    var b = e.target.closest('.ship-g-edit, .ship-g-toggle, .ship-g-delete');
+    var tr = b && b.closest('tr[data-group-row]');
+    if (!tr || !tr._members) return;
+    var ms = tr._members;
+    if (b.classList.contains('ship-g-edit')) {
+      startGroupEdit(tr);
+    } else if (b.classList.contains('ship-g-toggle')) {
+      runBatch(ms.map(function (m) { return { url: m.toggle, body: tokenData() }; }), b,
+        'Updated ' + ms.length + ' barangay rates.');
+    } else {
+      pendingBatch = ms;
+      pendingForm = null;
+      confirmText.textContent = 'Delete the shipping rates for ' + ms.length + ' barangays in ' + tr._place + '? This cannot be undone.';
+      confirmBar.hidden = false;
+      confirmBar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  });
+
+  // Edit buttons live inside the table that gets refreshed, so use delegation.
+  modalEl.addEventListener('click', function (e) {
+    var btn = e.target.closest('.ship-edit');
+    if (btn) startEdit(btn);
+  });
+
+  // Save / turn on-off / delete run in the background so the panel stays open.
+  var flash = document.getElementById('ship-flash');
+  var flashTimer = null;
+  function showFlash(text, isError) {
+    flash.textContent = text;
+    flash.className = 'ship-flash ' + (isError ? 'err' : 'ok');
+    flash.hidden = false;
+    clearTimeout(flashTimer);
+    flashTimer = setTimeout(function () { flash.hidden = true; }, 5000);
+  }
+
+  var confirmBar = document.getElementById('ship-confirm');
+  var confirmText = document.getElementById('ship-confirm-text');
+  var pendingForm = null;
+  function hideConfirm() { confirmBar.hidden = true; pendingForm = null; pendingBatch = null; }
+
+  modalEl.addEventListener('submit', function (e) {
+    var frm = e.target;
+    if (!frm || frm.tagName !== 'FORM') return;
+    e.preventDefault();
+    if (frm === form && groupEdit) { bulkSaveFee(); return; }
+    if (frm.dataset.confirmPlace) {
+      // Delete: ask inside the modal instead of the browser's confirm box.
+      pendingForm = frm;
+      pendingBatch = null;
+      confirmText.textContent = 'Delete the shipping rate for ' + frm.dataset.confirmPlace + '? This cannot be undone.';
+      confirmBar.hidden = false;
+      confirmBar.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      return;
+    }
+    sendForm(frm);
+  });
+  document.getElementById('ship-confirm-yes').addEventListener('click', function () {
+    var frm = pendingForm, batch = pendingBatch;
+    hideConfirm();
+    if (frm) sendForm(frm);
+    else if (batch) {
+      runBatch(batch.map(function (m) { return { url: m.del, body: tokenData() }; }), null,
+        'Deleted ' + batch.length + ' barangay rates.');
+    }
+  });
+  document.getElementById('ship-confirm-no').addEventListener('click', hideConfirm);
+  modalEl.addEventListener('hidden.bs.modal', hideConfirm);
+
+  function sendForm(frm) {
+    var btn = frm.querySelector('button[type="submit"]');
+    if (btn) btn.disabled = true;
+    fetch(frm.action, { method: 'POST', body: new FormData(frm), credentials: 'same-origin' })
+      .then(function (r) { return r.text(); })
+      .then(function (html) {
+        var doc = new DOMParser().parseFromString(html, 'text/html');
+        var fresh = doc.getElementById('ship-rates-section');
+        var current = document.getElementById('ship-rates-section');
+        if (fresh && current) { current.innerHTML = fresh.innerHTML; renderRates(); }
+        var toast = doc.querySelector('.toast .toast-body');
+        var isErr = !!doc.querySelector('.toast.bg-danger');
+        showFlash(toast ? toast.textContent.trim() : 'Saved.', isErr);
+        if (frm === form && !isErr) resetForm();
+      })
+      .catch(function () { showFlash('Could not save. Check your connection and try again.', true); })
+      .then(function () { if (btn && document.body.contains(btn)) btn.disabled = false; });
+  }
+
+  cancelBtn.addEventListener('click', resetForm);
+  modalEl.addEventListener('hidden.bs.modal', resetForm);
+})();
 </script>
 {% endblock %}

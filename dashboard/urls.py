@@ -7,6 +7,9 @@ urlpatterns = [
     path('', views.dashboard_home, name='home'),
     # Orders
     path('orders/', views.order_list, name='order_list'),
+    path('orders/shipping/rates/save/', views.shipping_rate_save, name='shipping_rate_save'),
+    path('orders/shipping/rates/<int:pk>/toggle/', views.shipping_rate_toggle, name='shipping_rate_toggle'),
+    path('orders/shipping/rates/<int:pk>/delete/', views.shipping_rate_delete, name='shipping_rate_delete'),
     path('orders/<int:pk>/', views.order_detail, name='order_detail'),
     path('orders/<int:pk>/start-processing/', views.order_start_processing, name='order_start_processing'),
     path('orders/<int:pk>/set-eta/', views.order_set_eta, name='order_set_eta'),
@@ -14,7 +17,6 @@ urlpatterns = [
     path('orders/<int:pk>/assign-courier/', views.order_assign_courier, name='order_assign_courier'),
     path('orders/<int:pk>/cancel/', views.order_cancel, name='order_cancel'),
     path('orders/<int:pk>/undo-cancel/', views.order_undo_cancel, name='order_undo_cancel'),
-    path('orders/export/csv/', views.order_export_csv, name='order_export_csv'),
     # Courier deliveries
     path('deliveries/', views.courier_order_list, name='courier_order_list'),
     path('deliveries/<int:pk>/', views.courier_order_detail, name='courier_order_detail'),

@@ -95,6 +95,7 @@ def _create_order(request, items, payment_method, form_data, extra=None, finaliz
     quantity = sum(item['quantity'] for item in items)
     shipping_fee = get_shipping_quote(
         quantity, form_data.get('province', ''), form_data.get('city', ''),
+        form_data.get('barangay') or getattr(request.user, 'barangay', '') or '',
     )['fee']
     with transaction.atomic():
         order = Order.all_objects.create(
@@ -319,6 +320,7 @@ def cart_detail(request):
         len(cart),
         user.province if has_location else '',
         user.city if has_location else '',
+        (user.barangay if has_location else '') or '',
     )
     return render(request, 'orders/cart.html', {
         'cart': cart,
@@ -415,7 +417,7 @@ def checkout(request):
 
     cart_total = cart.total_price_for(selected_ids)
     selected_qty = sum(cart.get_quantity(k) for k in selected_ids)
-    quote = get_shipping_quote(selected_qty, request.user.province, request.user.city)
+    quote = get_shipping_quote(selected_qty, request.user.province, request.user.city, request.user.barangay)
     shipping_fee = quote['fee']
     return render(request, 'orders/checkout.html', {
         'cart': cart.iter_selected(selected_ids),
@@ -482,7 +484,7 @@ def _checkout_buy_now(request, cart):
         return redirect('orders:order_confirmation', pk=order.pk)
 
     cart_total = buy_now_item['total']
-    quote = get_shipping_quote(buy_now_item['quantity'], request.user.province, request.user.city)
+    quote = get_shipping_quote(buy_now_item['quantity'], request.user.province, request.user.city, request.user.barangay)
     shipping_fee = quote['fee']
     return render(request, 'orders/checkout.html', {
         'cart': [buy_now_item],
@@ -588,6 +590,7 @@ def gcash_payment_pending(request):
     shipping_fee = get_shipping_quote(
         sum(item['quantity'] for item in items),
         draft['form_data'].get('province', ''), draft['form_data'].get('city', ''),
+        draft['form_data'].get('barangay', ''),
     )['fee']
     draft_total = cart_total + shipping_fee
 
@@ -710,7 +713,7 @@ def gcash_payment(request, pk):
         # A new city/province can change the shipping fee, so keep the
         # order's fee and total in step with the address.
         new_fee = get_shipping_quote(
-            sum(item.quantity for item in order.items.all()), order.province, order.city,
+            sum(item.quantity for item in order.items.all()), order.province, order.city, order.barangay,
         )['fee']
         if order.shipping_fee != new_fee:
             order.shipping_fee = new_fee
@@ -896,6 +899,7 @@ def gcash_qr_image_pending(request):
     shipping_fee = get_shipping_quote(
         sum(item['quantity'] for item in items),
         form_data.get('province', ''), form_data.get('city', ''),
+        form_data.get('barangay', ''),
     )['fee']
     amount = cart_total + shipping_fee
 

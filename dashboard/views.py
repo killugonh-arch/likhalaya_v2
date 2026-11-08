@@ -54,7 +54,7 @@ EXPORT_MAX_PER_HOUR = 20
 
 def _export_throttle_key(request):
     return f'dashboard_export:{request.user.pk}'
-from orders.models import Order, OrderItem, Notification, OrderStatusError, GCashQRCode, GCashQRRemovalRequest
+from orders.models import Order, OrderItem, Notification, OrderStatusError, GCashQRCode, GCashQRRemovalRequest, ShippingRate
 from accounts.models import CustomUser, ActivityLog
 from accounts.activity import log_activity
 from dashboard.models import MonthlyPeriod, Expense
@@ -1085,7 +1085,111 @@ def order_list(request):
         'payment_filter': payment,
         'status_choices': Order.STATUS_CHOICES,
         'payment_choices': Order.PAYMENT_CHOICES,
+        'shipping_rates': ShippingRate.objects.all(),
     })
+
+
+def _back_to_shipping():
+    # The #shipping hash re-opens the Shipping Fees panel after a save.
+    return redirect(reverse('dashboard:order_list') + '#shipping')
+
+
+def _money(value, default=None, allow_blank=False):
+    """Parse a peso amount from a form field. Returns Decimal, or `default`
+    when blank and allowed; raises ValueError for bad / negative input."""
+    raw = (value or '').strip().replace(',', '')
+    if not raw:
+        if allow_blank:
+            return default
+        raise ValueError('Amount required.')
+    try:
+        amount = Decimal(raw)
+    except InvalidOperation:
+        raise ValueError('Enter a whole number.')
+    if amount < 0 or amount > Decimal('99999'):
+        raise ValueError('Amount must be between 0 and 99,999.')
+    return amount.quantize(Decimal('1'), rounding='ROUND_HALF_UP')
+
+
+@admin_required
+@require_POST
+def shipping_rate_save(request):
+    """Create or update place-based shipping rates.
+
+    Editing (rate_id given) changes one rate. Adding can take several
+    barangays at once: one rate is saved per barangay with the same fee, and
+    an existing rate for the same place is updated instead of duplicated."""
+    province = 'Leyte'  # the shop delivers within Leyte only
+    city = ' '.join(request.POST.get('city', '').split())
+    barangays = []
+    for b in request.POST.getlist('barangay'):
+        b = ' '.join(b.split())
+        if b and b.lower() not in [x.lower() for x in barangays]:
+            barangays.append(b)
+    try:
+        if barangays and not city:
+            raise ValueError('A barangay rate needs its city / municipality too.')
+        base_fee = _money(request.POST.get('base_fee'))
+    except ValueError as e:
+        messages.error(request, f'Rate not saved: {e}')
+        return _back_to_shipping()
+
+    rate_id = request.POST.get('rate_id', '').strip()
+    if rate_id:
+        rate = get_object_or_404(ShippingRate, pk=rate_id)
+        old = f'{rate.place_label}: ₱{rate.base_fee}'
+        rate.province, rate.city, rate.barangay = province, city, (barangays[0] if barangays else '')
+        rate.base_fee = base_fee
+        rate.save()
+        log_activity(request, 'update', f'Updated shipping rate {rate.place_label}: ₱{base_fee}',
+                     resource='Shipping', resource_label=rate.place_label,
+                     previous_value=old, new_value=f'₱{base_fee}')
+        messages.success(request, f'Shipping rate for {rate.place_label} saved.')
+        return _back_to_shipping()
+
+    saved = []
+    for brgy in (barangays or ['']):
+        rate = ShippingRate.objects.filter(
+            province__iexact=province, city__iexact=city, barangay__iexact=brgy,
+        ).first() or ShippingRate(province=province, city=city, barangay=brgy)
+        rate.base_fee = base_fee
+        rate.is_active = True
+        rate.save()
+        saved.append(rate)
+    if len(saved) == 1:
+        label = saved[0].place_label
+        msg = f'Shipping rate for {label} saved.'
+    else:
+        label = f'{len(saved)} barangays in {city}'
+        msg = f'Saved ₱{base_fee} for {len(saved)} barangays in {city}.'
+    log_activity(request, 'create', f'Added shipping rate {label}: ₱{base_fee}',
+                 resource='Shipping', resource_label=label, new_value=f'₱{base_fee}')
+    messages.success(request, msg)
+    return _back_to_shipping()
+
+
+@admin_required
+@require_POST
+def shipping_rate_toggle(request, pk):
+    rate = get_object_or_404(ShippingRate, pk=pk)
+    rate.is_active = not rate.is_active
+    rate.save(update_fields=['is_active', 'updated_at'])
+    log_activity(request, 'update', f'{"Enabled" if rate.is_active else "Disabled"} shipping rate {rate.place_label}',
+                 resource='Shipping', resource_label=rate.place_label)
+    messages.success(request, f'Rate for {rate.place_label} {"enabled" if rate.is_active else "disabled"}.')
+    return _back_to_shipping()
+
+
+@admin_required
+@require_POST
+def shipping_rate_delete(request, pk):
+    rate = get_object_or_404(ShippingRate, pk=pk)
+    label = rate.place_label
+    rate.delete()
+    log_activity(request, 'delete', f'Deleted shipping rate {label}',
+                 resource='Shipping', resource_label=label)
+    messages.success(request, f'Rate for {label} deleted.')
+    return _back_to_shipping()
 
 
 @staff_required
@@ -1215,6 +1319,10 @@ def order_assign_courier(request, pk):
     order = get_object_or_404(Order, pk=pk)
     courier_id = request.POST.get('courier_id')
     courier = CustomUser.objects.filter(pk=courier_id, role__in=['courier', 'staff']).first() if courier_id else None
+    # Only an admin can assign someone else (or unassign). Staff can only take an order for themselves.
+    if not request.user.is_admin_user() and (not courier or courier.pk != request.user.pk):
+        messages.error(request, 'You can only assign an order to yourself.')
+        return redirect('dashboard:order_detail', pk=pk)
     if courier_id and not courier:
         messages.error(request, 'Please select a valid courier.')
         return redirect('dashboard:order_detail', pk=pk)
@@ -1313,183 +1421,6 @@ def courier_order_detail(request, pk):
         return redirect('dashboard:courier_order_detail', pk=pk)
 
     return render(request, 'dashboard/courier/detail.html', {'order': order})
-
-
-@staff_required
-@throttle(_export_throttle_key, EXPORT_MAX_PER_HOUR)
-def order_export_csv(request):
-    """Formal, print-ready Excel export of the Orders list — same sober
-    black/white/gray document styling as the Financial Report export,
-    with a letterhead, generated-on line, and a signature block so it
-    reads as an official paper record rather than a colored dashboard view."""
-    orders = Order.objects.prefetch_related('items').order_by('-created_at')
-    now = timezone.now()
-
-    # ── Styling constants (formal black/white/gray document palette) ──
-    BLACK = '000000'
-    DARK_GRAY = '333333'
-    MID_GRAY = '666666'
-    LIGHT_GRAY = 'F2F2F2'
-    HEADER_GRAY = 'D9D9D9'
-    WHITE = 'FFFFFF'
-
-    title_font = Font(name='Calibri', size=18, bold=True, color=BLACK)
-    subtitle_font = Font(name='Calibri', size=10, italic=True, color=MID_GRAY)
-    meta_font = Font(name='Calibri', size=10, bold=True, color=BLACK)
-    header_font = Font(name='Calibri', size=10, bold=True, color=BLACK)
-    body_font = Font(name='Calibri', size=10, color=DARK_GRAY)
-    status_font = Font(name='Calibri', size=10, bold=True, color=BLACK)
-    sign_label_font = Font(name='Calibri', size=9, color=MID_GRAY)
-
-    header_fill = PatternFill('solid', fgColor=HEADER_GRAY)
-    zebra_fill = PatternFill('solid', fgColor=LIGHT_GRAY)
-    white_fill = PatternFill('solid', fgColor=WHITE)
-
-    thin = Side(style='thin', color='CCCCCC')
-    border = Border(left=thin, right=thin, top=thin, bottom=thin)
-    double_bottom = Border(bottom=Side(style='double', color=BLACK))
-    signature_line = Border(top=Side(style='thin', color=BLACK))
-    center = Alignment(horizontal='center', vertical='center')
-    left_align = Alignment(horizontal='left', vertical='center')
-
-    wb = Workbook()
-    ws = wb.active
-    ws.title = 'Orders'
-    ws.sheet_view.showGridLines = False
-
-    columns = [
-        ('Order #', 14), ('Customer', 20), ('Email', 26), ('Phone', 14),
-        ('Status', 13), ('Payment', 16), ('Subtotal', 12), ('Shipping', 12),
-        ('Total', 12), ('Date', 18),
-    ]
-    last_col_letter = get_column_letter(len(columns))
-    for i, (_, width) in enumerate(columns, start=1):
-        ws.column_dimensions[get_column_letter(i)].width = width
-
-    row = 1
-
-    # ── Letterhead ──
-    ws.merge_cells(f'A{row}:{last_col_letter}{row}')
-    c = ws[f'A{row}']
-    c.value = 'LIKHALAYA'
-    c.font = title_font
-    c.alignment = center
-    ws.row_dimensions[row].height = 26
-    row += 1
-
-    ws.merge_cells(f'A{row}:{last_col_letter}{row}')
-    c = ws[f'A{row}']
-    c.value = 'PDL Market — Official Orders Record'
-    c.font = Font(name='Calibri', size=11, bold=True, color=DARK_GRAY)
-    c.alignment = center
-    row += 1
-
-    ws.merge_cells(f'A{row}:{last_col_letter}{row}')
-    c = ws[f'A{row}']
-    c.value = f'Generated {now.strftime("%B %d, %Y at %I:%M %p")} — {orders.count()} order(s) on record'
-    c.font = subtitle_font
-    c.alignment = center
-    row += 1
-
-    # Double rule under the letterhead, like a formal document header
-    for col_idx in range(1, len(columns) + 1):
-        ws.cell(row=row, column=col_idx).border = double_bottom
-    row += 2
-
-    header_row = row
-    for col_idx, (label, _) in enumerate(columns, start=1):
-        cell = ws.cell(row=header_row, column=col_idx, value=label)
-        cell.font = header_font
-        cell.fill = header_fill
-        cell.alignment = center
-        cell.border = border
-    ws.row_dimensions[header_row].height = 20
-    ws.freeze_panes = f'A{header_row + 1}'
-    row = header_row + 1
-
-    for i, o in enumerate(orders):
-        fill = zebra_fill if i % 2 else white_fill
-        values = [
-            o.order_number, o.full_name, o.email, o.phone,
-            o.get_status_display().upper(),
-            o.get_payment_method_display(),
-            float(o.subtotal), float(o.shipping_fee), float(o.total),
-            timezone.localtime(o.created_at).replace(tzinfo=None),
-        ]
-        for col_idx, val in enumerate(values, start=1):
-            cell = ws.cell(row=row, column=col_idx, value=val)
-            cell.font = status_font if col_idx == 5 else body_font
-            cell.fill = fill
-            cell.border = border
-            if col_idx in (7, 8, 9):
-                cell.number_format = '"₱"#,##0.00'
-            elif col_idx == 10:
-                cell.number_format = 'yyyy-mm-dd hh:mm'
-            cell.alignment = center
-        row += 1
-
-    ws.auto_filter.ref = f'A{header_row}:{last_col_letter}{row - 1}'
-
-    # ── Certification / signature block — gives the export the feel of
-    # a formal paper record that a coordinator can print and sign ──
-    row += 2
-    ws.merge_cells(f'A{row}:{last_col_letter}{row}')
-    cert = ws[f'A{row}']
-    cert.value = ('This document certifies the orders on record as of the generation date above. '
-                  'Figures reflect the system at the time of export.')
-    cert.font = subtitle_font
-    cert.alignment = center
-    row += 3
-
-    sig_col_span = max(len(columns) // 2, 1)
-    left_start, left_end = 'A', get_column_letter(sig_col_span)
-    right_start, right_end = get_column_letter(sig_col_span + 1), last_col_letter
-
-    ws.merge_cells(f'{left_start}{row}:{left_end}{row}')
-    ws.merge_cells(f'{right_start}{row}:{right_end}{row}')
-    for col in range(1, sig_col_span + 1):
-        ws.cell(row=row, column=col).border = signature_line
-    for col in range(sig_col_span + 1, len(columns) + 1):
-        ws.cell(row=row, column=col).border = signature_line
-    row += 1
-
-    ws.merge_cells(f'{left_start}{row}:{left_end}{row}')
-    lc = ws[f'{left_start}{row}']
-    lc.value = 'Prepared by (Coordinator / Staff)'
-    lc.font = sign_label_font
-    lc.alignment = center
-    ws.merge_cells(f'{right_start}{row}:{right_end}{row}')
-    rc = ws[f'{right_start}{row}']
-    rc.value = 'Verified by (Administrator)'
-    rc.font = sign_label_font
-    rc.alignment = center
-    row += 2
-
-    ws.merge_cells(f'A{row}:{last_col_letter}{row}')
-    footer = ws[f'A{row}']
-    footer.value = 'Likhalaya PDL Market — Confidential internal orders export'
-    footer.font = Font(name='Calibri', size=8, italic=True, color='AAAAAA')
-    footer.alignment = center
-
-    ws.print_area = f'A1:{last_col_letter}{row}'
-    ws.page_setup.orientation = 'landscape'
-    ws.page_setup.fitToWidth = 1
-    ws.page_setup.fitToHeight = 0
-    ws.sheet_properties.pageSetUpPr.fitToPage = True
-    ws.print_options.horizontalCentered = True
-    ws.page_margins.left = 0.4
-    ws.page_margins.right = 0.4
-    ws.page_margins.top = 0.5
-    ws.page_margins.bottom = 0.5
-
-    buffer_bytes = _xlsx_bytes(wb)
-    response = HttpResponse(
-        buffer_bytes,
-        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    )
-    filename = f'Likhalaya_Orders_{now.strftime("%Y%m%d")}.xlsx'
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    return response
 
 
 # ─── Users ──────────────────────────────────────────────────────────────────────

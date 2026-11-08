@@ -53,7 +53,7 @@
             <div class="spm-card-list" id="sizePickerOptions"></div>
           </div>
 
-          <!-- STEP 2: DESIGN -->
+          <!-- STEP 2: DESIGN (shares one step with the selection summary + quantity below) -->
           <div class="spm-step-panel" id="stepPanelDesign" data-step-key="design" style="display:none;">
             <div class="spm-step-heading-row">
               <div>
@@ -65,22 +65,22 @@
             <div class="spm-design-grid" id="designPickerOptions"></div>
           </div>
 
-          <!-- STEP 3: CONFIRM -->
+          <!-- CONFIRM: selection summary + quantity (shown together with Design when the product has designs) -->
           <div class="spm-step-panel" id="stepPanelConfirm" data-step-key="qty">
-            <div class="spm-step-heading">Your selection</div>
-
             <div class="spm-summary-card">
-              <div class="spm-summary-row" id="spmSumSizeRow" style="display:none;">
-                <span class="spm-summary-label">Size</span>
-                <span class="spm-summary-value" id="spmSumSize">—</span>
+              <div class="spm-summary-pair">
+                <div class="spm-summary-row" id="spmSumDesignRow" style="display:none;">
+                  <span class="spm-summary-label">Design</span>
+                  <span class="spm-summary-value" id="spmSumDesign">—</span>
+                </div>
+                <div class="spm-summary-row" id="spmSumSizeRow" style="display:none;">
+                  <span class="spm-summary-label">Size</span>
+                  <span class="spm-summary-value" id="spmSumSize">—</span>
+                </div>
               </div>
               <div class="spm-summary-row" id="spmSumDimRow" style="display:none;">
                 <span class="spm-summary-label">Image size</span>
                 <span class="spm-summary-value" id="spmSumDim">—</span>
-              </div>
-              <div class="spm-summary-row" id="spmSumDesignRow" style="display:none;">
-                <span class="spm-summary-label">Design</span>
-                <span class="spm-summary-value" id="spmSumDesign">—</span>
               </div>
               <div class="spm-summary-row">
                 <span class="spm-summary-label">Price</span>
@@ -111,6 +111,7 @@
           <span class="spm-footer-label">Total</span>
           <span id="modalSubtotal" class="spm-footer-total">₱0</span>
         </div>
+        <div class="spm-footer-qty" id="spmFooterQty"></div>
         <div class="spm-footer-summary">
           <span class="spm-footer-label">Selected</span>
           <span id="sizePickerSelectionSummary" class="spm-footer-variant">—</span>
@@ -375,6 +376,11 @@
 }
 .spm-summary-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; }
 .spm-summary-row + .spm-summary-row { border-top: 1px solid #EFEAE0; }
+.spm-summary-pair { display: flex; gap: 18px; }
+.spm-summary-pair > .spm-summary-row { flex: 1 1 0; min-width: 0; gap: 8px; }
+.spm-summary-pair > .spm-summary-row + .spm-summary-row { border-top: 0; }
+.spm-summary-pair + .spm-summary-row { border-top: 1px solid #EFEAE0; }
+.spm-summary-pair:empty { display: none; }
 .spm-summary-label { font-size: 12px; color: #737C79; font-weight: 600; text-transform: uppercase; letter-spacing: .02em; }
 .spm-summary-value { font-size: 14px; font-weight: 700; color: #202525; }
 .spm-summary-price { color: #C9841A; font-size: 15px; }
@@ -400,6 +406,7 @@
 .spm-qty-input { -moz-appearance: textfield; appearance: textfield; }
 
 /* ===== Sticky footer ===== */
+.spm-footer-qty { display: none; } /* only used on phones */
 .spm-footer {
   display: flex; align-items: center; gap: 18px;
   padding: 14px 26px;
@@ -413,7 +420,7 @@
 .spm-footer-price { margin-right: auto; }
 .spm-footer-label { font-size: 10.5px; color: #737C79; text-transform: uppercase; letter-spacing: .03em; font-weight: 600; }
 .spm-footer-variant { font-size: 13.5px; font-weight: 700; color: #202525; }
-.spm-footer-total { font-size: 21px; font-weight: 800; color: #C9841A; }
+.spm-footer-total { font-size: 18px; font-weight: 800; color: #C9841A; }
 .spm-footer-actions { display: flex; gap: 10px; flex-shrink: 0; }
 
 .spm-btn-cancel {
@@ -430,6 +437,19 @@
 }
 .spm-btn-primary:hover:not(:disabled) { background: #B5760E; border-color: #B5760E; }
 .spm-btn-primary:disabled { background: #E4CBA0; border-color: #E4CBA0; color: #fff; opacity: 1; cursor: not-allowed; }
+
+/* ===== Design, Size, Price in ONE horizontal row, centered (all screen sizes) ===== */
+.spm-summary-card { display: flex; align-items: stretch; padding: 0; }
+.spm-summary-pair { display: contents; }
+.spm-summary-card .spm-summary-row {
+  flex: 1 1 0; min-width: 0;
+  flex-direction: column; align-items: center; justify-content: center;
+  text-align: center;
+  gap: 3px; padding: 14px 18px;
+  border-top: 0 !important;
+}
+.spm-summary-card > .spm-summary-row,
+.spm-summary-pair > .spm-summary-row + .spm-summary-row { border-left: 1px solid #EFEAE0; }
 
 /* ===== Desktop sizing: two-column configurator ===== */
 #sizePickerDialog { max-width: 640px; margin: 1.75rem auto; }
@@ -558,7 +578,7 @@
     min-height: 72px;
   }
   .spm-footer-price { order: 1; margin-right: auto; }
-  .spm-footer-total { font-size: 19px; }
+  .spm-footer-total { font-size: 16px; }
   .spm-footer-summary { order: 2; text-align: right; }
   .spm-footer-variant { font-size: 12.5px; }
   .spm-footer-actions { order: 3; width: 100%; gap: 8px; }
@@ -619,7 +639,7 @@
   .spm-summary-label, .spm-summary-value { font-size: 12px; }
   .spm-qty-btn { width: 44px; height: 44px; } /* touch target floor never drops below 44px */
   .spm-footer { padding: 8px 12px; gap: 6px 10px; }
-  .spm-footer-total { font-size: 17px; }
+  .spm-footer-total { font-size: 14px; }
   .spm-footer-variant { font-size: 11.5px; }
   .spm-footer-actions .btn { font-size: 12.5px; padding: 0 10px; }
 }
@@ -672,15 +692,18 @@
   .spm-summary-card { padding: 0 10px; margin-bottom: 8px; border-radius: 10px; }
   .spm-summary-row { padding: 6px 0; }
   .spm-summary-label, .spm-summary-value { font-size: 12px; }
-  .spm-qty-btn { width: 40px; height: 40px; font-size: 15px; border-radius: 9px; }
-  .spm-qty-input { width: 46px; height: 40px; font-size: 14px; }
-  .spm-qty-title { font-size: 12.5px; }
-  .spm-qty-note { font-size: 10.5px; }
+  .spm-qty-btn { width: 39px; height: 39px; font-size: 13px; border-radius: 9px; }
+  .spm-qty-input { width: 45px; height: 39px; font-size: 11px; }
+  .spm-qty-title { font-size: 11.5px; }
+  .spm-qty-note { font-size: 9.5px; }
+  #stepPanelConfirm > .spm-step-heading { font-size: 12.5px; }
+  #stepPanelConfirm .spm-summary-label, #stepPanelConfirm .spm-summary-value { font-size: 11px; }
+  #stepPanelConfirm .spm-summary-price { font-size: 14px; }
 
   /* Footer */
   .spm-footer { padding: 7px 12px; padding-bottom: max(7px, env(safe-area-inset-bottom)); gap: 4px 10px; min-height: 0; }
   .spm-footer-label { font-size: 9.5px; }
-  .spm-footer-total { font-size: 16px; }
+  .spm-footer-total { font-size: 13px; }
   .spm-footer-variant { font-size: 11px; }
   .spm-footer-actions { gap: 6px; }
   .spm-footer-actions .btn { height: 40px; min-height: 40px; font-size: 12.5px; padding: 0 10px; border-radius: 9px; }
@@ -688,9 +711,44 @@
 
 /* Phones: full-screen modal, no description */
 @media (max-width: 767.98px) {
+  #sizePickerModal { --spm-img-extra: 110px; } /* taller product image on phones (+50px) */
   #sizePickerDialog { min-height: 100dvh; align-items: stretch; }
+  /* Phones: "Your selection" + Quantity lives in the footer, in front of Total / buttons */
+  .spm-footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "confirm confirm"
+      "actions actions";
+    align-items: center;
+    gap: 2px 12px;
+  }
+  /* Phones: Total + Selected row removed */
+  .spm-footer-price, .spm-footer-summary { display: none !important; }
+  .spm-footer > #stepPanelConfirm { grid-area: confirm; animation: none; margin-bottom: 8px; }
+  .spm-footer > #stepPanelConfirm .spm-summary-card { margin-bottom: 8px; }
+  .spm-footer-price { grid-area: price; margin-right: 0; }
+  .spm-footer-total {
+    font-size: 22px; font-weight: 800; line-height: 1.15; color: #B5760E;
+    background: rgba(201, 132, 26, .14);
+    padding: 2px 10px; margin: 2px 0;
+    border-radius: 8px;
+    align-self: flex-start;
+  }
+  .spm-footer-summary { grid-area: summary; min-width: 0; flex-direction: row; text-align: right; justify-self: end; }
+  .spm-footer-summary .spm-footer-label { display: none; }   /* value only, tucked under the Total */
+  .spm-footer-price .spm-footer-label { font-size: 10.5px; }
+  .spm-footer-variant { font-size: 14.5px; font-weight: 600; color: #5A6360; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .spm-footer-actions { grid-area: actions; width: 100%; margin-top: 8px; }
   .spm-content { height: 100dvh; max-height: 100dvh; border-radius: 0; box-shadow: none; }
   .spm-desc { display: none !important; }
+}
+
+/* Phones: keep the centered summary row compact (wins over the earlier phone padding tiers) */
+@media (max-width: 767.98px) {
+  .spm-summary-card { padding: 0; }
+  .spm-summary-card .spm-summary-row { padding: 8px 6px; }
+  .spm-summary-card .spm-summary-value { word-break: break-word; }
 }
 </style>
 
@@ -783,10 +841,11 @@
     return state.legacyStock;
   }
 
-  // The stock that actually governs the quantity stepper on Step 3 —
+  // The stock that actually governs the quantity stepper —
   // a specific design's stock when the product uses variants, otherwise
   // the plain per-size/product stock.
   function currentPurchasableStock() {
+    if (state.hasSizes && !state.size) return 0;   // no size picked yet
     if (state.hasVariants) {
       return state.design ? (state.design.stock || 0) : 0;
     }
@@ -794,8 +853,8 @@
   }
 
   function currentPrice() {
-    if (state.hasSizes && state.size) {
-      var sizeObj = getSizeObj(state.size);
+    if (state.hasSizes) {
+      var sizeObj = state.size ? getSizeObj(state.size) : null;
       return sizeObj ? sizeObj.price : 0;
     }
     return state.legacyPrice || 0;
@@ -886,13 +945,36 @@
   // change (size picked, design picked, quantity changed, step moved)
   // so nothing can ever go out of sync.
   // -----------------------------------------------------------------
+  // On phones the quantity stepper is moved into the footer (next to the
+  // Total); on larger screens it goes back to its place in the options.
+  var qtyControlEl = document.querySelector('.spm-qty-control');
+  var qtyHomeEl = qtyControlEl.parentNode;
+  var footerQtyEl = document.getElementById('spmFooterQty');
+  var confirmPanelEl = document.getElementById('stepPanelConfirm');
+  var optionsEl = confirmPanelEl.parentNode;
+  var footerEl = document.querySelector('.spm-footer');
+  function placeQtyControl() {
+    // Phones: the whole "Your selection" panel (summary + quantity) sits at the
+    // top of the footer. Larger screens: back in the options column.
+    var phone = window.matchMedia('(max-width: 767.98px)').matches;
+    if (phone && confirmPanelEl.parentNode !== footerEl) footerEl.insertBefore(confirmPanelEl, footerEl.firstChild);
+    else if (!phone && confirmPanelEl.parentNode !== optionsEl) optionsEl.appendChild(confirmPanelEl);
+  }
+  placeQtyControl();
+
   function render() {
+    placeQtyControl();
     renderSizeCards();
     renderDesignCards();
     renderConfirmStep();
     renderFooter();
     renderStepper();
     renderNav();
+    // Hide the whole "selection + quantity" panel until the customer picks:
+    // a size (sized products) or a design (design-only products)
+    if ((state.hasSizes && !state.size) || (state.noSizeDesigns && !state.design)) {
+      confirmPanelEl.style.display = 'none';
+    }
     updateMainImage();
   }
 
@@ -952,6 +1034,10 @@
     designContextChipEl.textContent = (sizeObj && state.hasSizes) ? (sizeObj.name + ' · ' + fmt(sizeObj.price)) : '';
 
     designOptionsEl.innerHTML = '';
+    if (state.hasSizes && !state.size) {
+      designOptionsEl.innerHTML = '<div class="design-empty-note" style="color:#737C79;background:#FBFAF7;border-color:#E2DDD3;">Choose a size first to see designs</div>';
+      return;
+    }
     if (!designs.length) {
       designOptionsEl.innerHTML = '<div class="design-empty-note">No design available for this size</div>';
       return;
@@ -1035,7 +1121,10 @@
     qtyValueEl.value = stock > 0 ? state.qty : 0;
     qtyHiddenInput.value = stock > 0 ? state.qty : 0;
 
-    stockNoteEl.textContent = stock > 0 ? (stock + ' available') : 'Out of stock for this selection';
+    var needSize = state.hasSizes && !state.size;
+    var needDesign = state.hasVariants && !state.design;
+    stockNoteEl.textContent = stock > 0 ? (stock + ' available')
+      : (needSize ? 'Choose a size first' : (needDesign ? 'Choose a design first' : 'Out of stock for this selection'));
     qtyMinusBtn.disabled = stock <= 0 || state.qty <= 1;
     qtyPlusBtn.disabled = stock <= 0 || state.qty >= stock;
     qtyValueEl.disabled = stock <= 0;
@@ -1050,8 +1139,13 @@
     subtotalEl.textContent = fmt(currentPrice() * (state.qty || 0));
   }
 
+  // One screen for everyone: size, design, summary and quantity are all
+  // shown together (no stepper, no Next button), on phones too.
+  // Set to false to bring back the step-by-step flow on phones.
+  var SINGLE_PAGE = true;
+
   function isMobileViewport() {
-    return window.matchMedia('(max-width: 767.98px)').matches;
+    return !SINGLE_PAGE && window.matchMedia('(max-width: 767.98px)').matches;
   }
 
   function renderStepper() {
@@ -1086,7 +1180,9 @@
 
   function stepIsValid(key) {
     if (key === 'size') return !!state.size && sizeAvailableStock(getSizeObj(state.size)) > 0;
-    if (key === 'design') return !!state.design && (state.design.stock || 0) > 0;
+    // The design step also contains the quantity/summary, so it needs a
+    // purchasable design AND a valid quantity.
+    if (key === 'design') return !!state.design && (state.design.stock || 0) > 0 && state.qty >= 1;
     if (key === 'qty') return currentPurchasableStock() > 0 && state.qty >= 1;
     return true;
   }
@@ -1095,15 +1191,27 @@
     return state.activeSteps.every(function(key) { return stepIsValid(key); });
   }
 
+  // Design and Confirm are ONE step: the design cards plus the selection
+  // summary + quantity are shown together on the same screen.
+  function panelsForStep(key) {
+    return key === 'design' ? ['design', 'qty'] : [key];
+  }
+
+  function showPanels(stepKeys) {
+    var visible = [];
+    stepKeys.forEach(function(k) { visible = visible.concat(panelsForStep(k)); });
+    Object.keys(stepPanelEls).forEach(function(key) {
+      stepPanelEls[key].style.display = (visible.indexOf(key) !== -1) ? '' : 'none';
+    });
+  }
+
   function renderNav() {
     var mobile = isMobileViewport();
 
     if (!mobile) {
       // Desktop/laptop: everything visible at once, same as the original
       // single-page layout — no Next/Back, just Cancel + Add to Cart.
-      Object.keys(stepPanelEls).forEach(function(key) {
-        stepPanelEls[key].style.display = (state.activeSteps.indexOf(key) !== -1) ? '' : 'none';
-      });
+      showPanels(state.activeSteps);
       backBtn.textContent = 'Cancel';
       backBtn.setAttribute('data-bs-dismiss', 'modal');
       nextBtn.style.display = 'none';
@@ -1113,9 +1221,7 @@
     }
 
     // Phone: progressive, one step at a time.
-    Object.keys(stepPanelEls).forEach(function(key) {
-      stepPanelEls[key].style.display = (state.activeSteps[state.stepIndex] === key) ? '' : 'none';
-    });
+    showPanels([state.activeSteps[state.stepIndex]]);
 
     var isFirst = state.stepIndex === 0;
     var isLast = state.stepIndex === state.activeSteps.length - 1;
@@ -1134,7 +1240,7 @@
     if (!isLast) {
       nextBtn.disabled = !stepIsValid(currentKey);
     } else {
-      confirmBtn.disabled = !stepIsValid('qty');
+      confirmBtn.disabled = !stepIsValid(currentKey);
     }
   }
 
@@ -1153,7 +1259,7 @@
     // quantity — a design belongs to exactly one size. Design stays
     // unset (not auto-picked) so the main image keeps showing the
     // product's own front photo until the customer actually taps a
-    // design card in Step 2.
+    // design card.
     state.design = null;
     state.qty = 1;
     render();
@@ -1302,7 +1408,7 @@
         descWrapEl.style.display = '';
       }
 
-      subtitleEl.textContent = hasSizes ? 'Choose your size and design.' : (state.noSizeDesigns ? 'Choose your design.' : 'Confirm your order.');
+      subtitleEl.textContent = hasSizes ? 'Choose your size and design.' : (state.noSizeDesigns ? 'Choose a design to continue.' : 'Confirm your order.');
 
       // Pick the initial size: prefer the server's preselect hint if it
       // actually has stock, otherwise the first in-stock size, otherwise
@@ -1310,25 +1416,19 @@
       state.size = null;
       state.design = null;
       state.qty = 1;
-      if (hasSizes) {
-        var preselect = btn.dataset.preselectSize || 'M';
-        var preselectObj = getSizeObj(preselect);
-        if (!preselectObj || sizeAvailableStock(preselectObj) <= 0) {
-          var firstAvailable = sizeList.find(function(s) { return sizeAvailableStock(s) > 0; });
-          preselect = firstAvailable ? firstAvailable.code : (sizeList[0] ? sizeList[0].code : null);
-        }
-        if (preselect) selectSize(preselect); // selectSize also sets initial design + calls render()
-      } else if (state.noSizeDesigns) {
+      // Sized products start with NOTHING picked: the customer must choose
+      // a size (and design) themselves before they can add to cart / buy.
+      if (state.noSizeDesigns) {
         selectSize('');
       }
 
-      // Build this product's step flow: size only when it has sizes,
-      // design only when it uses the Size → Design variant system,
-      // quantity/confirm always last.
+      // Build this product's step flow: size only when it has sizes.
+      // Design and Confirm (summary + quantity) are combined into a single
+      // "design" step when the product uses designs; products without
+      // designs just end with the plain confirm/quantity step.
       state.activeSteps = [];
       if (hasSizes) state.activeSteps.push('size');
-      if (hasVariants) state.activeSteps.push('design');
-      state.activeSteps.push('qty');
+      state.activeSteps.push(hasVariants ? 'design' : 'qty');
       state.stepIndex = 0;
 
       render();

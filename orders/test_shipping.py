@@ -6,6 +6,7 @@ from django.urls import reverse
 from accounts.models import CustomUser
 from orders.models import Order
 from orders.shipping import get_shipping_quote, calculate_shipping_fee
+from orders.models import ShippingRate
 from store.models import Category, Product
 
 
@@ -30,12 +31,10 @@ class ShippingQuoteTests(TestCase):
         self.assertLess(near, mid)
         self.assertLess(mid, far)
 
-    def test_more_items_cost_more_and_cap(self):
+    def test_quantity_does_not_change_fee(self):
         one = calculate_shipping_fee(1, 'Leyte', 'Tacloban')
-        three = calculate_shipping_fee(3, 'Leyte', 'Tacloban')
-        many = calculate_shipping_fee(100, 'Leyte', 'Tacloban')
-        self.assertEqual(three - one, Decimal('20'))
-        self.assertEqual(many - one, Decimal('100'))
+        self.assertEqual(calculate_shipping_fee(3, 'Leyte', 'Tacloban'), one)
+        self.assertEqual(calculate_shipping_fee(100, 'Leyte', 'Tacloban'), one)
 
     def test_unknown_province_uses_fallback(self):
         q = get_shipping_quote(1, 'Nowhere', '')
@@ -77,3 +76,23 @@ class ShippingFlowTests(TestCase):
         expected = get_shipping_quote(2, 'Cebu', 'Cebu City')['fee']
         self.assertEqual(order.shipping_fee, expected)
         self.assertEqual(order.total, Decimal('600') + expected)
+
+
+class AdminShippingRateTests(TestCase):
+    def test_province_city_barangay_specificity(self):
+        ShippingRate.objects.create(province='Leyte', base_fee=Decimal('50'))
+        ShippingRate.objects.create(province='Leyte', city='Jaro', base_fee=Decimal('30'))
+        ShippingRate.objects.create(province='Leyte', city='Jaro', barangay='Poblacion', base_fee=Decimal('20'))
+        self.assertEqual(calculate_shipping_fee(1, 'Leyte', 'Jaro', 'Poblacion'), Decimal('20'))
+        self.assertEqual(calculate_shipping_fee(1, 'Leyte', 'Jaro', 'Other'), Decimal('30'))
+        self.assertEqual(calculate_shipping_fee(1, 'Leyte', 'Ormoc', ''), Decimal('50'))
+
+    def test_inactive_rate_ignored(self):
+        before = calculate_shipping_fee(1, 'Leyte', 'Jaro')
+        ShippingRate.objects.create(province='Leyte', city='Jaro', base_fee=Decimal('1'), is_active=False)
+        self.assertEqual(calculate_shipping_fee(1, 'Leyte', 'Jaro'), before)
+
+    def test_rate_ignores_quantity(self):
+        ShippingRate.objects.create(province='Cebu', base_fee=Decimal('100'))
+        self.assertEqual(calculate_shipping_fee(1, 'Cebu', ''), Decimal('100'))
+        self.assertEqual(calculate_shipping_fee(50, 'Cebu', ''), Decimal('100'))

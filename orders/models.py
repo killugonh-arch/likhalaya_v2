@@ -454,3 +454,51 @@ class GCashQRRemovalRequest(models.Model):
         if self.explanation:
             return f"{base} — {self.explanation}"
         return base
+
+
+class ShippingSetting(models.Model):
+    """Single-row table: the per-item part of the shipping fee, editable from
+    the Orders page. Falls back to the defaults in orders/shipping.py until
+    an admin saves a value."""
+    per_extra_item = models.DecimalField(max_digits=8, decimal_places=2, default=10)
+    max_item_surcharge = models.DecimalField(max_digits=8, decimal_places=2, default=100)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Shipping: +{self.per_extra_item} per extra item (cap {self.max_item_surcharge})"
+
+    @classmethod
+    def load(cls):
+        return cls.objects.first() or cls()
+
+
+class ShippingRate(models.Model):
+    """A fee for a specific place. Leave barangay / city / province blank to
+    widen the match; the most specific matching rule wins (barangay, then
+    city, then province). Overrides the built-in distance-based fee."""
+    province = models.CharField(max_length=100, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    barangay = models.CharField(max_length=150, blank=True)
+    base_fee = models.DecimalField(max_digits=8, decimal_places=2)
+    # Blank = use the global per-item setting.
+    per_extra_item = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    max_item_surcharge = models.DecimalField(max_digits=8, decimal_places=2, null=True, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['province', 'city', 'barangay']
+
+    @property
+    def was_edited(self):
+        """True once the rate has been changed after it was first added."""
+        return (self.updated_at - self.created_at).total_seconds() > 2
+
+    @property
+    def place_label(self):
+        parts = [p for p in (self.barangay, self.city, self.province) if p]
+        return ', '.join(parts) or 'Everywhere'
+
+    def __str__(self):
+        return f"{self.place_label}: {self.base_fee}"
