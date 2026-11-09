@@ -173,8 +173,9 @@ AXES_COOLOFF_TIME = timedelta(minutes=int(os.environ.get('AXES_COOLOFF_MINUTES',
 AXES_RESET_ON_SUCCESS = True
 AXES_LOCKOUT_PARAMETERS = [['username', 'ip_address']]
 AXES_USERNAME_CALLABLE = 'accounts.axes_utils.get_username'
-# Accounts that are never locked out by failed-login tracking (matched by email).
-AXES_EXEMPT_LOGINS = ['admin@likhalaya.com']
+# No account is exempt from failed-login lockout (lockout is per username + IP,
+# so an attacker can only lock themselves out, never the real admin).
+AXES_EXEMPT_LOGINS = []
 AXES_WHITELIST_CALLABLE = 'accounts.axes_utils.axes_whitelist'
 AXES_HTTP_RESPONSE_CODE = 429
 AXES_LOCKOUT_TEMPLATE = 'accounts/locked.html'

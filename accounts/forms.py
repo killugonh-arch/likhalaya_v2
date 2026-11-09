@@ -1,4 +1,5 @@
 from django import forms
+from likhalaya_project.image_validation import SafeImageFormMixin
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm, SetPasswordForm, PasswordChangeForm
 from .models import CustomUser
 
@@ -269,7 +270,7 @@ def leyte_zip_for(city):
     return LEYTE_ZIPS.get(_norm_place(city), '')
 
 
-class ProfileUpdateForm(forms.ModelForm):
+class ProfileUpdateForm(SafeImageFormMixin, forms.ModelForm):
     class Meta:
         model = CustomUser
         # 'email' intentionally excluded: it was verified via OTP at signup,

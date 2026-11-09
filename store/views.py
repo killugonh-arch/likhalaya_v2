@@ -51,17 +51,10 @@ REPLY_IMAGE_MAX_BYTES = 5 * 1024 * 1024
 
 def _validate_reply_image(f):
     """Error message for a bad uploaded reply image, or None if it's fine."""
-    if f.content_type not in REPLY_IMAGE_TYPES:
-        return 'Please choose a JPG, PNG or WEBP image.'
-    if f.size > REPLY_IMAGE_MAX_BYTES:
-        return 'The image must be 5 MB or smaller.'
-    try:
-        from PIL import Image
-        Image.open(f).verify()
-    except Exception:
-        return 'That file is not a valid image.'
-    f.seek(0)
-    return None
+    # Checks the real file content (not the browser-supplied content type)
+    # and cleans it in place: strips metadata, random filename.
+    from likhalaya_project.image_validation import sanitize_image
+    return sanitize_image(f, max_bytes=REPLY_IMAGE_MAX_BYTES)
 
 
 def home(request):

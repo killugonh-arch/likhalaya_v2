@@ -1,5 +1,6 @@
 from django import forms
 from django.forms import inlineformset_factory, BaseInlineFormSet
+from likhalaya_project.image_validation import SafeImageFormMixin
 from django.utils.safestring import mark_safe
 from .models import Product, Category, ContactMessage, LivelihoodVideo, ProductImage, ProductDesign, ProductSize
 
@@ -72,7 +73,7 @@ class ProductSearchForm(forms.Form):
         ('name', 'Name A-Z'),
     ], required=False, widget=forms.Select(attrs={'class': 'form-select'}))
 
-class ContactForm(forms.ModelForm):
+class ContactForm(SafeImageFormMixin, forms.ModelForm):
     """Smart inquiry form for the Contact page. All fields are declared here;
     which ones are shown/required for a given inquiry type is driven client-side
     by JS (data-show-for attributes in the template) and re-checked server-side
@@ -297,7 +298,7 @@ class ContactForm(forms.ModelForm):
         return cleaned
 
 
-class ProductForm(forms.ModelForm):
+class ProductForm(SafeImageFormMixin, forms.ModelForm):
     class Meta:
         model = Product
         # NOTE: 'stock' is intentionally NOT a form field. Total stock is
@@ -357,7 +358,7 @@ class ProductForm(forms.ModelForm):
                 field.widget.attrs.update({'class': 'form-control'})
 
 
-class ProductImageForm(forms.ModelForm):
+class ProductImageForm(SafeImageFormMixin, forms.ModelForm):
     """One gallery photo. `size` is '' for "all sizes" or S / M / L when the
     photo belongs to a single size (set by the Product Images tabs in the
     dashboard product form)."""
@@ -430,7 +431,7 @@ ProductSizeFormSet = inlineformset_factory(
 )
 
 
-class ProductDesignForm(forms.ModelForm):
+class ProductDesignForm(SafeImageFormMixin, forms.ModelForm):
     """A design is a photo + title, plus its OWN stock quantity. Each
     design's quantity is entered here directly and is the single source of
     truth for that design's availability — the product's overall stock is
@@ -467,7 +468,29 @@ class CategoryForm(forms.ModelForm):
         }
 
 
-class LivelihoodVideoForm(forms.ModelForm):
+class LivelihoodVideoForm(SafeImageFormMixin, forms.ModelForm):
+    VIDEO_EXTS = ('.mp4', '.webm', '.mov')
+    VIDEO_MAX_BYTES = 100 * 1024 * 1024  # 100 MB
+
+    def clean_video_file(self):
+        f = self.cleaned_data.get('video_file')
+        # Only check a NEW upload (a saved file has no content_type).
+        if not f or not hasattr(f, 'content_type'):
+            return f
+        name = (f.name or '').lower()
+        if not name.endswith(self.VIDEO_EXTS):
+            raise forms.ValidationError('Please upload an MP4, WEBM or MOV video.')
+        if f.size > self.VIDEO_MAX_BYTES:
+            raise forms.ValidationError('The video must be 100 MB or smaller.')
+        f.seek(0)
+        head = f.read(12)
+        f.seek(0)
+        is_mp4_mov = head[4:8] == b'ftyp'
+        is_webm = head[:4] == b'\x1a\x45\xdf\xa3'
+        if not (is_mp4_mov or is_webm):
+            raise forms.ValidationError("That file doesn't look like a real video.")
+        return f
+
     class Meta:
         model = LivelihoodVideo
         fields = ['title', 'description', 'video_url', 'video_file', 'thumbnail', 'order', 'is_active', 'show_on_home']

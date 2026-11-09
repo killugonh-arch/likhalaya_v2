@@ -8,8 +8,9 @@ logger = logging.getLogger('security')
 ADMIN_MAX_ATTEMPTS = 5
 ADMIN_LOCKOUT_SECONDS = 15 * 60
 
-# only applies to staff/admin, not regular customers
-STAFF_IDLE_TIMEOUT_SECONDS = 30 * 60
+# idle timeouts (sliding: resets on every request)
+CUSTOMER_IDLE_TIMEOUT_SECONDS = 2 * 24 * 60 * 60   # 2 days
+STAFF_IDLE_TIMEOUT_SECONDS = 15 * 24 * 60 * 60     # 15 days (staff + admin)
 
 
 def _client_ip(request):
@@ -21,7 +22,8 @@ def _client_ip(request):
 
 
 class StaffIdleTimeoutMiddleware:
-    """Logs out staff after 30 min idle. Resets on each request."""
+    """Logs out customers after 2 days idle, staff/admin after 15 days idle.
+    The timer resets on each request."""
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -35,9 +37,17 @@ class StaffIdleTimeoutMiddleware:
             from django.contrib.auth import logout
             logout(request)
             return self.get_response(request)
-        if user is not None and user.is_authenticated and user.is_staff_user():
-            request.session.set_expiry(STAFF_IDLE_TIMEOUT_SECONDS)
-        return self.get_response(request)
+        response = self.get_response(request)
+
+        # Set the expiry AFTER the view runs so it also applies on the very
+        # request where the user logs in (and skips users who just logged out).
+        user = getattr(request, 'user', None)
+        if user is not None and user.is_authenticated:
+            if user.is_staff_user():
+                request.session.set_expiry(STAFF_IDLE_TIMEOUT_SECONDS)
+            else:
+                request.session.set_expiry(CUSTOMER_IDLE_TIMEOUT_SECONDS)
+        return response
 
 
 class RestrictDjangoAdminMiddleware:

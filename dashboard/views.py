@@ -3,6 +3,7 @@ import re
 import csv
 import calendar
 import functools
+from likhalaya_project.image_validation import sanitize_image
 from io import BytesIO
 from decimal import Decimal, InvalidOperation
 from datetime import timedelta, date
@@ -142,6 +143,18 @@ def _parse_direct_designs(post):
                         'is_active': bool(post.get(p + 'is_active')),
                         'delete': d_delete, 'stock': stock})
     return designs, errors
+
+
+def _clean_variant_images(files):
+    """The size/design photo inputs (design-*-image, sdesign-*-image) aren't
+    Django form fields, so check them here. Returns a list of error strings."""
+    errors = []
+    for key in list(files.keys()):
+        if key.endswith('-image') and key.startswith(('design-', 'sdesign-')):
+            error = sanitize_image(files[key])
+            if error:
+                errors.append(f'Design photo: {error}')
+    return errors
 
 
 def _apply_direct_designs(product, designs, files):
@@ -535,11 +548,9 @@ def message_detail(request, pk):
             body = request.POST.get('reply_body', '').strip()
             image = request.FILES.get('image')
             if image:
-                if image.content_type not in ('image/jpeg', 'image/png', 'image/webp'):
-                    messages.error(request, 'Please choose a JPG, PNG or WEBP image.')
-                    return redirect('dashboard:message_detail', pk=pk)
-                if image.size > 5 * 1024 * 1024:
-                    messages.error(request, 'The image must be 5 MB or smaller.')
+                image_error = sanitize_image(image)
+                if image_error:
+                    messages.error(request, image_error)
                     return redirect('dashboard:message_detail', pk=pk)
             # Staff can pick which of this customer's inquiries the reply goes on
             # (the "Reply" button on a message). Only the same customer's own
@@ -860,6 +871,7 @@ def product_create(request):
         else:
             variant_sizes = []
             direct_designs, variant_errors = _parse_direct_designs(request.POST)
+        variant_errors = list(variant_errors) + _clean_variant_images(request.FILES)
         if form.is_valid() and image_formset.is_valid() and not variant_errors:
             with transaction.atomic():
                 product = form.save(commit=False)
@@ -924,6 +936,7 @@ def product_edit(request, pk):
         else:
             variant_sizes = []
             direct_designs, variant_errors = _parse_direct_designs(request.POST)
+        variant_errors = list(variant_errors) + _clean_variant_images(request.FILES)
         if form.is_valid() and image_formset.is_valid() and not variant_errors:
             with transaction.atomic():
                 obj = form.save(commit=False)
@@ -1707,6 +1720,10 @@ def courier_order_detail(request, pk):
         old_status = order.status
         if action == 'confirm_pickup':
             proof = request.FILES.get('pickup_proof')
+            proof_error = sanitize_image(proof) if proof else None
+            if proof_error:
+                messages.error(request, proof_error)
+                return redirect('dashboard:courier_order_detail', pk=pk)
             try:
                 order.confirm_pickup(proof)
             except OrderStatusError as e:
@@ -1719,6 +1736,10 @@ def courier_order_detail(request, pk):
                 messages.success(request, f'Pickup confirmed — order {order.order_number} is now Shipped.')
         elif action == 'confirm_delivery':
             proof = request.FILES.get('delivery_proof')
+            proof_error = sanitize_image(proof) if proof else None
+            if proof_error:
+                messages.error(request, proof_error)
+                return redirect('dashboard:courier_order_detail', pk=pk)
             try:
                 order.confirm_delivery(proof)
             except OrderStatusError as e:
@@ -3377,7 +3398,9 @@ def _qr_validate_image(f):
         return 'That image is too small to be a real QR code. Please upload a genuine QR code image.'
     if f.size > QR_MAX_SIZE:
         return 'That image is too large (must be under 2 MB).'
-    return None
+    # Real-content check + re-encode (QR stays scannable: PNG is lossless,
+    # JPEG is saved at high quality).
+    return sanitize_image(f, max_bytes=QR_MAX_SIZE, quality=95)
 
 
 @staff_required

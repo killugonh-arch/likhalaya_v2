@@ -5,6 +5,7 @@ from django.db import IntegrityError, transaction
 from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.http import require_POST
 
+from likhalaya_project.image_validation import sanitize_image
 from likhalaya_project.rate_limit import throttle
 from store.models import Product
 
@@ -28,12 +29,9 @@ def _clean_images(request):
     Returns (images, error_message_or_None)."""
     images = []
     for f in request.FILES.getlist('media'):
-        if f.size > MAX_IMAGE_MB * 1024 * 1024:
-            return [], f'Each photo must be {MAX_IMAGE_MB} MB or smaller.'
-        try:
-            forms.ImageField().clean(f)
-        except forms.ValidationError:
-            return [], 'Please upload valid image files (JPG, PNG, WebP).'
+        error = sanitize_image(f, max_bytes=MAX_IMAGE_MB * 1024 * 1024)
+        if error:
+            return [], error
         images.append(f)
     return images, None
 
