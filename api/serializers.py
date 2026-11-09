@@ -1,6 +1,8 @@
+from django.db import transaction
 from rest_framework import serializers
+from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from accounts.models import CustomUser
+from accounts.models import CustomUser, StaffInvite
 from store.models import Category, Product, ProductImage, ContactMessage, MessageReply
 from orders.models import Order, OrderItem, Notification
 
@@ -22,6 +24,11 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
     def validate(self, attrs):
         data = super().validate(attrs)
+        # Staff must be switched on for the mobile app (admins are exempt).
+        if self.user.role == 'staff' and not self.user.mobile_access:
+            raise AuthenticationFailed(
+                'Your staff account is not enabled for the mobile app. Please contact an administrator.')
+        data['mobile_access'] = self.user.mobile_access
         data['role'] = self.user.role
         data['username'] = self.user.username
         data['full_name'] = self.user.get_full_name()
@@ -41,9 +48,9 @@ class UserSerializer(serializers.ModelSerializer):
         fields = [
             'id', 'username', 'email', 'first_name', 'last_name', 'full_name',
             'role', 'phone', 'address', 'barangay', 'city', 'province',
-            'zip_code', 'avatar', 'bio', 'created_at',
+            'zip_code', 'avatar', 'bio', 'mobile_access', 'created_at',
         ]
-        read_only_fields = ['id', 'email', 'role', 'created_at']
+        read_only_fields = ['id', 'email', 'role', 'mobile_access', 'created_at']
 
     def validate_avatar(self, value):
         if value and value.size > AVATAR_MAX_SIZE:
@@ -54,23 +61,45 @@ class UserSerializer(serializers.ModelSerializer):
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, min_length=8)
     password2 = serializers.CharField(write_only=True, min_length=8)
+    # Optional one-time code from an administrator. A valid code makes this
+    # a Staff account (with mobile access) instead of a customer.
+    staff_code = serializers.CharField(write_only=True, required=False, allow_blank=True)
 
     class Meta:
         model = CustomUser
-        fields = ['username', 'email', 'password', 'password2', 'first_name', 'last_name', 'phone']
+        fields = ['username', 'email', 'password', 'password2', 'first_name', 'last_name', 'phone', 'staff_code']
 
     def validate(self, attrs):
         if attrs.get('password') != attrs.get('password2'):
             raise serializers.ValidationError({'password2': ["Passwords don't match."]})
+        code = (attrs.get('staff_code') or '').strip()
+        if code:
+            invite = StaffInvite.objects.filter(code__iexact=code).first()
+            if invite is None or not invite.is_valid():
+                raise serializers.ValidationError({'staff_code': ['Invalid or expired staff code.']})
         return attrs
 
+    @transaction.atomic
     def create(self, validated_data):
         validated_data.pop('password2')
         password = validated_data.pop('password')
-        user = CustomUser(**validated_data, role='customer')
+        code = (validated_data.pop('staff_code', '') or '').strip()
+        invite = None
+        if code:
+            # Lock the row so one code can't be used by two people at once.
+            invite = StaffInvite.objects.select_for_update().filter(code__iexact=code).first()
+            if invite is None or not invite.is_valid():
+                raise serializers.ValidationError({'staff_code': ['Invalid or expired staff code.']})
+        user = CustomUser(**validated_data, role='staff' if invite else 'customer')
+        if invite:
+            user.mobile_access = True
+            user.mobile_only = True  # created in the app: no website access
         user.set_password(password)
         user.is_active = False  # activated after EmailOTP verification
         user.save()
+        if invite:
+            invite.used_by = user
+            invite.save(update_fields=['used_by'])
         return user
 
 

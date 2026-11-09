@@ -740,6 +740,9 @@ body:not(.dark-mode) .dash-page .pagination .page-item.active .page-link { backg
       <i class="fas fa-shopping-bag"></i><span>Orders</span>
       {% if new_orders_count %}<span class="sidebar-badge">{{ new_orders_count }}</span>{% endif %}
     </a>
+    <a href="{% url 'dashboard:walkin_list' %}" class="sidebar-link {% block sb_walkin %}{% endblock %}">
+      <i class="fas fa-cash-register"></i><span>Walk-in Sales</span>
+    </a>
     {% if user.is_courier_user %}
     <a href="{% url 'dashboard:courier_order_list' %}" class="sidebar-link {% block sb_deliveries2 %}{% endblock %}">
       <i class="fas fa-truck-fast"></i><span>Deliveries</span>

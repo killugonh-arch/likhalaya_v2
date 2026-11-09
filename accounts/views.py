@@ -56,7 +56,7 @@ REGISTER_MAX_PER_HOUR = 5
 
 
 def _otp_resend_cooldown_remaining(user):
-    """Seconds left before `user` may request another OTP resend, or 0 if
+    """Seconds left before user may request another OTP resend, or 0 if
     they're clear to send. Based on the most recently issued OTP, used or not."""
     last_otp = EmailOTP.objects.filter(user=user).order_by('-created_at').first()
     if not last_otp:
@@ -272,6 +272,10 @@ def login_view(request):
         form = LoginForm(request, data=request.POST)
         if form.is_valid():
             user = form.get_user()
+            # Staff accounts made in the mobile app are mobile-only.
+            if user.role == 'staff' and user.mobile_only:
+                messages.error(request, 'This staff account can only be used in the mobile app.')
+                return render(request, 'accounts/login.html', {'form': LoginForm()})
             # Successful login: clear this account's failure count from the
             # IP dict so a typo followed by the right password isn't held
             # against future attempts.

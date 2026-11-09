@@ -28,6 +28,13 @@ class StaffIdleTimeoutMiddleware:
 
     def __call__(self, request):
         user = getattr(request, 'user', None)
+        # Mobile-only staff must never hold a website session (this also
+        # covers Google web sign-in and sessions that already existed).
+        if (user is not None and user.is_authenticated
+                and getattr(user, 'role', '') == 'staff' and user.mobile_only):
+            from django.contrib.auth import logout
+            logout(request)
+            return self.get_response(request)
         if user is not None and user.is_authenticated and user.is_staff_user():
             request.session.set_expiry(STAFF_IDLE_TIMEOUT_SECONDS)
         return self.get_response(request)

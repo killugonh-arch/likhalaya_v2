@@ -410,7 +410,8 @@ def dashboard_home(request):
     status_counts = {s[0]: Order.objects.filter(status=s[0]).count() for s in Order.STATUS_CHOICES}
     status_counts = {k: v for k, v in status_counts.items() if v > 0}
 
-    recent_orders = Order.objects.select_related('user').prefetch_related('items').order_by('-created_at')[:10]
+    recent_orders = (Order.objects.exclude(sales_channel=Order.CHANNEL_WALK_IN)
+                     .select_related('user').prefetch_related('items').order_by('-created_at')[:10])
     low_stock_products = Product.objects.filter(stock__lte=5, is_active=True).select_related('category').order_by('stock', 'name')[:5]
     recent_customers = CustomUser.objects.filter(role='customer').order_by('-created_at')[:5]
 
@@ -1065,7 +1066,9 @@ def product_delete_permanent(request, pk):
 # ─── Orders ─────────────────────────────────────────────────────────────────────
 @staff_required
 def order_list(request):
-    orders = Order.objects.select_related('user').prefetch_related('items').order_by('-created_at')
+    # Walk-in (in-store) sales live on their own Walk-in Sales page.
+    orders = (Order.objects.exclude(sales_channel=Order.CHANNEL_WALK_IN)
+              .select_related('user').prefetch_related('items').order_by('-created_at'))
     status = request.GET.get('status', '')
     search = request.GET.get('q', '')
     payment = request.GET.get('payment', '')
@@ -1370,6 +1373,314 @@ def order_undo_cancel(request, pk):
         _log_and_notify(request, order, old_status, order.status)
         messages.success(request, f'Order {order.order_number} has been restored to {order.get_status_display()}.')
     return redirect('dashboard:order_detail', pk=pk)
+
+
+# ─── Walk-in (in-store) sales ───────────────────────────────────────────────────
+# A walk-in sale is a normal Order with sales_channel='walk_in': cash only, no
+# shipping, completed on the spot (status 'delivered'). Because it is a real
+# delivered Order, Reports, the Excel export and the dashboard revenue pick it up
+# automatically, and stock is deducted the same way the website checkout does it.
+class WalkInError(Exception):
+    """A walk-in sale couldn't be recorded (bad row, not enough stock...)."""
+
+
+def _walkin_catalog():
+    """Everything the walk-in form needs, as plain data for the page's JS."""
+    products = (Product.objects.filter(is_active=True)
+                .prefetch_related('sizes__designs', 'direct_designs')
+                .order_by('name'))
+    catalog = []
+    for p in products:
+        sizes = [s for s in p.sizes.all() if s.is_active]
+        direct = [d for d in p.direct_designs.all() if d.is_active]
+        item = {'id': p.pk, 'name': p.name, 'stock': p.stock,
+                'price': str(p.price_min), 'sizes': [], 'designs': []}
+        if sizes:
+            item['kind'] = 'sizes_designs'
+            for s in sizes:
+                item['sizes'].append({
+                    'code': s.name, 'name': s.get_name_display(),
+                    'price': str(p.get_price_for_size(s.name)),
+                    'designs': [{'id': d.pk, 'title': d.title or 'Design', 'stock': d.stock}
+                                for d in s.designs.all() if d.is_active],
+                })
+        elif direct:
+            item['kind'] = 'designs'
+            item['designs'] = [{'id': d.pk, 'title': d.title or 'Design', 'stock': d.stock} for d in direct]
+        elif p.has_size_pricing:
+            item['kind'] = 'sizes_plain'
+            for code, name, price in (('S', 'Small', p.price_small),
+                                      ('M', 'Medium', p.price_medium),
+                                      ('L', 'Large', p.price_large)):
+                item['sizes'].append({'code': code, 'name': name, 'price': str(price),
+                                      'stock': p.stock, 'designs': []})
+        else:
+            item['kind'] = 'plain'
+        catalog.append(item)
+    return catalog
+
+
+def _walkin_parse_rows(post):
+    """Read the sale rows from the POST (rows are keyed by row id, so a hidden
+    size/design box can never shift the other values out of line)."""
+    rows = []
+    for rid in post.getlist('row_id'):
+        row = {
+            'product_id': (post.get(f'product_{rid}') or '').strip(),
+            'size': (post.get(f'size_{rid}') or '').strip().upper(),
+            'design_id': (post.get(f'design_{rid}') or '').strip(),
+            'qty': (post.get(f'qty_{rid}') or '').strip(),
+            'price': (post.get(f'price_{rid}') or '').strip(),
+        }
+        if row['product_id']:          # rows with no product chosen are simply skipped
+            rows.append(row)
+    return rows
+
+
+def _walkin_record_sale(request, customer_name, contact, rows):
+    """Create the order, its items and deduct stock - all or nothing."""
+    if not rows:
+        raise WalkInError('Add at least one product to the sale.')
+
+    now = timezone.now()
+    staff_name = request.user.get_full_name() or request.user.username
+    with transaction.atomic():
+        order = Order.objects.create(
+            user=None,
+            status='delivered',
+            payment_method=Order.PAYMENT_CASH,
+            sales_channel=Order.CHANNEL_WALK_IN,
+            sold_by=request.user,
+            full_name=customer_name or 'Walk-in Customer',
+            email='',
+            phone=contact,
+            address='In-store purchase',
+            city='', province='', zip_code='',
+            notes=f'Walk-in sale recorded by {staff_name}.',
+            subtotal=Decimal('0'), shipping_fee=Decimal('0'), total=Decimal('0'),
+            delivery_confirmed_at=now,
+        )
+        subtotal = Decimal('0')
+
+        for n, row in enumerate(rows, start=1):
+            label = f'Item {n}'
+            # ── quantity ──
+            try:
+                qty = int(row['qty'])
+            except (TypeError, ValueError):
+                raise WalkInError(f'{label}: enter a valid quantity.')
+            if qty < 1:
+                raise WalkInError(f'{label}: quantity must be at least 1.')
+
+            # ── product (locked while we check + deduct stock) ──
+            try:
+                product = (Product.objects.select_for_update()
+                           .filter(pk=int(row['product_id']), is_active=True).first())
+            except (TypeError, ValueError):
+                product = None
+            if not product:
+                raise WalkInError(f'{label}: that product is no longer available.')
+            label = f'{product.name}'
+
+            sizes = list(product.sizes.filter(is_active=True))
+            size_code = ''
+            design = None
+            if sizes:
+                ps = next((s for s in sizes if s.name == row['size']), None)
+                if not ps:
+                    raise WalkInError(f'{label}: choose a size.')
+                size_code = ps.name
+                try:
+                    design = (ProductDesign.objects.select_for_update()
+                              .filter(pk=int(row['design_id']), product_size=ps, is_active=True).first())
+                except (TypeError, ValueError):
+                    design = None
+                if not design:
+                    raise WalkInError(f'{label}: choose a design.')
+                default_price = product.get_price_for_size(size_code)
+            elif product.direct_designs.filter(is_active=True).exists():
+                try:
+                    design = (ProductDesign.objects.select_for_update()
+                              .filter(pk=int(row['design_id']), parent_product=product, is_active=True).first())
+                except (TypeError, ValueError):
+                    design = None
+                if not design:
+                    raise WalkInError(f'{label}: choose a design.')
+                default_price = product.price_min
+            elif product.has_size_pricing:
+                if row['size'] not in ('S', 'M', 'L'):
+                    raise WalkInError(f'{label}: choose a size.')
+                size_code = row['size']
+                default_price = product.get_price_for_size(size_code)
+            else:
+                default_price = product.price_min
+
+            # ── price (defaults to the shop price, staff can lower/raise it) ──
+            if row['price'] == '':
+                price = Decimal(default_price)
+            else:
+                try:
+                    price = Decimal(row['price']).quantize(Decimal('0.01'))
+                except (InvalidOperation, ValueError):
+                    raise WalkInError(f'{label}: enter a valid price.')
+            if price < 0 or price > Decimal('1000000'):
+                raise WalkInError(f'{label}: enter a valid price.')
+
+            # ── stock ──
+            if design:
+                if design.stock < qty:
+                    raise WalkInError(
+                        f'{label} ({design.title or "design"}): only {design.stock} in stock, you entered {qty}.')
+                design.deduct_stock(qty)
+            else:
+                if product.stock < qty:
+                    raise WalkInError(f'{label}: only {product.stock} in stock, you entered {qty}.')
+                product.stock -= qty
+                product.save(update_fields=['stock'])
+
+            OrderItem.objects.create(
+                order=order, product=product, product_name=product.name,
+                product_price=price, size=size_code,
+                design=design, design_name=(design.title if design else ''),
+                quantity=qty,
+            )
+            subtotal += price * qty
+
+        order.subtotal = subtotal
+        order.total = subtotal
+        order.save(update_fields=['subtotal', 'total', 'updated_at'])
+    return order
+
+
+@staff_required
+def walkin_list(request):
+    if request.method == 'POST':
+        customer_name = (request.POST.get('customer_name') or '').strip()[:200]
+        contact = (request.POST.get('contact') or '').strip()[:20]
+        rows = _walkin_parse_rows(request.POST)
+        try:
+            order = _walkin_record_sale(request, customer_name, contact, rows)
+        except WalkInError as e:
+            messages.error(request, str(e))
+            restore = {'customer_name': customer_name, 'contact': contact, 'rows': rows}
+        else:
+            log_activity(request, 'create', f'Recorded walk-in sale {order.order_number}',
+                         resource='Order', resource_label=order.order_number,
+                         new_value=f'₱{order.total:,.2f} cash')
+            messages.success(request, f'Walk-in sale {order.order_number} recorded: ₱{order.total:,.2f} (cash). Stock updated.')
+            return redirect('dashboard:walkin_list')
+    else:
+        restore = None
+
+    sales = (Order.objects.filter(sales_channel=Order.CHANNEL_WALK_IN)
+             .select_related('sold_by').prefetch_related('items').order_by('-created_at'))
+    q = (request.GET.get('q') or '').strip()
+    date_from = (request.GET.get('from') or '').strip()
+    date_to = (request.GET.get('to') or '').strip()
+    if q:
+        sales = sales.filter(Q(full_name__icontains=q) | Q(phone__icontains=q) | Q(pk__icontains=q.lstrip('LKLlkl-').lstrip('0') or q))
+    if date_from:
+        sales = sales.filter(created_at__date__gte=date_from)
+    if date_to:
+        sales = sales.filter(created_at__date__lte=date_to)
+
+    # Quick totals (voided sales are not counted)
+    now_local = timezone.localtime()
+    live = Order.objects.filter(sales_channel=Order.CHANNEL_WALK_IN).exclude(status='cancelled')
+    today_total = live.filter(created_at__date=now_local.date()).aggregate(t=Sum('total'), c=Count('id'))
+    month_total = live.filter(created_at__year=now_local.year, created_at__month=now_local.month).aggregate(t=Sum('total'), c=Count('id'))
+
+    paginator = Paginator(sales, 10)
+    page_obj = paginator.get_page(request.GET.get('page'))
+    return render(request, 'dashboard/walkin/list.html', {
+        'sales': page_obj,
+        'page_obj': page_obj,
+        'q': q, 'date_from': date_from, 'date_to': date_to,
+        'catalog': _walkin_catalog(),
+        'restore': restore,
+        'today_total': today_total['t'] or Decimal('0'),
+        'today_count': today_total['c'] or 0,
+        'month_total': month_total['t'] or Decimal('0'),
+        'month_count': month_total['c'] or 0,
+    })
+
+
+@admin_required
+@require_POST
+def walkin_void(request, pk):
+    """Cancel a walk-in sale entered by mistake: stock goes back on the shelf and
+    the sale drops out of Reports. Admin only, and it stays listed as Voided."""
+    order = get_object_or_404(Order, pk=pk, sales_channel=Order.CHANNEL_WALK_IN)
+    if order.status == 'cancelled':
+        messages.info(request, f'Sale {order.order_number} is already voided.')
+        return redirect('dashboard:walkin_list')
+    with transaction.atomic():
+        order.restock_items()
+        order.previous_status = order.status
+        order.status = 'cancelled'
+        order.save(update_fields=['previous_status', 'status', 'updated_at'])
+    log_activity(request, 'status_change', f'Walk-in sale {order.order_number} voided',
+                 resource='Order', resource_label=order.order_number,
+                 previous_value='delivered', new_value='cancelled')
+    messages.success(request, f'Walk-in sale {order.order_number} voided. Stock was put back.')
+    return redirect('dashboard:walkin_list')
+
+
+@admin_required
+@require_POST
+def walkin_restore(request, pk):
+    """Cancel a void: the walk-in sale becomes active again, its stock is taken
+    out of the shelf again and it shows in Reports again. Admin only. If any
+    item no longer has enough stock, nothing is changed."""
+    order = get_object_or_404(Order, pk=pk, sales_channel=Order.CHANNEL_WALK_IN)
+    if order.status != 'cancelled':
+        messages.info(request, f'Sale {order.order_number} is not voided.')
+        return redirect('dashboard:walkin_list')
+
+    try:
+        with transaction.atomic():
+            locked = Order.objects.select_for_update().get(pk=order.pk)
+            if locked.status != 'cancelled':
+                raise WalkInError('This sale is no longer voided.')
+
+            # Take the stock out again, same way a new walk-in sale does.
+            # Any shortage raises WalkInError and rolls everything back.
+            for it in locked.items.all():
+                qty = it.quantity
+                label = it.product_name
+
+                if it.design_id:
+                    design = ProductDesign.objects.select_for_update().filter(pk=it.design_id).first()
+                    if not design:
+                        raise WalkInError(f'{label}: its design no longer exists.')
+                    if design.stock < qty:
+                        raise WalkInError(
+                            f'{label} ({design.title or "design"}): only {design.stock} in stock, needs {qty}.')
+                    design.deduct_stock(qty)
+                elif it.design_name:
+                    # The design was deleted after the sale, so its stock can't be taken out.
+                    raise WalkInError(f'{label}: the design "{it.design_name}" no longer exists.')
+                else:
+                    product = (Product.objects.select_for_update().filter(pk=it.product_id).first()
+                               if it.product_id else None)
+                    if not product:
+                        raise WalkInError(f'{label}: this product no longer exists.')
+                    if product.stock < qty:
+                        raise WalkInError(f'{label}: only {product.stock} in stock, needs {qty}.')
+                    product.stock -= qty
+                    product.save(update_fields=['stock'])
+
+            locked.status = 'delivered'     # walk-in sales are completed on the spot
+            locked.save(update_fields=['status', 'updated_at'])
+    except WalkInError as e:
+        messages.error(request, f'Could not cancel the void for {order.order_number}. {e}')
+        return redirect('dashboard:walkin_list')
+
+    log_activity(request, 'status_change', f'Walk-in sale {order.order_number} restored (void cancelled)',
+                 resource='Order', resource_label=order.order_number,
+                 previous_value='cancelled', new_value='delivered')
+    messages.success(request, f'Void cancelled. Walk-in sale {order.order_number} is active again and stock was updated.')
+    return redirect('dashboard:walkin_list')
 
 
 # ─── Courier delivery workflow ──────────────────────────────────────────────
@@ -2148,6 +2459,25 @@ def _delivered_orders_for_month(year, month):
             .filter(revenue_date__year=year, revenue_date__month=month))
 
 
+def _channel_breakdown(orders_qs):
+    """Website vs Walk-in totals for a queryset of delivered orders. Both
+    channels are always listed (zeros when empty) so the report layout is stable."""
+    found = {r['sales_channel']: r for r in orders_qs.values('sales_channel').annotate(
+        product_income=Sum('subtotal'), shipping_income=Sum('shipping_fee'),
+        total=Sum('total'), orders=Count('id'))}
+    rows = []
+    for key, label in Order.CHANNEL_CHOICES:
+        r = found.get(key, {})
+        rows.append({
+            'channel': key, 'label': label,
+            'orders': r.get('orders') or 0,
+            'product_income': r.get('product_income') or Decimal('0'),
+            'shipping_income': r.get('shipping_income') or Decimal('0'),
+            'total': r.get('total') or Decimal('0'),
+        })
+    return rows
+
+
 def _financial_summary(year, month):
     orders_qs = _delivered_orders_for_month(year, month)
     agg = orders_qs.aggregate(
@@ -2166,11 +2496,12 @@ def _financial_summary(year, month):
         )
         .order_by('payment_method')
     )
-    payment_display = dict(Order.PAYMENT_CHOICES)
+    payment_display = Order.PAYMENT_LABELS
     for row in payment_breakdown:
         row['payment_method_label'] = payment_display.get(row['payment_method'], row['payment_method'])
 
     return {
+        'channel_breakdown': _channel_breakdown(orders_qs),
         'product_income': agg['product_income'] or Decimal('0'),
         'shipping_income': agg['shipping_income'] or Decimal('0'),
         'gross_total': agg['gross_total'] or Decimal('0'),
@@ -2283,20 +2614,32 @@ def reports(request):
         _delivered_qs = financials['orders_qs']
 
     # Every status is listed (in workflow order), even when it has 0 orders this month.
-    _status_rows = {r['status']: r for r in orders_created_qs.values('status').annotate(
-        count=Count('id'), revenue=Sum('total'))}
+    # Walk-in (in-store) sales get their own row, so the status rows below
+    # count website orders only.
+    _status_rows = {r['status']: r for r in orders_created_qs
+                    .exclude(sales_channel=Order.CHANNEL_WALK_IN)
+                    .values('status').annotate(count=Count('id'), revenue=Sum('total'))}
     sales_by_status = [
-        {'status': key,
+        {'status': key, 'label': label,
          'count': _status_rows.get(key, {}).get('count', 0),
          'revenue': _status_rows.get(key, {}).get('revenue') or 0}
-        for key, _label in Order.STATUS_CHOICES
+        for key, label in Order.STATUS_CHOICES
     ]
-    # The Delivered row uses the delivery date instead of the order date.
+    # The Delivered row uses the delivery date instead of the order date
+    # (website orders only; walk-ins are shown in their own row).
     for r in sales_by_status:
         if r['status'] == 'delivered':
-            d = _delivered_qs.aggregate(c=Count('id'), v=Sum('total'))
+            d = _delivered_qs.exclude(sales_channel=Order.CHANNEL_WALK_IN).aggregate(c=Count('id'), v=Sum('total'))
             r['count'] = d['c'] or 0
             r['revenue'] = d['v'] or 0
+    # Walk-in row, placed right after Delivered (counted by sale date, voided ones excluded).
+    _walkin = _delivered_qs.filter(sales_channel=Order.CHANNEL_WALK_IN).aggregate(c=Count('id'), v=Sum('total'))
+    _delivered_pos = next((i for i, r in enumerate(sales_by_status) if r['status'] == 'delivered'),
+                          len(sales_by_status) - 1)
+    sales_by_status.insert(_delivered_pos + 1, {
+        'status': 'walk_in', 'label': 'Walk-in',
+        'count': _walkin['c'] or 0, 'revenue': _walkin['v'] or 0,
+    })
     sales_total_orders = sum(r['count'] for r in sales_by_status)
 
     # Top products: only delivered orders, counted by delivery date.
@@ -2306,6 +2649,17 @@ def reports(request):
                               revenue=Sum(ExpressionWrapper(
                                   F('product_price') * F('quantity'),
                                   output_field=DecimalField(max_digits=14, decimal_places=2))),
+                              # website vs walk-in split
+                              web_units=Sum('quantity', filter=~Q(order__sales_channel=Order.CHANNEL_WALK_IN)),
+                              walkin_units=Sum('quantity', filter=Q(order__sales_channel=Order.CHANNEL_WALK_IN)),
+                              web_revenue=Sum(ExpressionWrapper(
+                                  F('product_price') * F('quantity'),
+                                  output_field=DecimalField(max_digits=14, decimal_places=2)),
+                                  filter=~Q(order__sales_channel=Order.CHANNEL_WALK_IN)),
+                              walkin_revenue=Sum(ExpressionWrapper(
+                                  F('product_price') * F('quantity'),
+                                  output_field=DecimalField(max_digits=14, decimal_places=2)),
+                                  filter=Q(order__sales_channel=Order.CHANNEL_WALK_IN)),
                               # flags so the report can show whether the product / its
                               # category has since been deleted
                               n_items=Count('id'),
@@ -2315,6 +2669,10 @@ def reports(request):
                     .order_by('-units'))
     top_products = list(top_products)
     for tp in top_products:
+        tp['web_units'] = tp['web_units'] or 0
+        tp['walkin_units'] = tp['walkin_units'] or 0
+        tp['web_revenue'] = tp['web_revenue'] or Decimal('0')
+        tp['walkin_revenue'] = tp['walkin_revenue'] or Decimal('0')
         # permanently deleted (row gone) or moved to Archive
         tp['product_deleted'] = tp['n_product_gone'] == tp['n_items'] or tp['n_product_archived'] > 0
         tp['product_deleted_permanent'] = tp['n_product_gone'] == tp['n_items']
@@ -2330,6 +2688,8 @@ def reports(request):
         sold_names.add((name or '').strip().lower())
         top_products.append({
             'product_name': name, 'units': 0, 'revenue': Decimal('0'),
+            'web_units': 0, 'walkin_units': 0,
+            'web_revenue': Decimal('0'), 'walkin_revenue': Decimal('0'),
             'product_deleted': False, 'product_deleted_permanent': False,
             'category_deleted': False,
         })
@@ -2360,6 +2720,8 @@ def reports(request):
             'order_count': m_fin['order_count'],
             'gcash_income': next((r['product_income'] for r in m_fin['payment_breakdown'] if r['payment_method'] == 'gcash'), Decimal('0')),
             'cod_income': next((r['product_income'] for r in m_fin['payment_breakdown'] if r['payment_method'] == 'cod'), Decimal('0')),
+            'walkin_income': next((r['product_income'] for r in m_fin['channel_breakdown'] if r['channel'] == 'walk_in'), Decimal('0')),
+            'website_income': next((r['product_income'] for r in m_fin['channel_breakdown'] if r['channel'] == 'website'), Decimal('0')),
             'approved_expenses': m_pdl['approved_expenses'],
             'net_product_income': m_pdl['net_product_income'],
             'status': m_period.get_status_display() if m_period else 'Open',
@@ -2374,6 +2736,8 @@ def reports(request):
             'gross_total': sum((r['gross_total'] for r in monthly_history), Decimal('0')),
             'gcash_income': sum((r['gcash_income'] for r in monthly_history), Decimal('0')),
             'cod_income': sum((r['cod_income'] for r in monthly_history), Decimal('0')),
+            'walkin_income': sum((r['walkin_income'] for r in monthly_history), Decimal('0')),
+            'website_income': sum((r['website_income'] for r in monthly_history), Decimal('0')),
             'order_count': sum(r['order_count'] for r in monthly_history),
             'approved_expenses': sum((r['approved_expenses'] for r in monthly_history), Decimal('0')),
             'net_product_income': sum((r['net_product_income'] for r in monthly_history), Decimal('0')),
@@ -2385,6 +2749,8 @@ def reports(request):
             'gross_total': financials['gross_total'],
             'gcash_income': gcash_product_income,
             'cod_income': cod_product_income,
+            'walkin_income': next((r['product_income'] for r in financials['channel_breakdown'] if r['channel'] == 'walk_in'), Decimal('0')),
+            'website_income': next((r['product_income'] for r in financials['channel_breakdown'] if r['channel'] == 'website'), Decimal('0')),
             'order_count': financials['order_count'],
             'approved_expenses': pdl['approved_expenses'],
             'net_product_income': pdl['net_product_income'],
@@ -2425,7 +2791,19 @@ def reports(request):
     awaiting_count = sum(r['count'] for r in in_progress)
     awaiting_value = sum((r['revenue'] or 0) for r in in_progress)
 
+    # Website vs Walk-in for the period shown (the month, or the whole year)
+    channel_rows = (_channel_breakdown(_delivered_qs) if view_mode == 'year'
+                    else financials['channel_breakdown'])
+    channel_totals = {
+        'orders': sum(r['orders'] for r in channel_rows),
+        'product_income': sum((r['product_income'] for r in channel_rows), Decimal('0')),
+        'shipping_income': sum((r['shipping_income'] for r in channel_rows), Decimal('0')),
+        'total': sum((r['total'] for r in channel_rows), Decimal('0')),
+    }
+
     ctx = {
+        'channel_rows': channel_rows,
+        'channel_totals': channel_totals,
         'available_years': available_years,
         'months': [(i, calendar.month_name[i]) for i in range(1, 13)],
         'selected_year': selected_year,
@@ -2738,7 +3116,7 @@ def reports_export_excel(request):
         cell.value = h; cell.font = header_font; cell.fill = header_fill
         cell.alignment = center; cell.border = border
     row += 1
-    payment_display = dict(Order.PAYMENT_CHOICES)
+    payment_display = Order.PAYMENT_LABELS
     for i, r in enumerate(financials['payment_breakdown']):
         fill = zebra_fill if i % 2 else white_fill
         values = [
@@ -2748,6 +3126,31 @@ def reports_export_excel(request):
             f"₱{r['total'] or 0:,.2f}",
             r['orders'],
         ]
+        for v, col in zip(values, ['A', 'B', 'C', 'D', 'E']):
+            cell = ws[f'{col}{row}']
+            cell.value = v; cell.font = body_font; cell.fill = fill
+            cell.alignment = center; cell.border = border
+        row += 1
+    totals = ['TOTAL', f"₱{financials['product_income']:,.2f}", f"₱{financials['shipping_income']:,.2f}",
+              f"₱{financials['gross_total']:,.2f}", financials['order_count']]
+    for v, col in zip(totals, ['A', 'B', 'C', 'D', 'E']):
+        cell = ws[f'{col}{row}']
+        cell.value = v; cell.font = total_font; cell.fill = header_fill
+        cell.alignment = center; cell.border = border
+    row += 2
+
+    # Income by Sales Channel (Website vs Walk-in)
+    section_header('Income by Sales Channel')
+    headers = ['Channel', 'Product Income', 'Shipping Fees', 'Total', 'Orders']
+    for h, col in zip(headers, ['A', 'B', 'C', 'D', 'E']):
+        cell = ws[f'{col}{row}']
+        cell.value = h; cell.font = header_font; cell.fill = header_fill
+        cell.alignment = center; cell.border = border
+    row += 1
+    for i, r in enumerate(financials['channel_breakdown']):
+        fill = zebra_fill if i % 2 else white_fill
+        values = [r['label'], f"₱{r['product_income']:,.2f}", f"₱{r['shipping_income']:,.2f}",
+                  f"₱{r['total']:,.2f}", r['orders']]
         for v, col in zip(values, ['A', 'B', 'C', 'D', 'E']):
             cell = ws[f'{col}{row}']
             cell.value = v; cell.font = body_font; cell.fill = fill
@@ -2781,8 +3184,8 @@ def reports_export_excel(request):
     # ── Sheet 2: Orders ──
     ws2 = wb.create_sheet('Orders')
     ws2.sheet_view.showGridLines = False
-    headers = ['Order ID', 'Delivery Date', 'Payment Method', 'Product Income', 'Shipping Fee', 'Order Total', 'Status']
-    widths = [14, 18, 16, 16, 14, 14, 14]
+    headers = ['Order ID', 'Delivery Date', 'Channel', 'Payment Method', 'Product Income', 'Shipping Fee', 'Order Total', 'Status']
+    widths = [14, 18, 16, 16, 16, 14, 14, 14]
     for i, w in enumerate(widths, start=1):
         ws2.column_dimensions[get_column_letter(i)].width = w
     for col_idx, h in enumerate(headers, start=1):
@@ -2797,6 +3200,7 @@ def reports_export_excel(request):
         row_values = [
             o.order_number,
             delivery_date.strftime('%Y-%m-%d %I:%M %p') if delivery_date else '—',
+            o.get_sales_channel_display(),
             payment_display.get(o.payment_method, o.payment_method),
             f"₱{o.subtotal:,.2f}",
             f"₱{o.shipping_fee:,.2f}",
@@ -2808,7 +3212,7 @@ def reports_export_excel(request):
             cell.value = v; cell.font = body_font; cell.fill = fill
             cell.alignment = center; cell.border = border
         r_idx += 1
-    ws2.print_area = f'A1:G{max(r_idx - 1, 1)}'
+    ws2.print_area = f'A1:H{max(r_idx - 1, 1)}'
     ws2.page_setup.orientation = 'landscape'
     ws2.page_setup.fitToWidth = 1
     ws2.sheet_properties.pageSetUpPr.fitToPage = True

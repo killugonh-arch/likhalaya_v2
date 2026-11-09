@@ -1,4 +1,5 @@
 import random
+import secrets
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.db import models
 from django.utils import timezone
@@ -30,6 +31,17 @@ class CustomUser(AbstractUser):
     zip_code = models.CharField(max_length=10, blank=True)
     avatar = models.ImageField(upload_to='avatars/', blank=True, null=True)
     bio = models.TextField(blank=True)
+    # Staff accounts only: may this person use the mobile app? Staff created
+    # with a StaffInvite code get it automatically; existing web staff start
+    # with it OFF until an admin ticks it.
+    mobile_access = models.BooleanField(
+        default=False,
+        help_text='Staff only: allow this account to sign in to the mobile app.')
+    # Staff created through the mobile app's invite code: may use the mobile
+    # app only, not the website / dashboard.
+    mobile_only = models.BooleanField(
+        default=False,
+        help_text='Staff only: this account can use the mobile app but NOT the website.')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -90,6 +102,39 @@ class CustomUser(AbstractUser):
 
     def __str__(self):
         return f"{self.username} ({self.get_role_display()})"
+
+
+def _new_invite_code():
+    return secrets.token_hex(4).upper()  # e.g. 'A3F9C21B'
+
+
+class StaffInvite(models.Model):
+    """One-time code an admin hands to a new staff member. Entering it on the
+    mobile sign-up screen creates a Staff account (with mobile access) instead
+    of a customer account."""
+    code = models.CharField(max_length=20, unique=True, default=_new_invite_code, editable=False)
+    note = models.CharField(max_length=120, blank=True, help_text='Who this code is for.')
+    created_by = models.ForeignKey(
+        'accounts.CustomUser', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='staff_invites_created')
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True, help_text='Leave empty for no expiry.')
+    # If the account that used the code is later deleted this goes back to
+    # NULL and the code can be used again.
+    used_by = models.OneToOneField(
+        'accounts.CustomUser', on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='staff_invite_used')
+
+    class Meta:
+        ordering = ['-created_at']
+
+    def is_valid(self):
+        if self.used_by_id is not None:
+            return False
+        return self.expires_at is None or timezone.now() < self.expires_at
+
+    def __str__(self):
+        return f"{self.code} ({'used' if self.used_by_id else 'open'})"
 
 
 class ActivityLog(models.Model):

@@ -90,6 +90,7 @@
 .ds-badge-info { background: var(--info-bg); color: var(--info); }
 .ds-badge-teal { background: #E3F6F2; color: #138D75; }
 .ds-badge-purple { background: #F1E9FB; color: #7D3C98; }
+.ds-badge-walkin { background: #F3ECE6; color: #795548; }
 
 .ds-table { width: 100%; border-collapse: collapse; background: var(--surface-white); border-radius: var(--radius-md); overflow: hidden; }
 .ds-table thead th { background: var(--surface-subtle); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text-muted); padding: 12px var(--space-3); text-align: left; border-bottom: 1px solid var(--border); white-space: nowrap; }
@@ -183,6 +184,7 @@ body.dark-mode { --info: #4fa9e8; --info-bg: rgba(79,169,232,.16); }
 body.dark-mode .icon-cod { background: rgba(155,89,182,.2); color: #c39bd3; }
 body.dark-mode .ds-badge-teal { background: rgba(26,188,156,.16); color: #4fd1c5; }
 body.dark-mode .ds-badge-purple { background: rgba(155,89,182,.2); color: #c39bd3; }
+body.dark-mode .ds-badge-walkin { background: rgba(161,136,127,.2); color: #bcaaa4; }
 body.dark-mode .ds-select { color-scheme: dark; background: var(--dm-surface-2); border-color: var(--dm-border); color: var(--dm-text); }
 body.dark-mode .ds-table.sticky-first td:first-child { background: var(--dm-surface); }
 body.dark-mode .ds-table.sticky-first thead th:first-child { background: var(--dm-surface-2); }
@@ -358,6 +360,8 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
     <tr><td>Shipping Fees</td><td>₱{{ kpi.shipping_income|floatformat:2|intcomma }}</td></tr>
     <tr><td>GCash Sales</td><td>₱{{ kpi.gcash_income|default:0|floatformat:2|intcomma }}</td></tr>
     <tr><td>COD Sales</td><td>₱{{ kpi.cod_income|default:0|floatformat:2|intcomma }}</td></tr>
+    <tr><td>Website Sales (product)</td><td>₱{{ kpi.website_income|default:0|floatformat:2|intcomma }}</td></tr>
+    <tr><td>Walk-in Sales (product, cash)</td><td>₱{{ kpi.walkin_income|default:0|floatformat:2|intcomma }}</td></tr>
     <tr><td>Orders Delivered</td><td>{{ kpi.order_count }}</td></tr>
   </tbody>
 </table>
@@ -500,6 +504,45 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
       </div>
       <div class="kpi-value">{{ kpi.order_count }}</div>
     </div>
+  </div>
+</div>
+
+<!-- Sales by Channel: website orders vs walk-in (in-store) sales -->
+<div class="dash-panel mb-4">
+  <div class="dash-panel-header">
+    <h6>Sales by Channel</h6>
+    <span class="ds-badge ds-badge-neutral">Website vs Walk-in</span>
+  </div>
+  <div class="table-responsive">
+    <table class="ds-table no-stack tbl-center mb-0">
+      <thead><tr><th>Channel</th><th>Orders</th><th>Product Sales</th><th>Shipping Fees</th><th>Total</th></tr></thead>
+      <tbody>
+        {% for row in channel_rows %}
+        <tr>
+          <td>
+            {% if row.channel == 'walk_in' %}
+            <span class="ds-badge ds-badge-warning"><i class="fas fa-store"></i>{{ row.label }}</span>
+            {% else %}
+            <span class="ds-badge ds-badge-info"><i class="fas fa-globe"></i>{{ row.label }}</span>
+            {% endif %}
+          </td>
+          <td>{{ row.orders }}</td>
+          <td>₱{{ row.product_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ row.shipping_income|floatformat:2|intcomma }}</td>
+          <td class="fw-semibold" style="color:var(--brand-green);">₱{{ row.total|floatformat:2|intcomma }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr class="row-total">
+          <td>TOTAL</td>
+          <td>{{ channel_totals.orders }}</td>
+          <td>₱{{ channel_totals.product_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ channel_totals.shipping_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ channel_totals.total|floatformat:2|intcomma }}</td>
+        </tr>
+      </tfoot>
+    </table>
   </div>
 </div>
 
@@ -739,7 +782,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
     <table class="ds-table no-stack sticky-first tbl-center mb-0">
       <thead>
         <tr>
-          <th>Month</th><th>Product Income</th><th>Shipping Fees</th><th>GCash</th><th>COD</th>
+          <th>Month</th><th>Product Income</th><th>Shipping Fees</th><th>GCash</th><th>COD</th><th>Walk-in</th>
           <th>Expenses</th><th>Net Product Income</th><th>Finalized</th>
         </tr>
       </thead>
@@ -755,6 +798,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
           <td>₱{{ row.shipping_income|floatformat:2|intcomma }}</td>
           <td>₱{{ row.gcash_income|floatformat:2|intcomma }}</td>
           <td>₱{{ row.cod_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ row.walkin_income|floatformat:2|intcomma }}</td>
           <td>₱{{ row.approved_expenses|floatformat:2|intcomma }}</td>
           <td class="fw-semibold">₱{{ row.net_product_income|floatformat:2|intcomma }}</td>
           <td>
@@ -774,6 +818,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
           <td>₱{{ kpi.shipping_income|floatformat:2|intcomma }}</td>
           <td>₱{{ kpi.gcash_income|floatformat:2|intcomma }}</td>
           <td>₱{{ kpi.cod_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ kpi.walkin_income|floatformat:2|intcomma }}</td>
           <td>₱{{ kpi.approved_expenses|floatformat:2|intcomma }}</td>
           <td>₱{{ kpi.net_product_income|floatformat:2|intcomma }}</td>
           <td></td>
@@ -824,13 +869,14 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
               <td>
                 <span class="ds-badge
                   {% if row.status == 'delivered' %}ds-badge-success
+                  {% elif row.status == 'walk_in' %}ds-badge-walkin
                   {% elif row.status == 'confirmed' %}ds-badge-info
                   {% elif row.status == 'processing' %}ds-badge-teal
                   {% elif row.status == 'shipped' %}ds-badge-purple
                   {% elif row.status == 'pending' %}ds-badge-warning
                   {% elif row.status == 'cancelled' %}ds-badge-danger
                   {% else %}ds-badge-neutral{% endif %}">
-                  {{ row.status|title }}
+                  {% if row.status == 'walk_in' %}<i class="fas fa-store"></i>{% endif %}{{ row.label }}
                 </span>
               </td>
               <td class="fw-semibold">{{ row.count }}</td>
@@ -857,7 +903,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
   </div>
   <div class="table-responsive">
     <table class="ds-table no-stack tbl-center mb-0">
-      <thead><tr><th>Product</th><th>Units</th><th>Revenue</th></tr></thead>
+      <thead><tr><th>Product</th><th>Website Units</th><th>Walk-in Units</th><th>Total Units</th><th>Website Revenue</th><th>Walk-in Revenue</th><th>Total Revenue</th></tr></thead>
       <tbody>
         {% for p in top_products %}
         <tr>
@@ -870,11 +916,15 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
             <span class="ds-badge ds-badge-warning ms-1" style="font-size:10px;" title="This product's category was deleted (in Archive)">Category deleted</span>
             {% endif %}
           </td>
+          <td><span class="ds-badge ds-badge-neutral">{{ p.web_units }}</span></td>
+          <td><span class="ds-badge ds-badge-neutral">{{ p.walkin_units }}</span></td>
           <td><span class="ds-badge ds-badge-neutral">{{ p.units }}</span></td>
+          <td style="font-size:13px;">₱{{ p.web_revenue|floatformat:2|intcomma }}</td>
+          <td style="font-size:13px;">₱{{ p.walkin_revenue|floatformat:2|intcomma }}</td>
           <td class="fw-semibold" style="color:var(--brand-green);">₱{{ p.revenue|floatformat:2|intcomma }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="3">
+        <tr><td colspan="7">
           <div class="ds-empty-state">
             <i class="fas fa-box-open icon"></i>
             <div class="title">No product sales yet</div>
@@ -985,14 +1035,15 @@ const mhData = {
 };
 // Overall income = product income + shipping fees collected
 mhData.overall = mhData.product.map((v, i) => Math.round((v + mhData.shipping[i]) * 100) / 100);
-const statusLabels   = [{% for row in sales_by_status %}"{{ row.status|title }}",{% endfor %}];
+const statusLabels   = [{% for row in sales_by_status %}"{{ row.label }}",{% endfor %}];
 const statusCounts   = [{% for row in sales_by_status %}{{ row.count }},{% endfor %}];
 const statusKeys     = [{% for row in sales_by_status %}"{{ row.status }}",{% endfor %}];
 
 // Same palette as the Dashboard home donut — one distinct color per status
+// (Walk-in sales get their own color, separate from Delivered)
 const STATUS_COLORS = {
   pending: '#f39c12', confirmed: '#3498db', processing: '#1abc9c',
-  shipped: '#9b59b6', delivered: '#27ae60', cancelled: '#e74c3c'
+  shipped: '#9b59b6', delivered: '#27ae60', walk_in: '#795548', cancelled: '#e74c3c'
 };
 const statusColors = statusKeys.map(k => STATUS_COLORS[k] || '#9AA09C');
 

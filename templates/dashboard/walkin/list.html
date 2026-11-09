@@ -1,0 +1,799 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load humanize %}
+{% block page_title %}Walk-in Sales{% endblock %}
+{% block sb_walkin %}active{% endblock %}
+{% block title %}Walk-in Sales – Dashboard{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+.wk {
+  --wk-green: #0F6B4F; --wk-green-hover: #0C5940; --wk-green-light: #E6F4EF;
+  --wk-surface: #FFFFFF; --wk-subtle: #F9FAF9; --wk-border: #E4E7E4;
+  --wk-text: #1A1D1B; --wk-muted: #8a8f8c; --wk-gold: #B7791F; --wk-gold-bg: #FBF3E4;
+  --wk-danger: #C0362C; --wk-danger-bg: #FBEAE8;
+}
+body.dark-mode .wk {
+  --wk-green: #4fd1c5; --wk-green-hover: #3fb3a8; --wk-green-light: rgba(79,209,197,.14);
+  --wk-surface: var(--dm-surface); --wk-subtle: var(--dm-surface-2); --wk-border: var(--dm-border);
+  --wk-text: var(--dm-text); --wk-muted: var(--dm-text-mute); --wk-gold: #D0884E; --wk-gold-bg: rgba(208,136,78,.14);
+  --wk-danger: #ff6b6b; --wk-danger-bg: rgba(255,107,107,.12);
+}
+
+
+/* Stat card icon (same look as the dashboard cards) */
+.wk { --wk-blue: #2B6CB0; --wk-blue-bg: #E8F0FB; }
+body.dark-mode .wk { --wk-blue: #63b3ed; --wk-blue-bg: rgba(99,179,237,.14); }
+.wk-stat-ico { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 700; flex-shrink: 0; }
+.wk-ico-green { background: var(--wk-green-light); color: var(--wk-green); }
+.wk-ico-blue { background: var(--wk-blue-bg); color: var(--wk-blue); }
+
+.wk-title { font-size: 23px; font-weight: 700; color: var(--wk-text); margin: 0 0 2px; }
+.wk-sub { font-size: 13px; color: var(--wk-muted); margin: 0 0 22px; }
+
+.wk-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; margin-bottom: 22px; }
+.wk-stat { display: flex; align-items: center; justify-content: space-between; gap: 14px; background: var(--wk-surface); border: 1px solid var(--wk-border); border-radius: 12px; padding: 20px 24px; box-shadow: 0 1px 2px rgba(16,24,20,.06); }
+.wk-stat-label { font-size: 11.5px; color: var(--wk-muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 700; }
+.wk-stat-value { font-size: 30px; font-weight: 700; color: var(--wk-text); margin-top: 6px; line-height: 1.15; }
+.wk-stat-note { font-size: 12px; color: var(--wk-muted); margin-top: 4px; }
+
+.wk-panel { background: var(--wk-surface); border: 1px solid var(--wk-border); border-radius: 10px; box-shadow: 0 1px 2px rgba(16,24,20,.06); margin-bottom: 22px; }
+.wk-row:hover { border-color: var(--wk-green); }
+.wk-panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; padding: 14px 20px; border-bottom: 1px solid var(--wk-border); }
+.wk-panel-head h6 { margin: 0; font-size: 14px; font-weight: 700; color: var(--wk-text); }
+.wk-panel-body { padding: 18px 20px; }
+
+.wk-label { display: block; font-size: 11.5px; font-weight: 700; color: var(--wk-muted); text-transform: uppercase; letter-spacing: .04em; margin-bottom: 5px; }
+.wk-input, .wk-select {
+  width: 100%; height: 40px; padding: 0 12px; font-size: 14px; font-family: inherit;
+  background: var(--wk-surface); color: var(--wk-text);
+  border: 1px solid var(--wk-border); border-radius: 8px;
+}
+.wk-input:focus, .wk-select:focus { outline: none; border-color: var(--wk-green); box-shadow: 0 0 0 3px var(--wk-green-light); }
+body.dark-mode .wk-select, body.dark-mode .wk-input { color-scheme: dark; }
+.wk-input[type=number]::-webkit-outer-spin-button,
+.wk-input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.wk-input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+
+.wk-customer { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 18px; }
+
+/* One product line */
+.wk-row {
+  display: grid; grid-template-columns: repeat(3, minmax(160px, 1fr)) 84px 120px 110px 40px;
+  gap: 12px; align-items: start;
+  padding: 16px; margin-bottom: 12px;
+  background: var(--wk-subtle); border: 1px solid var(--wk-border); border-radius: 10px;
+}
+.wk-row.is-bad { border-color: var(--wk-danger); }
+/* Size / Design boxes are always shown; greyed out and unclickable when they don't apply */
+.wk-cell.is-hidden .wk-select { opacity: .7; cursor: not-allowed; background: var(--wk-subtle); border-color: var(--wk-danger); }
+.wk-hint { font-size: 12px; color: var(--wk-muted); margin-top: 6px; min-height: 16px; }
+.wk-hint.is-low { color: var(--wk-gold); font-weight: 600; }
+.wk-hint.is-out { color: var(--wk-danger); font-weight: 600; }
+.wk-line-total { height: 40px; white-space: nowrap; display: flex; align-items: center; justify-content: flex-end; font-weight: 700; font-size: 14px; color: var(--wk-text); }
+.wk-remove {
+  width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--wk-border);
+  background: var(--wk-surface); color: var(--wk-danger); cursor: pointer; font-size: 14px;
+}
+.wk-remove:hover { background: var(--wk-danger-bg); }
+
+.wk-btn { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 18px; font-size: 14px; font-weight: 600; border-radius: 9px; border: 1px solid transparent; cursor: pointer; font-family: inherit; text-decoration: none; transition: background .15s, border-color .15s; }
+.wk-btn-primary { background: var(--wk-green); color: #fff; }
+.wk-btn-primary:hover:not(:disabled) { background: var(--wk-green-hover); color: #fff; }
+body.dark-mode .wk-btn-primary { color: #0e1420; }
+.wk-btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+.wk-btn-outline { background: var(--wk-surface); color: var(--wk-text); border-color: var(--wk-border); }
+.wk-btn-outline:hover { border-color: var(--wk-green); color: var(--wk-green); }
+.wk-btn-sm { height: 32px; padding: 0 12px; font-size: 12.5px; border-radius: 7px; }
+.wk-btn-danger { background: var(--wk-danger-bg); color: var(--wk-danger); border-color: rgba(192,54,44,.25); }
+.wk-btn-danger:hover { background: var(--wk-danger); color: #fff; }
+.wk-btn-danger-solid { background: var(--wk-danger); color: #fff; }
+.wk-btn-danger-solid:hover:not(:disabled) { background: #a02d24; color: #fff; }
+body.dark-mode .wk-btn-danger-solid { color: #0e1420; }
+body.dark-mode .wk-btn-danger-solid:hover:not(:disabled) { background: #ff8585; color: #0e1420; }
+.wk-btn-danger-solid:disabled { opacity: .6; cursor: not-allowed; }
+
+/* Restore (cancel a void) button, green version of the Void button */
+.wk-btn-restore { background: var(--wk-green-light); color: var(--wk-green); border-color: rgba(15,107,79,.25); }
+.wk-btn-restore:hover { background: var(--wk-green); color: #fff; }
+body.dark-mode .wk-btn-restore { border-color: rgba(79,209,197,.3); }
+body.dark-mode .wk-btn-restore:hover { color: #0e1420; }
+
+.wk-footer { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin-top: 14px; padding-top: 16px; border-top: 1px solid var(--wk-border); }
+.wk-total-label { font-size: 11.5px; color: var(--wk-muted); text-transform: uppercase; letter-spacing: .05em; font-weight: 700; }
+.wk-total { font-size: 28px; font-weight: 800; color: var(--wk-gold); line-height: 1.1; }
+.wk-cash-note { font-size: 12px; color: var(--wk-muted); }
+
+
+/* Centered labels in a product line */
+.wk-row .wk-label { text-align: center; }
+.wk-row .wk-line-total { justify-content: center; }
+
+
+/* Product box: not stretched across the whole row */
+.wk-cell-product .wk-select { width: 100%; }
+.wk-cell-product .wk-hint { text-align: center; }
+
+/* Qty up / down arrows */
+.wk-qty { position: relative; }
+.wk-qty .wk-input { padding-right: 30px; }
+.wk-qty-btns { position: absolute; top: 4px; right: 4px; bottom: 4px; width: 24px; display: flex; flex-direction: column; gap: 2px; }
+.wk-qty-btns button { flex: 1; display: flex; align-items: center; justify-content: center; padding: 0; font-size: 9px; line-height: 1; color: var(--wk-muted); background: var(--wk-subtle); border: 1px solid var(--wk-border); border-radius: 5px; cursor: pointer; }
+.wk-qty-btns button:hover { color: var(--wk-green); border-color: var(--wk-green); background: var(--wk-green-light); }
+
+/* Page header + Add button */
+.wk-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+
+/* New walk-in sale pop-up */
+.wk-sale-modal .modal-dialog { --bs-modal-width: 1100px; width: calc(100% - 2rem); max-width: 1100px !important; }
+.wk-sale-modal .modal-content { border: 1px solid var(--wk-border); border-radius: 16px; background: var(--wk-surface); color: var(--wk-text); box-shadow: 0 24px 60px rgba(0,0,0,.3); overflow: hidden; }
+.wk-sale-modal form { display: flex; flex-direction: column; min-height: 0; max-height: calc(100vh - 3.5rem); }
+.wk-sale-modal .wk-panel-body { overflow-y: auto; }
+.wk-sale-modal .wk-panel-head { gap: 10px; justify-content: flex-start; }
+.wk-sale-modal .wk-panel-head h6 { margin-right: auto; }
+.wk-x { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--wk-border); background: var(--wk-surface); color: var(--wk-muted); cursor: pointer; }
+.wk-x:hover { color: var(--wk-text); border-color: var(--wk-green); }
+
+/* Confirm pop-ups */
+.wk-modal .modal-dialog { max-width: 470px !important; }
+.wk-modal .modal-content { border: 1px solid var(--wk-border); border-radius: 16px; background: var(--wk-surface); color: var(--wk-text); box-shadow: 0 24px 60px rgba(0,0,0,.3); padding: 0; overflow: hidden; }
+.wk-modal-head { display: flex; align-items: center; gap: 12px; padding: 20px 22px 6px; }
+.wk-modal-ico { width: 42px; height: 42px; border-radius: 50%; background: var(--wk-green-light); color: var(--wk-green); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
+.wk-modal-ico-danger { background: var(--wk-danger-bg); color: var(--wk-danger); }
+.wk-modal-title { font-size: 17px; font-weight: 700; margin: 0; color: var(--wk-text); }
+.wk-modal-sub { font-size: 12.5px; color: var(--wk-muted); margin: 2px 0 0; }
+.wk-modal-body { padding: 14px 22px 4px; }
+.wk-sum-customer { font-size: 13px; color: var(--wk-muted); margin-bottom: 10px; }
+.wk-sum-customer strong { color: var(--wk-text); }
+.wk-sum-list { list-style: none; margin: 0; padding: 0; border: 1px solid var(--wk-border); border-radius: 10px; overflow: hidden; }
+.wk-sum-list li { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 14px; font-size: 13.5px; border-bottom: 1px solid var(--wk-border); }
+.wk-sum-list li:last-child { border-bottom: none; }
+.wk-sum-list small { display: block; color: var(--wk-muted); font-size: 12.5px; margin-top: 3px; }
+.wk-sum-list strong { color: var(--wk-text); font-weight: 700; }
+.wk-sum-qty { display: inline-block; margin-left: 4px; padding: 1px 8px; border-radius: 20px; background: var(--wk-green-light); color: var(--wk-green); font-size: 12px; font-weight: 700; }
+.wk-sum-list .amt { font-weight: 700; white-space: nowrap; font-size: 15.5px; }
+.wk-sum-total { display: flex; justify-content: space-between; align-items: center; margin: 14px 0 4px; padding: 12px 14px; background: var(--wk-gold-bg); border-radius: 10px; }
+.wk-sum-total span { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--wk-gold); }
+.wk-sum-total b { font-size: 24px; color: var(--wk-gold); }
+.wk-sum-note { font-size: 12px; color: var(--wk-muted); margin: 8px 0 0; }
+.wk-modal-foot { display: flex; gap: 10px; padding: 16px 22px 20px; }
+.wk-modal-foot .wk-btn { flex: 1; justify-content: center; }
+
+/* Centered confirm pop-up (used by Void and Restore) */
+.wk-modal-center .wk-modal-head { flex-direction: column; text-align: center; gap: 10px; padding-top: 26px; }
+.wk-modal-center .wk-modal-body { text-align: center; }
+
+
+/* Filter bar (same look as the Products page) */
+.wk-filterbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: var(--wk-surface); border: 1px solid var(--wk-border); border-radius: 12px; padding: 14px 20px; box-shadow: 0 1px 2px rgba(16,24,20,.06); margin-bottom: 22px; }
+.wk-search { position: relative; flex: 1 1 280px; }
+.wk-search i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--wk-muted); pointer-events: none; }
+.wk-search .wk-input { height: 44px; padding-left: 42px; border-radius: 10px; }
+.wk-filterbar > .wk-input { width: auto; flex: 0 0 auto; height: 44px; border-radius: 10px; }
+.wk-filterbar .wk-btn { height: 44px; border-radius: 10px; }
+@media (max-width: 575.98px) {
+  .wk-filterbar > .wk-input, .wk-filterbar .wk-btn { flex: 1 1 100%; justify-content: center; }
+}
+
+/* Past sales */
+.wk-filter { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+.wk-filter .wk-input { height: 36px; font-size: 13px; width: auto; }
+.wk-table { width: 100%; border-collapse: collapse; }
+.wk-table thead th { background: var(--wk-subtle); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--wk-muted); padding: 11px 14px; text-align: center; border-bottom: 1px solid var(--wk-border); white-space: nowrap; }
+.wk-table tbody td { padding: 12px 14px; font-size: 13px; color: var(--wk-text); border-bottom: 1px solid var(--wk-border); vertical-align: middle; text-align: center; }
+.wk-table tbody tr:last-child td { border-bottom: none; }
+.wk-items { margin: 0; padding: 0; list-style: none; }
+.wk-items li { padding: 1px 0; }
+.wk-items small { display: block; margin-top: 3px; color: var(--wk-muted); font-size: 12.5px; }
+.wk-items strong { font-weight: 700; color: var(--wk-text); }
+.wk-items li + li { margin-top: 8px; }
+.wk-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: var(--wk-green-light); color: var(--wk-green); }
+.wk-badge.voided { background: var(--wk-danger-bg); color: var(--wk-danger); }
+.wk-voided td { opacity: .6; }
+.wk-voided td:last-child { opacity: 1; }
+.wk-empty { text-align: center; padding: 34px 16px; color: var(--wk-muted); font-size: 13px; }
+.wk-empty i { display: block; font-size: 30px; margin-bottom: 8px; opacity: .5; }
+
+@media (max-width: 991.98px) {
+  .wk-row { grid-template-columns: 1fr 1fr; align-items: start; }
+  .wk-row .wk-cell-product { grid-column: 1 / -1; }
+  .wk-row .wk-cell-remove { grid-column: 1 / -1; justify-self: end; }
+}
+@media (max-width: 575.98px) {
+  .wk-customer { grid-template-columns: 1fr; }
+  .wk-panel-body { padding: 14px; }
+  .wk-top .wk-btn { width: 100%; justify-content: center; }
+  .wk-footer { flex-direction: column; align-items: stretch; }
+  .wk-footer .wk-btn { justify-content: center; width: 100%; }
+  .wk-total { font-size: 24px; }
+  .wk-input, .wk-select { font-size: 16px; }
+}
+</style>
+{% endblock %}
+
+{% block dash_content %}
+<div class="wk">
+  <div class="wk-top">
+    <div>
+      <h1 class="wk-title">Walk-in Sales</h1>
+      <p class="wk-sub">Record a sale made at the shop. It is paid in cash, stock is deducted right away, and it shows in Reports as a walk-in sale.</p>
+    </div>
+    <button type="button" class="wk-btn wk-btn-primary" id="wkOpenSale" data-bs-toggle="modal" data-bs-target="#wkSaleModal"><i class="fas fa-plus"></i>Add walk-in</button>
+  </div>
+
+  <div class="wk-stats">
+    <div class="wk-stat">
+      <div>
+        <div class="wk-stat-label">Today</div>
+        <div class="wk-stat-value">₱{{ today_total|floatformat:2|intcomma }}</div>
+        <div class="wk-stat-note">{{ today_count }} sale{{ today_count|pluralize }}</div>
+      </div>
+      <div class="wk-stat-ico wk-ico-green">₱</div>
+    </div>
+    <div class="wk-stat">
+      <div>
+        <div class="wk-stat-label">This month</div>
+        <div class="wk-stat-value">₱{{ month_total|floatformat:2|intcomma }}</div>
+        <div class="wk-stat-note">{{ month_count }} sale{{ month_count|pluralize }}</div>
+      </div>
+      <div class="wk-stat-ico wk-ico-blue"><i class="fas fa-calendar-alt"></i></div>
+    </div>
+  </div>
+
+  <!-- FILTER BAR -->
+  <form method="get" class="wk-filterbar">
+    <div class="wk-search">
+      <i class="fas fa-search"></i>
+      <input type="text" class="wk-input" name="q" placeholder="Search name, number or order #" value="{{ q }}">
+    </div>
+    <input type="date" class="wk-input" name="from" value="{{ date_from }}" aria-label="From date">
+    <input type="date" class="wk-input" name="to" value="{{ date_to }}" aria-label="To date">
+    <button type="submit" class="wk-btn wk-btn-primary"><i class="fas fa-search"></i>Search</button>
+    <a href="{% url 'dashboard:walkin_list' %}" class="wk-btn wk-btn-outline"><i class="fas fa-redo"></i>Clear</a>
+  </form>
+
+  <!-- PAST SALES -->
+  <div class="wk-panel">
+    <div class="wk-panel-head">
+      <h6>Walk-in sales</h6>
+    </div>
+    <div class="table-responsive">
+      <table class="wk-table ds-table">
+        <thead>
+          <tr><th>Sale</th><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Recorded by</th>{% if request.user.is_admin_user %}<th>Actions</th>{% endif %}</tr>
+        </thead>
+        <tbody>
+          {% for o in sales %}
+          <tr class="{% if o.status == 'cancelled' %}wk-voided{% endif %}">
+            <td class="fw-semibold">{{ o.order_number }}{% if o.status == 'cancelled' %}<br><span class="wk-badge voided">Voided</span>{% endif %}</td>
+            <td>{{ o.created_at|date:"M d, Y" }}<br><small style="color:var(--wk-muted);">{{ o.created_at|date:"h:i A" }}</small></td>
+            <td>{{ o.full_name }}{% if o.phone %}<br><small style="color:var(--wk-muted);">{{ o.phone }}</small>{% endif %}</td>
+            <td>
+              <ul class="wk-items">
+                {% for it in o.items.all %}
+                <li><strong>{{ it.product_name }}</strong> <span class="wk-sum-qty">× {{ it.quantity }}</span>
+                  {% if it.size_display or it.design_name %}<small>{% if it.size_display %}Size: {{ it.size_display }}{% endif %}{% if it.size_display and it.design_name %} · {% endif %}{% if it.design_name %}Design: {{ it.design_name }}{% endif %}</small>{% endif %}
+                </li>
+                {% endfor %}
+              </ul>
+            </td>
+            <td class="fw-semibold">₱{{ o.total|floatformat:2|intcomma }}</td>
+            <td>{{ o.sold_by.get_full_name|default:o.sold_by.username|default:"—" }}</td>
+            {% if request.user.is_admin_user %}
+            <td>
+              {% if o.status != 'cancelled' %}
+              <form method="post" action="{% url 'dashboard:walkin_void' o.pk %}" class="js-void-form" data-order="{{ o.order_number }}">
+                {% csrf_token %}
+                <button type="submit" class="wk-btn wk-btn-danger wk-btn-sm"><i class="fas fa-ban"></i>Void</button>
+              </form>
+              {% else %}
+              <form method="post" action="{% url 'dashboard:walkin_restore' o.pk %}" class="js-restore-form" data-order="{{ o.order_number }}">
+                {% csrf_token %}
+                <button type="submit" class="wk-btn wk-btn-restore wk-btn-sm"><i class="fas fa-undo"></i>Cancel void</button>
+              </form>
+              {% endif %}
+            </td>
+            {% endif %}
+          </tr>
+          {% empty %}
+          <tr><td colspan="7">
+            <div class="wk-empty"><i class="fas fa-receipt"></i>No walk-in sales {% if q or date_from or date_to %}match your filter{% else %}recorded yet{% endif %}.</div>
+          </td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% if page_obj.has_other_pages %}
+    <div class="d-flex align-items-center justify-content-between card-footer bg-white" style="padding:12px 20px;border-top:1px solid var(--wk-border);">
+      <small class="text-muted">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</small>
+      <ul class="pagination mb-0">
+        {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ q }}&from={{ date_from }}&to={{ date_to }}">&laquo;</a></li>{% endif %}
+        <li class="page-item active"><span class="page-link">{{ page_obj.number }}</span></li>
+        {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ q }}&from={{ date_from }}&to={{ date_to }}">&raquo;</a></li>{% endif %}
+      </ul>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Confirm pop-up -->
+<div class="modal fade wk-modal wk" id="wkConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="wk-modal-head">
+        <div class="wk-modal-ico"><i class="fas fa-cash-register"></i></div>
+        <div>
+          <h5 class="wk-modal-title">Confirm cash sale</h5>
+          <p class="wk-modal-sub">Please check the details before recording.</p>
+        </div>
+      </div>
+      <div class="wk-modal-body">
+        <div class="wk-sum-customer" id="wkSumCustomer"></div>
+        <ul class="wk-sum-list" id="wkSumList"></ul>
+        <div class="wk-sum-total"><span>Total (cash)</span><b id="wkSumTotal">₱0.00</b></div>
+      </div>
+      <div class="wk-modal-foot">
+        <button type="button" class="wk-btn wk-btn-outline" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="wk-btn wk-btn-primary" id="wkConfirmBtn"><i class="fas fa-check"></i>Yes, record sale</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- New walk-in sale pop-up -->
+<div class="modal fade wk wk-sale-modal" id="wkSaleModal" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+  <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-xl">
+    <div class="modal-content">
+  <form method="post" id="walkinForm" autocomplete="off">
+    {% csrf_token %}
+    <div class="wk-panel-head">
+      <h6><i class="fas fa-cash-register me-2"></i>New walk-in sale</h6>
+      <span class="wk-badge">Cash only</span>
+      <button type="button" class="wk-x" data-bs-dismiss="modal" aria-label="Close"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="wk-panel-body">
+      <div class="wk-customer">
+        <div>
+          <label class="wk-label" for="wkName">Customer name (optional)</label>
+          <input type="text" class="wk-input" id="wkName" name="customer_name" maxlength="200" placeholder="e.g. Maria Santos" value="{{ restore.customer_name|default:'' }}">
+        </div>
+        <div>
+          <label class="wk-label" for="wkContact">Contact number (optional)</label>
+          <input type="text" class="wk-input" id="wkContact" name="contact" maxlength="20" placeholder="09XX XXX XXXX" value="{{ restore.contact|default:'' }}">
+        </div>
+      </div>
+
+      <div id="wkRows"></div>
+
+      <button type="button" class="wk-btn wk-btn-outline wk-btn-sm" id="wkAddRow"><i class="fas fa-plus"></i>Add another product</button>
+
+      <div class="wk-footer">
+        <div>
+          <div class="wk-total-label">Total (cash)</div>
+          <div class="wk-total" id="wkTotal">₱0.00</div>
+          <div class="wk-cash-note">No shipping fee. Prices can be edited for a discount.</div>
+        </div>
+        <button type="submit" class="wk-btn wk-btn-primary" id="wkSubmit" disabled><i class="fas fa-check"></i>Record sale</button>
+      </div>
+    </div>
+  </form>
+    </div>
+  </div>
+</div>
+
+<!-- Void pop-up -->
+<div class="modal fade wk-modal wk wk-modal-center" id="wkVoidModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="wk-modal-head">
+        <div class="wk-modal-ico wk-modal-ico-danger"><i class="fas fa-ban"></i></div>
+        <div>
+          <h5 class="wk-modal-title">Void sale <span id="wkVoidOrder"></span>?</h5>
+          <p class="wk-modal-sub">You can cancel the void later from this list.</p>
+        </div>
+      </div>
+      <div class="wk-modal-body">
+        <p class="wk-sum-note" style="font-size:13.5px;margin:6px 0 10px;">
+          <i class="fas fa-box-open me-1"></i>The items go back into stock and the sale is removed from Reports.
+        </p>
+      </div>
+      <div class="wk-modal-foot">
+        <button type="button" class="wk-btn wk-btn-outline" data-bs-dismiss="modal">Cancel</button>
+        <button type="button" class="wk-btn wk-btn-danger-solid" id="wkVoidConfirmBtn"><i class="fas fa-ban"></i>Yes, void sale</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cancel void (restore) pop-up -->
+<div class="modal fade wk-modal wk wk-modal-center" id="wkRestoreModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="wk-modal-head">
+        <div class="wk-modal-ico"><i class="fas fa-undo"></i></div>
+        <div>
+          <h5 class="wk-modal-title">Cancel void for <span id="wkRestoreOrder"></span>?</h5>
+          <p class="wk-modal-sub">The sale will be active again.</p>
+        </div>
+      </div>
+      <div class="wk-modal-body">
+        <p class="wk-sum-note" style="font-size:13.5px;margin:6px 0 10px;">
+          <i class="fas fa-box me-1"></i>The items are taken out of stock again and the sale shows in Reports again.
+        </p>
+      </div>
+      <div class="wk-modal-foot">
+        <button type="button" class="wk-btn wk-btn-outline" data-bs-dismiss="modal">Keep voided</button>
+        <button type="button" class="wk-btn wk-btn-primary" id="wkRestoreConfirmBtn"><i class="fas fa-undo"></i>Yes, restore sale</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{ catalog|json_script:"walkinCatalog" }}
+{{ restore|json_script:"walkinRestore" }}
+{% endblock %}
+
+{% block dash_js %}
+<script>
+(function () {
+  var catalog = JSON.parse(document.getElementById('walkinCatalog').textContent || '[]');
+  var restore = JSON.parse(document.getElementById('walkinRestore').textContent || 'null');
+  var byId = {};
+  catalog.forEach(function (p) { byId[p.id] = p; });
+
+  var rowsEl = document.getElementById('wkRows');
+  var totalEl = document.getElementById('wkTotal');
+  var submitBtn = document.getElementById('wkSubmit');
+  var form = document.getElementById('walkinForm');
+  var counter = 0;
+
+  function peso(n) { return '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function el(tag, attrs, html) {
+    var e = document.createElement(tag);
+    Object.keys(attrs || {}).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+    if (html !== undefined) e.innerHTML = html;
+    return e;
+  }
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  function addRow(pre) {
+    var id = ++counter;
+    var row = el('div', { 'class': 'wk-row', 'data-id': id });
+    row.innerHTML =
+      '<input type="hidden" name="row_id" value="' + id + '">' +
+      '<div class="wk-cell wk-cell-product"><label class="wk-label">Product</label>' +
+        '<select class="wk-select js-product" name="product_' + id + '"><option value="">Choose a product…</option>' +
+        catalog.map(function (p) { return '<option value="' + p.id + '">' + esc(p.name) + '</option>'; }).join('') +
+        '</select><div class="wk-hint js-hint"></div></div>' +
+      '<div class="wk-cell js-size-cell is-hidden"><label class="wk-label">Size</label>' +
+        '<select class="wk-select js-size" name="size_' + id + '"></select></div>' +
+      '<div class="wk-cell js-design-cell is-hidden"><label class="wk-label">Design</label>' +
+        '<select class="wk-select js-design" name="design_' + id + '"></select></div>' +
+      '<div class="wk-cell"><label class="wk-label">Qty</label>' +
+        '<div class="wk-qty"><input type="number" class="wk-input js-qty" name="qty_' + id + '" min="1" value="1" inputmode="numeric">' +
+        '<div class="wk-qty-btns"><button type="button" class="js-qty-up" tabindex="-1" aria-label="Increase quantity"><i class="fas fa-chevron-up"></i></button>' +
+        '<button type="button" class="js-qty-down" tabindex="-1" aria-label="Decrease quantity"><i class="fas fa-chevron-down"></i></button></div></div></div>' +
+      '<div class="wk-cell"><label class="wk-label">Price (₱)</label>' +
+        '<input type="number" class="wk-input js-price" name="price_' + id + '" min="0" step="0.01" inputmode="decimal"></div>' +
+      '<div class="wk-cell"><label class="wk-label">Line total</label><div class="wk-line-total js-line">₱0.00</div></div>' +
+      '<div class="wk-cell wk-cell-remove"><label class="wk-label">&nbsp;</label>' +
+        '<button type="button" class="wk-remove js-remove" title="Remove this product" aria-label="Remove this product"><i class="fas fa-trash"></i></button></div>';
+    rowsEl.appendChild(row);
+    row.querySelectorAll('.js-size, .js-design').forEach(function (b) { b.disabled = true; b.innerHTML = '<option value="">—</option>'; });
+
+    var q = function (s) { return row.querySelector(s); };
+    q('.js-product').addEventListener('change', function () { onProduct(row, true); });
+    q('.js-size').addEventListener('change', function () { onSize(row, true); });
+    q('.js-design').addEventListener('change', function () { onDesign(row); });
+    q('.js-qty').addEventListener('input', function () { clampQty(row); refresh(); });
+    q('.js-price').addEventListener('input', refresh);
+    function stepQty(d) {
+      var inp = q('.js-qty');
+      var v = (parseInt(inp.value, 10) || 0) + d;
+      inp.value = v < 1 ? 1 : v;
+      clampQty(row); refresh();
+    }
+    q('.js-qty-up').addEventListener('click', function () { stepQty(1); });
+    q('.js-qty-down').addEventListener('click', function () { stepQty(-1); });
+    q('.js-remove').addEventListener('click', function () {
+      row.remove();
+      if (!rowsEl.children.length) addRow();
+      refresh();
+    });
+
+    if (pre) {
+      q('.js-product').value = pre.product_id || '';
+      onProduct(row, false);
+      if (pre.size) { q('.js-size').value = pre.size; }
+      onSize(row, false);
+      if (pre.design_id) { q('.js-design').value = pre.design_id; }
+      onDesign(row);
+      if (pre.qty) q('.js-qty').value = pre.qty;
+      if (pre.price !== undefined && pre.price !== '') q('.js-price').value = pre.price;
+      clampQty(row);
+    }
+    refresh();
+    return row;
+  }
+
+  function showCell(row, sel, on) {
+    var cell = row.querySelector(sel);
+    var box = cell.querySelector('select');
+    cell.classList.toggle('is-hidden', !on);   // class now means "not available for this product"
+    box.disabled = !on;
+    if (!on) {
+      var prod = byId[row.querySelector('.js-product').value];
+      var txt = '—';
+      if (prod) {
+        if (sel === '.js-size-cell') txt = 'No size';
+        else txt = (prod.kind === 'sizes_designs') ? 'Choose a size first' : 'No design';
+      }
+      box.innerHTML = '<option value="">' + txt + '</option>';
+    }
+    // No size box -> the product box grows into the empty space (desktop)
+    var sizeOn = !row.querySelector('.js-size-cell').classList.contains('is-hidden');
+    var designOn = !row.querySelector('.js-design-cell').classList.contains('is-hidden');
+    row.classList.toggle('no-size', !sizeOn);
+    row.classList.toggle('no-design', !designOn);
+  }
+
+  function onProduct(row, reset) {
+    var p = byId[row.querySelector('.js-product').value];
+    var sizeSel = row.querySelector('.js-size');
+    var designSel = row.querySelector('.js-design');
+    sizeSel.innerHTML = ''; designSel.innerHTML = '';
+    showCell(row, '.js-size-cell', false);
+    showCell(row, '.js-design-cell', false);
+    if (!p) { setHint(row, '', ''); if (reset) row.querySelector('.js-price').value = ''; refresh(); return; }
+
+    if (p.kind === 'sizes_designs' || p.kind === 'sizes_plain') {
+      sizeSel.innerHTML = sizeOptions(p);
+      showCell(row, '.js-size-cell', true);
+    }
+    if (p.kind === 'designs') {
+      designSel.innerHTML = designOptions(p.designs);
+      showCell(row, '.js-design-cell', true);
+    }
+    if (reset) {
+      row.querySelector('.js-price').value = (p.kind === 'sizes_designs' || p.kind === 'sizes_plain') ? '' : p.price;
+      row.querySelector('.js-qty').value = 1;
+    }
+    updateHint(row);
+    refresh();
+  }
+
+  // Stock behind a size: shared stock for plain sizes, sum of the designs otherwise
+  function sizeStock(p, s) {
+    if (p.kind === 'sizes_plain') return p.stock;
+    return (s.designs || []).reduce(function (t, d) { return t + (d.stock || 0); }, 0);
+  }
+  function sizeOptions(p) {
+    return '<option value="" hidden>Choose…</option>' + p.sizes.map(function (s) {
+      var st = sizeStock(p, s), out = st < 1;
+      return '<option value="' + s.code + '"' + (out ? ' disabled style="color:#C0362C"' : '') + '>' +
+        esc(s.name) + (out ? ' (sold out)' : ' (' + st + ')') + '</option>';
+    }).join('');
+  }
+
+  function designOptions(designs) {
+    return '<option value="" hidden>Choose…</option>' + designs.map(function (d) {
+      return '<option value="' + d.id + '"' + (d.stock < 1 ? ' disabled style="color:#C0362C"' : '') + '>' + esc(d.title) + (d.stock < 1 ? ' (sold out)' : ' (' + d.stock + ')') + '</option>';
+    }).join('');
+  }
+
+  function onSize(row, reset) {
+    var p = byId[row.querySelector('.js-product').value];
+    if (!p) return;
+    var code = row.querySelector('.js-size').value;
+    var s = p.sizes.filter(function (x) { return x.code === code; })[0];
+    var designSel = row.querySelector('.js-design');
+    if (p.kind === 'sizes_designs') {
+      designSel.innerHTML = s ? designOptions(s.designs) : '';
+      showCell(row, '.js-design-cell', !!s);
+    }
+    if (reset) {
+      row.querySelector('.js-price').value = s ? s.price : '';
+      row.querySelector('.js-qty').value = 1;
+    }
+    updateHint(row);
+    refresh();
+  }
+
+  function onDesign(row) {
+    updateHint(row);
+    clampQty(row);
+    refresh();
+  }
+
+  // How many can be sold for what's currently chosen (null = not chosen yet)
+  function available(row) {
+    var p = byId[row.querySelector('.js-product').value];
+    if (!p) return null;
+    var code = row.querySelector('.js-size').value;
+    var did = row.querySelector('.js-design').value;
+    if (p.kind === 'plain') return p.stock;
+    if (p.kind === 'sizes_plain') return code ? p.stock : null;
+    if (p.kind === 'designs') {
+      var d = p.designs.filter(function (x) { return String(x.id) === did; })[0];
+      return d ? d.stock : null;
+    }
+    var s = p.sizes.filter(function (x) { return x.code === code; })[0];
+    if (!s) return null;
+    var dd = s.designs.filter(function (x) { return String(x.id) === did; })[0];
+    return dd ? dd.stock : null;
+  }
+
+  function setHint(row, text, cls) {
+    var h = row.querySelector('.js-hint');
+    h.textContent = text;
+    h.className = 'wk-hint js-hint' + (cls ? ' ' + cls : '');
+  }
+  function updateHint(row) {
+    var a = available(row);
+    if (a === null) { setHint(row, '', ''); return; }
+    if (a < 1) setHint(row, 'Out of stock', 'is-out');
+    else if (a <= 3) setHint(row, 'Only ' + a + ' left', 'is-low');
+    else setHint(row, a + ' in stock', '');
+  }
+  function clampQty(row) {
+    var a = available(row), qty = row.querySelector('.js-qty');
+    var v = parseInt(qty.value, 10);
+    if (a !== null && a > 0 && v > a) qty.value = a;
+  }
+
+  // Is this row ready to be recorded?
+  function rowState(row) {
+    var p = byId[row.querySelector('.js-product').value];
+    if (!p) return 'empty';
+    var a = available(row);
+    var qty = parseInt(row.querySelector('.js-qty').value, 10);
+    var price = parseFloat(row.querySelector('.js-price').value);
+    if (a === null || a < 1) return 'bad';
+    if (!(qty >= 1) || qty > a) return 'bad';
+    if (isNaN(price) || price < 0) return 'bad';
+    return 'ok';
+  }
+
+  function refresh() {
+    var total = 0, ok = 0, bad = 0;
+    Array.prototype.forEach.call(rowsEl.children, function (row) {
+      var st = rowState(row);
+      var qty = parseInt(row.querySelector('.js-qty').value, 10) || 0;
+      var price = parseFloat(row.querySelector('.js-price').value) || 0;
+      var line = (st === 'ok') ? qty * price : 0;
+      row.querySelector('.js-line').textContent = peso(line);
+      total += line;
+      if (st === 'ok') ok++;
+      if (st === 'bad') bad++;
+      // only flag a row as wrong once a product was picked and something is missing
+      row.classList.toggle('is-bad', st === 'bad' && !!row.querySelector('.js-product').value && wasTouched(row));
+    });
+    totalEl.textContent = peso(total);
+    submitBtn.disabled = !(ok > 0 && bad === 0);
+  }
+  function wasTouched(row) {
+    var p = byId[row.querySelector('.js-product').value];
+    if (!p) return false;
+    return p.kind === 'plain' || row.querySelector('.js-size').value || row.querySelector('.js-design').value;
+  }
+
+  document.getElementById('wkAddRow').addEventListener('click', function () { addRow(); });
+
+  // Pop-up summary instead of the browser's plain confirm box
+  var modalEl = document.getElementById('wkConfirmModal');
+  var modal = new bootstrap.Modal(modalEl);
+  var saleEl = document.getElementById('wkSaleModal');
+  var saleModal = new bootstrap.Modal(saleEl);
+  var confirmed = false;
+
+  // Show the confirm pop-up only after the sale pop-up has finished closing
+  function openConfirm() {
+    if (saleEl.classList.contains('show')) {
+      saleEl.addEventListener('hidden.bs.modal', function h() {
+        saleEl.removeEventListener('hidden.bs.modal', h);
+        modal.show();
+      });
+      saleModal.hide();
+    } else {
+      modal.show();
+    }
+  }
+  // Cancel on the confirm pop-up goes back to the sale form
+  modalEl.addEventListener('hidden.bs.modal', function () { if (!confirmed) saleModal.show(); });
+
+  function selText(sel) { return sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].textContent.replace(/\s*\(\d+\)$/, '') : ''; }
+
+  form.addEventListener('submit', function (e) {
+    if (confirmed) return;                      // already confirmed in the pop-up
+    e.preventDefault();
+    if (submitBtn.disabled) return;
+
+    var name = document.getElementById('wkName').value.trim();
+    var contact = document.getElementById('wkContact').value.trim();
+    document.getElementById('wkSumCustomer').innerHTML =
+      'Customer: <strong>' + esc(name || 'Walk-in Customer') + '</strong>' + (contact ? ' · ' + esc(contact) : '');
+
+    var list = document.getElementById('wkSumList');
+    list.innerHTML = '';
+    Array.prototype.forEach.call(rowsEl.children, function (row) {
+      if (rowState(row) !== 'ok') return;
+      var p = byId[row.querySelector('.js-product').value];
+      var qty = parseInt(row.querySelector('.js-qty').value, 10);
+      var price = parseFloat(row.querySelector('.js-price').value);
+      var bits = [];
+      if (!row.querySelector('.js-size-cell').classList.contains('is-hidden') && row.querySelector('.js-size').value) bits.push('Size: ' + selText(row.querySelector('.js-size')));
+      if (!row.querySelector('.js-design-cell').classList.contains('is-hidden') && row.querySelector('.js-design').value) bits.push('Design: ' + selText(row.querySelector('.js-design')));
+      var li = document.createElement('li');
+      li.innerHTML = '<div><strong>' + esc(p.name) + '</strong> <span class="wk-sum-qty">× ' + qty + '</span>' + (bits.length ? '<small>' + esc(bits.join(' · ')) + '</small>' : '') + '</div>' +
+                     '<div class="amt">' + peso(qty * price) + '</div>';
+      list.appendChild(li);
+    });
+    document.getElementById('wkSumTotal').textContent = totalEl.textContent;
+    openConfirm();
+  });
+
+  document.getElementById('wkConfirmBtn').addEventListener('click', function () {
+    confirmed = true;
+    this.disabled = true;
+    this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Recording…';
+    form.submit();
+  });
+
+  // Void pop-up (replaces the browser confirm box)
+  var voidModalEl = document.getElementById('wkVoidModal');
+  if (voidModalEl) {
+    var voidModal = new bootstrap.Modal(voidModalEl);
+    var pendingVoidForm = null;
+    var voidBtn = document.getElementById('wkVoidConfirmBtn');
+
+    document.querySelectorAll('.js-void-form').forEach(function (f) {
+      f.addEventListener('submit', function (e) {
+        e.preventDefault();
+        pendingVoidForm = f;
+        document.getElementById('wkVoidOrder').textContent = f.getAttribute('data-order');
+        voidModal.show();
+      });
+    });
+
+    voidBtn.addEventListener('click', function () {
+      if (!pendingVoidForm) return;
+      this.disabled = true;
+      this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Voiding…';
+      pendingVoidForm.submit();   // native submit() skips the submit handler, so no loop
+    });
+  }
+
+  // Cancel void (restore) pop-up
+  var restoreModalEl = document.getElementById('wkRestoreModal');
+  if (restoreModalEl) {
+    var restoreModal = new bootstrap.Modal(restoreModalEl);
+    var pendingRestoreForm = null;
+    var restoreBtn = document.getElementById('wkRestoreConfirmBtn');
+
+    document.querySelectorAll('.js-restore-form').forEach(function (f) {
+      f.addEventListener('submit', function (e) {
+        e.preventDefault();
+        pendingRestoreForm = f;
+        document.getElementById('wkRestoreOrder').textContent = f.getAttribute('data-order');
+        restoreModal.show();
+      });
+    });
+
+    restoreBtn.addEventListener('click', function () {
+      if (!pendingRestoreForm) return;
+      this.disabled = true;
+      this.innerHTML = '<i class="fas fa-spinner fa-spin"></i>Restoring…';
+      pendingRestoreForm.submit();
+    });
+  }
+
+  // Start with the rows that were typed before an error, or one empty row
+  if (restore && restore.rows && restore.rows.length) {
+    restore.rows.forEach(function (r) { addRow(r); });
+    saleModal.show();
+  } else {
+    addRow();
+  }
+})();
+</script>
+{% endblock %}

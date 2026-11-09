@@ -17,6 +17,10 @@ urlpatterns = [
     path('orders/<int:pk>/assign-courier/', views.order_assign_courier, name='order_assign_courier'),
     path('orders/<int:pk>/cancel/', views.order_cancel, name='order_cancel'),
     path('orders/<int:pk>/undo-cancel/', views.order_undo_cancel, name='order_undo_cancel'),
+    # Walk-in (in-store) sales
+    path('walk-in/', views.walkin_list, name='walkin_list'),
+    path('walk-in/<int:pk>/void/', views.walkin_void, name='walkin_void'),
+    path('walk-in/<int:pk>/restore/', views.walkin_restore, name='walkin_restore'),
     # Courier deliveries
     path('deliveries/', views.courier_order_list, name='courier_order_list'),
     path('deliveries/<int:pk>/', views.courier_order_detail, name='courier_order_detail'),

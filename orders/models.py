@@ -35,6 +35,19 @@ class Order(models.Model):
         ('gcash', 'GCash'),
         ('bank', 'Bank Transfer'),
     ]
+    # Walk-in (in-store) sales are paid in cash. 'cash' is deliberately NOT in
+    # PAYMENT_CHOICES so it can never show up as an option on the website
+    # checkout; PAYMENT_LABELS is what reports use to display every method.
+    PAYMENT_CASH = 'cash'
+    PAYMENT_LABELS = {**dict(PAYMENT_CHOICES), 'cash': 'Cash (Walk-in)'}
+
+    # Where the sale happened: online store or physically in the shop.
+    CHANNEL_WEBSITE = 'website'
+    CHANNEL_WALK_IN = 'walk_in'
+    CHANNEL_CHOICES = [
+        (CHANNEL_WEBSITE, 'Website'),
+        (CHANNEL_WALK_IN, 'Walk-in (Store)'),
+    ]
     user = models.ForeignKey(CustomUser, on_delete=models.SET_NULL, null=True, blank=True, related_name='orders')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     previous_status = models.CharField(max_length=20, choices=STATUS_CHOICES, blank=True)
@@ -63,6 +76,18 @@ class Order(models.Model):
     # Order"). Stock is not deducted and the cart is not cleared until this
     # flips to True. Every other order (COD, or GCash post-confirm) is True.
     is_finalized = models.BooleanField(default=True)
+
+    # ── Sales channel ──
+    # 'website' = normal online order (every existing order). 'walk_in' = a sale
+    # recorded by staff at the shop, paid in cash and completed on the spot.
+    sales_channel = models.CharField(
+        max_length=10, choices=CHANNEL_CHOICES, default=CHANNEL_WEBSITE, db_index=True,
+    )
+    # The staff member who recorded a walk-in sale.
+    sold_by = models.ForeignKey(
+        CustomUser, on_delete=models.SET_NULL, null=True, blank=True,
+        related_name='walkin_sales',
+    )
 
     # ── Task-based fulfillment workflow ──
     # Which of our own delivery personnel is handling this order. Only
@@ -97,6 +122,14 @@ class Order(models.Model):
 
     def __str__(self):
         return f"Order #{self.pk} – {self.full_name}"
+
+    @property
+    def is_walk_in(self):
+        return self.sales_channel == self.CHANNEL_WALK_IN
+
+    @property
+    def payment_label(self):
+        return self.PAYMENT_LABELS.get(self.payment_method, self.payment_method)
 
     @property
     def order_number(self):
