@@ -81,36 +81,7 @@ body { background: #f0ede8; }
 }
 .sidebar-link i { width: 18px; text-align: center; font-size: 14px; flex-shrink: 0; }
 
-/* Mobile-only Logout entry at the bottom of the off-canvas admin menu.
-   Kept out of the desktop sidebar (it stays permanently visible there,
-   so a second Logout would duplicate the one already in the topbar
-   account dropdown) — this copy only renders on phones/tablets. */
-.sidebar-logout-wrap { display: none; }
-.sidebar-logout-form { margin: 0; }
-.sidebar-link.sidebar-logout-link {
-  width: 100%;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  color: #ff8a8a;
-  font: inherit;
-  text-align: left;
-}
-.sidebar-link.sidebar-logout-link:hover,
-.sidebar-link.sidebar-logout-link:focus-visible {
-  color: #fff;
-  background: rgba(231,76,60,.22);
-  border-left-color: #e74c3c;
-}
-.sidebar-link.sidebar-logout-link:active {
-  background: rgba(231,76,60,.32);
-}
-
-/* Logout now shows in the topbar account dropdown on every screen size.
-   The sidebar copy stays available on mobile as a second way to sign out. */
-@media (max-width: 767.98px) {
-  .sidebar-logout-wrap { display: block; }
-}
+/* Logout lives only in the topbar account dropdown (all screen sizes). */
 
 .sidebar-badge {
   margin-left: auto;
@@ -683,6 +654,52 @@ body:not(.dark-mode) .dash-page .pagination .page-item.active .page-link { backg
 }
 .dash-topbar .dropdown-menu:not([style*="min-width:300px"]) .dropdown-item i { font-size: 15px; width: 22px; margin-right: 8px !important; }
 .dash-topbar .dropdown-menu:not([style*="min-width:300px"]) .dropdown-divider { margin: 6px 0 !important; }
+
+/* ── Phone fix: search/filter bars must size to their content ── */
+@media (max-width: 767.98px) {
+  /* stacked filter forms: children must not use flex-basis as a height */
+  .dash-page form[class*="filter"],
+  .dash-page form.d-flex,
+  .dash-page .filter-bar,
+  .dash-page .ds-filters {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 8px !important;
+  }
+  .dash-page form[class*="filter"] > *,
+  .dash-page form.d-flex > *,
+  .dash-page .filter-bar > *,
+  .dash-page .ds-filters > * {
+    flex: 0 0 auto !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-width: 100% !important;
+  }
+
+  /* search box wrapper: height comes from the input, icon stays centered on it */
+  .dash-page [class*="search"] {
+    position: relative;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  .dash-page [class*="search"] > i,
+  .dash-page [class*="search"] > svg,
+  .dash-page [class*="search"] > .fa-search {
+    position: absolute;
+    top: 50%;
+    left: 14px;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+  .dash-page [class*="search"] input[type="search"],
+  .dash-page [class*="search"] input[type="text"],
+  .dash-page input[type="search"] {
+    width: 100%;
+    height: 44px;
+    padding-left: 40px;
+  }
+}
 </style>
 {% endblock %}
 
@@ -801,18 +818,6 @@ body:not(.dark-mode) .dash-page .pagination .page-item.active .page-link { backg
     <a href="{% url 'store:home' %}" class="sidebar-link">
       <i class="fas fa-store"></i><span>View Store</span>
     </a>
-
-    <!-- Mobile-only: Logout at the bottom of the admin menu, so phone
-         users can sign out without switching to desktop view. Hidden
-         on desktop (≥769px) to avoid duplicating the topbar dropdown's
-         Logout item. -->
-    <div class="sidebar-logout-wrap">
-      <form method="post" action="{% url 'accounts:logout' %}" class="js-logout-form sidebar-logout-form">{% csrf_token %}
-        <button type="submit" class="sidebar-link sidebar-logout-link">
-          <i class="fas fa-sign-out-alt"></i><span>Logout</span>
-        </button>
-      </form>
-    </div>
 
     <div class="sidebar-footer">
       <span>v2.0 · Likhalaya PDL Market</span>
