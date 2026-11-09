@@ -6,6 +6,7 @@ from . import views
 from . import social_auth
 from . import chat_views
 from . import courier_views
+from . import staff_orders_api
 
 router = DefaultRouter()
 router.register('categories', views.CategoryViewSet, basename='category')
@@ -36,6 +37,9 @@ urlpatterns = [
     path('chat/conversations/<int:conversation_id>/messages/',
          chat_views.ChatConversationMessagesView.as_view(), name='chat_conversation_messages'),
     path('chat/messages/', chat_views.ChatMessagesView.as_view(), name='chat_messages'),
+
+    
+     path('staff/orders/', staff_orders_api.staff_orders, name='staff_orders'),  
 
     path('', include(router.urls)),
 ]

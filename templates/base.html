@@ -96,8 +96,17 @@
             border-bottom: 1px solid #e0ece4;
         }
 
+        /* Full-width navbar with equal breathing room on both sides:
+           logo is set in from the left, Login/Register from the right.
+           Change the 96px below to make the side space bigger or smaller. */
+        .navbar > .container {
+            max-width: 100% !important;
+            padding-left: clamp(16px, 5vw, 96px);
+            padding-right: clamp(16px, 5vw, 96px);
+        }
+
         .navbar .nav-link {
-            color: var(--gray) !important;
+            color: #333 !important;
             font-size: 13px;
             font-weight: 500;
         }
@@ -106,6 +115,23 @@
         .navbar .nav-link.active {
             color: var(--gold) !important;
             font-weight: 600;
+        }
+
+        /* Line on the current page's link (HOME, SHOP...).
+           To put it UNDER the text instead, change 'top: 0' to 'bottom: 0'. */
+        .navbar .nav-link.active {
+            position: relative;
+        }
+
+        .navbar .nav-link.active::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 14px;
+            right: 14px;
+            height: 3px;
+            border-radius: 2px;
+            background: var(--gold);
         }
 
         /* Bigger header on desktop */
@@ -1072,6 +1098,24 @@
         }
 
 
+        /* Login / Register: normal-size buttons on tablet and desktop */
+        @media (min-width: 768px) {
+            #navbarMain .btn.btn-teal,
+            #navbarMain .btn.btn-outline-secondary {
+                width: auto;
+                height: 38px;
+                padding: 0 18px !important;
+                font-size: 14px;
+            }
+        }
+
+        /* Wider search bar on desktop */
+        @media (min-width: 992px) {
+            #navbarMain form .input-group {
+                width: 340px;
+            }
+        }
+
         /* =========================================================
            MOBILE APP ACCOUNT MENU
            ========================================================= */
@@ -1534,13 +1578,6 @@
             <img
                 src="{% static 'imgs/likhalaya.png' %}"
                 alt="Likhalaya"
-                style="height:42px; width:auto;"
-                onerror="this.style.display='none'"
-            >
-
-            <img
-                src="{% static 'imgs/c_logo.png' %}"
-                alt="BJMP"
                 style="height:42px; width:auto;"
                 onerror="this.style.display='none'"
             >
