@@ -83,6 +83,33 @@ body.dark-mode .msg-toolbar, body.dark-mode .dash-panel { background: var(--dm-s
 body.dark-mode .msg-list-header, body.dark-mode .msg-list-footer { background: var(--dm-surface-2); border-color: var(--dm-border); }
 body.dark-mode .msg-row { border-color: var(--dm-border); }
 body.dark-mode .msg-row:hover, body.dark-mode .msg-row.is-unread { background: var(--dm-surface-2); }
+
+/* ── Phones: every message card has the same layout ──
+   avatar on the left, then name + badges, email, subject/snippet,
+   and one bottom line:  ● Read   date ............ [trash] */
+@media (max-width: 575.98px) {
+  .ds-page-header { gap: 12px; margin-bottom: 16px; }
+  .ds-page-header h1 { font-size: 22px; }
+  .ds-page-header-actions, .ds-page-header-actions form { width: 100%; }
+  .ds-page-header-actions .ds-btn { width: 100%; justify-content: center; }
+
+  .msg-row { align-items: flex-start; gap: 12px; padding: 14px 12px; }
+  .msg-avatar { width: 38px; height: 38px; font-size: 14px; }
+
+  .msg-top-line { flex-direction: column; align-items: stretch; flex-wrap: nowrap; gap: 8px; }
+  .msg-top-line > div:first-child { min-width: 0; max-width: 100%; }
+  .msg-name-line { gap: 6px; }
+  .msg-name { word-break: break-word; }
+  .msg-email { word-break: break-all; }
+
+  .msg-meta {
+    display: flex; align-items: center; flex-wrap: wrap; gap: 4px 12px;
+    width: 100%; text-align: left;
+  }
+  .msg-meta .msg-date { margin-top: 0; }
+  .msg-meta .msg-actions { margin: 0 0 0 auto; }
+  .msg-meta .btn-icon-action { width: 34px; height: 34px; }
+}
 </style>
 {% endblock %}
 

@@ -128,7 +128,7 @@ body.dark-mode .wk-btn-restore:hover { color: #0e1420; }
 .wk-sale-modal .modal-dialog { --bs-modal-width: 1100px; width: calc(100% - 2rem); max-width: 1100px !important; }
 .wk-sale-modal .modal-content { border: 1px solid var(--wk-border); border-radius: 16px; background: var(--wk-surface); color: var(--wk-text); box-shadow: 0 24px 60px rgba(0,0,0,.3); overflow: hidden; }
 .wk-sale-modal form { display: flex; flex-direction: column; min-height: 0; max-height: calc(100vh - 3.5rem); }
-.wk-sale-modal .wk-panel-body { overflow-y: auto; }
+.wk-sale-modal .wk-panel-body { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
 .wk-sale-modal .wk-panel-head { gap: 10px; justify-content: flex-start; }
 .wk-sale-modal .wk-panel-head h6 { margin-right: auto; }
 .wk-x { width: 32px; height: 32px; border-radius: 8px; border: 1px solid var(--wk-border); background: var(--wk-surface); color: var(--wk-muted); cursor: pointer; }
@@ -169,11 +169,8 @@ body.dark-mode .wk-btn-restore:hover { color: #0e1420; }
 .wk-search { position: relative; flex: 1 1 280px; }
 .wk-search i { position: absolute; left: 16px; top: 50%; transform: translateY(-50%); color: var(--wk-muted); pointer-events: none; }
 .wk-search .wk-input { height: 44px; padding-left: 42px; border-radius: 10px; }
-.wk-filterbar > .wk-input { width: auto; flex: 0 0 auto; height: 44px; border-radius: 10px; }
+.wk-filterbar > .wk-input { width: auto; flex: 0 0 auto; height: 44px; border-radius: 10px; min-width: 0; }
 .wk-filterbar .wk-btn { height: 44px; border-radius: 10px; }
-@media (max-width: 575.98px) {
-  .wk-filterbar > .wk-input, .wk-filterbar .wk-btn { flex: 1 1 100%; justify-content: center; }
-}
 
 /* Past sales */
 .wk-filter { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
@@ -199,14 +196,108 @@ body.dark-mode .wk-btn-restore:hover { color: #0e1420; }
   .wk-row .wk-cell-product { grid-column: 1 / -1; }
   .wk-row .wk-cell-remove { grid-column: 1 / -1; justify-self: end; }
 }
+
+/* ── Phones & small tablets: past-sales table shown as cards ── */
+@media (max-width: 767.98px) {
+  .wk-table.table-stack tbody td { text-align: right; }
+  .wk-table.table-stack tbody td:first-child { text-align: left; }
+  .wk-table.table-stack .wk-items { text-align: right; flex: 1 1 auto; min-width: 0; }
+  .wk-table.table-stack tbody td { word-break: break-word; }
+  .wk-panel-head { padding: 12px 14px; }
+}
+
+/* ── Phones ── */
 @media (max-width: 575.98px) {
+  .wk-title { font-size: 20px; }
+  .wk-sub { font-size: 12.5px; margin-bottom: 16px; }
+  .wk-top { margin-bottom: 14px; }
+  .wk-top .wk-btn { width: 100%; justify-content: center; }
+
+  /* stat cards: compact */
+  .wk-stats { gap: 10px; margin-bottom: 16px; }
+  .wk-stat { padding: 14px 16px; }
+  .wk-stat-ico { width: 40px; height: 40px; font-size: 17px; }
+  .wk-stat-value { font-size: 24px; margin-top: 4px; }
+
+  /* filter bar: search on top, dates side by side, buttons side by side.
+     (!important + higher specificity so no global rule can stretch these) */
+  .dash-page .wk form.wk-filterbar {
+    flex-direction: row !important; flex-wrap: wrap !important;
+    align-items: stretch !important; gap: 10px !important; padding: 12px;
+  }
+  .dash-page .wk form.wk-filterbar > * {
+    flex: 1 1 calc(50% - 5px) !important;
+    width: auto !important; min-width: 0 !important; max-width: none !important;
+    height: 44px !important; margin: 0 !important;
+  }
+  .dash-page .wk form.wk-filterbar > .wk-search { flex: 1 1 100% !important; }
+  .dash-page .wk form.wk-filterbar > .wk-search .wk-input { width: 100% !important; height: 44px !important; padding-left: 40px; }
+  .dash-page .wk form.wk-filterbar .wk-btn { justify-content: center; }
+
+  /* new-sale pop-up uses the whole screen width and height */
+  .wk-sale-modal .modal-dialog { width: calc(100% - 1rem); margin: .5rem auto; }
+  .wk-sale-modal form { max-height: calc(100vh - 1.5rem); max-height: calc(100dvh - 1.5rem); }
+  .wk-sale-modal .wk-panel-head { padding: 12px 14px; }
   .wk-customer { grid-template-columns: 1fr; }
   .wk-panel-body { padding: 14px; }
-  .wk-top .wk-btn { width: 100%; justify-content: center; }
+
+  /* one product line: product full width, then pairs; total + trash share the last row */
+  .wk-row { grid-template-columns: 1fr 1fr; gap: 10px; padding: 12px; }
+  .wk-row .wk-cell-product { grid-column: 1 / -1; }
+  .wk-row .wk-cell-remove { grid-column: auto; justify-self: stretch; }
+  .wk-row .wk-cell-remove .wk-remove { width: 100%; }
+
   .wk-footer { flex-direction: column; align-items: stretch; }
   .wk-footer .wk-btn { justify-content: center; width: 100%; }
   .wk-total { font-size: 24px; }
   .wk-input, .wk-select { font-size: 16px; }
+
+  /* confirm pop-ups */
+  .wk-modal-head { padding: 18px 16px 4px; }
+  .wk-modal-body { padding: 12px 16px 4px; }
+  .wk-modal-foot { padding: 14px 16px 16px; }
+}
+
+/* ── Phones: all text 2px smaller (form fields stay 16px so iPhones don't zoom on tap) ── */
+@media (max-width: 575.98px) {
+  .wk-title { font-size: 18px; }
+  .wk-sub { font-size: 10.5px; }
+  .wk-btn { font-size: 12px; }
+  .wk-btn-sm { font-size: 10.5px; }
+
+  .wk-stat-label { font-size: 9.5px; }
+  .wk-stat-value { font-size: 22px; }
+  .wk-stat-note { font-size: 10px; }
+  .wk-stat-ico { font-size: 15px; }
+
+  .wk-panel-head h6 { font-size: 12px; }
+  .wk-label { font-size: 9.5px; }
+  .wk-hint { font-size: 10px; }
+  .wk-line-total { font-size: 12px; }
+  .wk-total-label { font-size: 9.5px; }
+  .wk-total { font-size: 22px; }
+  .wk-cash-note { font-size: 10px; }
+  .wk-badge { font-size: 9px; }
+
+  /* past sales cards */
+  .wk-table tbody td { font-size: 11px; }
+  .wk-table.table-stack tbody td::before { font-size: 8.5px; }
+  .wk-items small { font-size: 10.5px; }
+  .wk-sum-qty { font-size: 10px; }
+  .wk-empty { font-size: 11px; }
+
+  /* pop-ups */
+  .wk-modal-title { font-size: 15px; }
+  .wk-modal-sub { font-size: 10.5px; }
+  .wk-modal-ico { font-size: 15px; }
+  .wk-sum-customer { font-size: 11px; }
+  .wk-sum-list li { font-size: 11.5px; }
+  .wk-sum-list small { font-size: 10.5px; }
+  .wk-sum-list .amt { font-size: 13.5px; }
+  .wk-sum-total span { font-size: 10px; }
+  .wk-sum-total b { font-size: 22px; }
+  .wk-sum-note { font-size: 10px; }
+  .wk-modal-body .wk-sum-note { font-size: 11.5px !important; }
 }
 </style>
 {% endblock %}

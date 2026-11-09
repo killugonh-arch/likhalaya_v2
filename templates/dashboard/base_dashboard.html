@@ -658,7 +658,7 @@ body:not(.dark-mode) .dash-page .pagination .page-item.active .page-link { backg
 /* ── Phone fix: search/filter bars must size to their content ── */
 @media (max-width: 767.98px) {
   /* stacked filter forms: children must not use flex-basis as a height */
-  .dash-page form[class*="filter"],
+  .dash-page form[class*="filter"]:not(.reports-filter-form):not(.wk-filterbar),
   .dash-page form.d-flex,
   .dash-page .filter-bar,
   .dash-page .ds-filters {
@@ -666,7 +666,7 @@ body:not(.dark-mode) .dash-page .pagination .page-item.active .page-link { backg
     align-items: stretch !important;
     gap: 8px !important;
   }
-  .dash-page form[class*="filter"] > *,
+  .dash-page form[class*="filter"]:not(.reports-filter-form):not(.wk-filterbar) > *,
   .dash-page form.d-flex > *,
   .dash-page .filter-bar > *,
   .dash-page .ds-filters > * {

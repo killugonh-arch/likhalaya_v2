@@ -2,7 +2,7 @@
 
 GET  /staff/orders/                 list + search/filters (?q= &status= &payment=)
 GET  /staff/orders/<id>/            one order, full detail
-POST /staff/orders/<id>/action/     {"action": "start_processing" | "mark_ready" | "cancel" | "set_eta",
+POST /staff/orders/<id>/action/     {"action": "start_processing" | "mark_ready" | "assign_me" | "unassign" | "cancel" | "set_eta",
                                      "days_min": 2, "days_max": 3}   (days optional)
 
 Staff/admin only (IsStaffRole). Status changes go through the Order model's own
@@ -175,6 +175,14 @@ def staff_order_action(request, pk):
             order.mark_ready_for_delivery()
         elif action == 'cancel':
             order.cancel()
+        elif action == 'assign_me':
+            if order.status not in ('processing', 'confirmed'):
+                raise OrderStatusError('Only an order that is being prepared can be assigned.')
+            order.assign_courier(request.user)
+        elif action == 'unassign':
+            if order.status not in ('processing', 'confirmed'):
+                raise OrderStatusError("This order can't be unassigned anymore.")
+            order.assign_courier(None)
         elif action == 'set_eta':
             order.set_eta(_days(request.data.get('days_min')), _days(request.data.get('days_max')))
         else:
