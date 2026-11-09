@@ -38,8 +38,7 @@ urlpatterns = [
          chat_views.ChatConversationMessagesView.as_view(), name='chat_conversation_messages'),
     path('chat/messages/', chat_views.ChatMessagesView.as_view(), name='chat_messages'),
 
-    
-     path('staff/orders/', staff_orders_api.staff_orders, name='staff_orders'),  
+    path('staff/orders/', staff_orders_api.staff_orders, name='staff_orders'),
 
     path('', include(router.urls)),
 ]
