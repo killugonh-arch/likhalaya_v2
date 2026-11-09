@@ -521,7 +521,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         <tr>
           <td>
             {% if row.channel == 'walk_in' %}
-            <span class="ds-badge ds-badge-warning"><i class="fas fa-store"></i>{{ row.label }}</span>
+            <span class="ds-badge ds-badge-warning">{{ row.label }}</span>
             {% else %}
             <span class="ds-badge ds-badge-info"><i class="fas fa-globe"></i>{{ row.label }}</span>
             {% endif %}
@@ -876,7 +876,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
                   {% elif row.status == 'pending' %}ds-badge-warning
                   {% elif row.status == 'cancelled' %}ds-badge-danger
                   {% else %}ds-badge-neutral{% endif %}">
-                  {% if row.status == 'walk_in' %}<i class="fas fa-store"></i>{% endif %}{{ row.label }}
+                  {{ row.label }}
                 </span>
               </td>
               <td class="fw-semibold">{{ row.count }}</td>

@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from . import views
 from . import social_auth
 from . import chat_views
+from . import courier_views
 
 router = DefaultRouter()
 router.register('categories', views.CategoryViewSet, basename='category')
@@ -20,6 +21,15 @@ urlpatterns = [
     path('auth/verify-otp/', views.VerifyOTPView.as_view(), name='api_verify_otp'),
     path('auth/google/', social_auth.GoogleLoginView.as_view(), name='api_google_login'),
     path('auth/me/', views.MeView.as_view(), name='api_me'),
+
+    path('courier/orders/', courier_views.CourierOrderListView.as_view(), name='courier_orders'),
+    path('courier/orders/<int:pk>/confirm-pickup/',
+         courier_views.CourierConfirmPickupView.as_view(), name='courier_confirm_pickup'),
+    path('courier/orders/<int:pk>/confirm-delivery/',
+         courier_views.CourierConfirmDeliveryView.as_view(), name='courier_confirm_delivery'),
+
+    path('courier/orders/<int:pk>/proof/<str:kind>/',
+         courier_views.CourierProofImageView.as_view(), name='courier_proof'),
 
     path('chat/unread/', chat_views.ChatUnreadCountView.as_view(), name='chat_unread'),
     path('chat/conversations/', chat_views.ChatConversationsView.as_view(), name='chat_conversations'),
