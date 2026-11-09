@@ -18,6 +18,25 @@
 }
 .price-range { width: 100%; }
 
+/* Mobile-only search bar (the navbar search is hidden on phones) */
+.mobile-shop-search { flex: 1 1 auto; min-width: 0; margin: 0; }
+.mobile-shop-search .input-group > .form-control {
+  font-size: 13px; height: 36px;
+  border-radius: 50px 0 0 50px !important;
+  border: 1px solid #dee2e6;
+  border-right: 0;
+}
+.mobile-shop-search .input-group > .form-control:focus { box-shadow: none; border-color: var(--gold); }
+.mobile-shop-search .input-group > .btn-gold {
+  height: 36px; width: 45px; padding: 0;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 0 50px 50px 0 !important;
+}
+.mobile-shop-search .input-group > .btn-gold i { font-size: 13px; }
+@media (max-width: 575.98px) {
+  .mobile-shop-search .input-group > .form-control { font-size: 15px; } /* was 16px */
+}
+
 /* Mobile filter toggle: collapsed by default so filters don't push the
    product grid down; icon flips when expanded. */
 .filter-toggle-btn { display: flex; justify-content: space-between; align-items: center; border-radius: 10px; }
@@ -182,9 +201,28 @@
     <!-- PRODUCT GRID -->
     <div class="col-lg-9">
 
-      <!-- Sort & Count bar -->
-      <div class="sort-bar d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
-        <div class="d-flex gap-2 align-items-center ms-auto">
+      <!-- Search (mobile only) + Sort & Count bar -->
+      <div class="sort-bar d-flex justify-content-between align-items-center mb-4 gap-2">
+
+        <!-- MOBILE SEARCH: the navbar search is hidden on phones -->
+        <form class="mobile-shop-search d-md-none" action="{% url 'store:shop' %}" method="get">
+          {% if selected_category %}<input type="hidden" name="category" value="{{ selected_category }}">{% endif %}
+          <div class="input-group input-group-sm">
+            <input
+              type="text"
+              name="q"
+              class="form-control"
+              placeholder="Search…"
+              value="{{ search_query }}"
+              aria-label="Search products"
+            >
+            <button class="btn btn-gold" type="submit" aria-label="Search">
+              <i class="fas fa-search fa-xs"></i>
+            </button>
+          </div>
+        </form>
+
+        <div class="d-flex gap-2 align-items-center ms-auto flex-shrink-0">
           <span class="text-muted small">View:</span>
           <button class="btn btn-sm btn-outline-secondary py-0 px-2" id="viewGrid" title="Grid"><i class="fas fa-th"></i></button>
           <button class="btn btn-sm btn-outline-secondary py-0 px-2" id="viewList" title="List"><i class="fas fa-list"></i></button>

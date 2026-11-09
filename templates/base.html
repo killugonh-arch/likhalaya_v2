@@ -126,7 +126,7 @@
         .navbar .nav-link.active::before {
             content: '';
             position: absolute;
-            top: 0;
+            bottom: 0;
             left: 14px;
             right: 14px;
             height: 3px;
@@ -1005,6 +1005,21 @@
                 padding: 0 3px;
             }
 
+            /* Phones: cart icon 1px smaller, bell icon darker */
+            .navbar-utility-row > a.utility-icon {
+                font-size: 21px;
+            }
+
+            .navbar-utility-row .notif-wrapper .utility-icon-btn,
+            .navbar-utility-row .notif-wrapper .utility-icon-btn:hover,
+            .navbar-utility-row .notif-wrapper .utility-icon-btn:focus {
+                color: #000 !important;
+            }
+
+            .navbar-utility-row .notif-wrapper .bi-bell {
+                -webkit-text-stroke: .5px currentColor;
+            }
+
 
 
             .notif-dropdown {
@@ -1548,6 +1563,55 @@
 
             /* iPhone home-bar safe area */
             body { padding-bottom: env(safe-area-inset-bottom); }
+        }
+
+
+        /* =========================================================
+           CART + BELL — SAME SIZE (all breakpoints)
+           Kept last so it overrides every breakpoint above.
+           Change the three numbers below to resize both at once.
+           ========================================================= */
+
+        /* Same normal color (not extra black) + no bold stroke for both icons */
+        .navbar-utility-row > a.utility-icon,
+        .navbar-utility-row .notif-wrapper .utility-icon-btn,
+        .navbar-utility-row .notif-wrapper .utility-icon-btn:focus {
+            color: var(--charcoal) !important;
+        }
+
+        .navbar-utility-row > a.utility-icon:hover,
+        .navbar-utility-row .notif-wrapper .utility-icon-btn:hover {
+            color: var(--gold) !important;
+        }
+
+        .navbar-utility-row > a.utility-icon i,
+        .navbar-utility-row .notif-wrapper .utility-icon-btn i,
+        .navbar-utility-row .notif-wrapper .bi-bell {
+            -webkit-text-stroke: 0;
+        }
+
+        /* Desktop */
+        @media (min-width: 992px) {
+            .navbar-utility-row > a.utility-icon,
+            .navbar-utility-row .notif-wrapper .utility-icon-btn,
+            .navbar-utility-row > a.utility-icon i,
+            .navbar-utility-row .notif-wrapper .utility-icon-btn i { font-size: 20px; }
+        }
+
+        /* Tablet */
+        @media (min-width: 768px) and (max-width: 991.98px) {
+            .navbar-utility-row > a.utility-icon,
+            .navbar-utility-row .notif-wrapper .utility-icon-btn,
+            .navbar-utility-row > a.utility-icon i,
+            .navbar-utility-row .notif-wrapper .utility-icon-btn i { font-size: 13px; }
+        }
+
+        /* Mobile */
+        @media (max-width: 767.98px) {
+            .navbar-utility-row > a.utility-icon,
+            .navbar-utility-row .notif-wrapper .utility-icon-btn,
+            .navbar-utility-row > a.utility-icon i,
+            .navbar-utility-row .notif-wrapper .utility-icon-btn i { font-size: 19px; }
         }
     </style>
 
