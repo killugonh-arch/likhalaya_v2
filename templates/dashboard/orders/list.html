@@ -140,6 +140,9 @@
 .ship-brgy-box { border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--surface-white); overflow: hidden; }
 .ship-brgy-head { display: flex; align-items: center; gap: 6px; padding: 6px; border-bottom: 1px solid var(--border); }
 .ship-brgy-head .ds-input { padding: 6px 8px; font-size: 12.5px; }
+/* Add-a-rate form: black outline on the type bars (city, barangay search, delivery fee) */
+body:not(.dark-mode) #ship-rate-form .ds-input { border: 1px solid #111; }
+body:not(.dark-mode) #ship-rate-form .ds-input:focus { border-color: var(--brand-green); }
 .ship-link { background: none; border: none; color: var(--brand-green); font-size: 12px; font-weight: 700; cursor: pointer; padding: 4px 6px; border-radius: var(--radius-sm); }
 .ship-link:hover:not(:disabled) { background: var(--brand-green-light); }
 .ship-link:disabled { color: var(--text-muted); cursor: not-allowed; }

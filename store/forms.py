@@ -5,6 +5,45 @@ from django.utils.safestring import mark_safe
 from .models import Product, Category, ContactMessage, LivelihoodVideo, ProductImage, ProductDesign, ProductSize
 
 
+# ── Facebook share links ───────────────────────────────────────────────
+# Links like facebook.com/share/r/XXXX are just redirects. Facebook's video
+# embed can't play them ("Video Unavailable"), so we follow the redirect once
+# when saving and store the real link (facebook.com/reel/<id>, /watch/?v=<id>).
+_FB_HOSTS = ('facebook.com', 'www.facebook.com', 'm.facebook.com', 'web.facebook.com', 'fb.watch')
+
+
+def _resolve_facebook_share(url):
+    """Return the real Facebook video URL for a share / short link, or None."""
+    import requests
+    from urllib.parse import urlparse, urljoin, urlunparse
+    current = url
+    for _ in range(6):
+        host = (urlparse(current).hostname or '').lower()
+        if host not in _FB_HOSTS:
+            return None  # never follow a redirect off Facebook
+        path = urlparse(current).path
+        if '/share/' not in path and host != 'fb.watch':
+            # Already a normal link. Drop tracking junk after the video id.
+            u = urlparse(current)
+            keep = u.query if u.path.startswith('/watch') else ''
+            return urlunparse((u.scheme or 'https', u.netloc, u.path, '', keep, ''))
+        try:
+            r = requests.get(current, allow_redirects=False, timeout=8, headers={
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
+                              '(KHTML, like Gecko) Chrome/124.0 Safari/537.36',
+                'Accept-Language': 'en-US,en;q=0.9',
+            })
+        except requests.RequestException:
+            return None
+        loc = r.headers.get('Location')
+        if r.status_code not in (301, 302, 303, 307, 308) or not loc:
+            return None
+        current = urljoin(current, loc)
+        if 'login' in urlparse(current).path:
+            return None
+    return None
+
+
 class ProductImageWidget(forms.ClearableFileInput):
     """A cleaner image upload widget: drag-and-drop style, live preview,
     no 'Clear' checkbox — uploading a new file simply replaces the old one."""
@@ -510,6 +549,20 @@ class LivelihoodVideoForm(SafeImageFormMixin, forms.ModelForm):
         self.fields['thumbnail'].required = False
         self.fields['is_active'].widget.attrs.update({'class': 'form-check-input', 'role': 'switch'})
         self.fields['show_on_home'].widget.attrs.update({'class': 'form-check-input', 'role': 'switch'})
+
+    def clean_video_url(self):
+        url = (self.cleaned_data.get('video_url') or '').strip()
+        low = url.lower()
+        if ('facebook.com' in low or 'fb.watch' in low) and ('/share/' in low or 'fb.watch' in low):
+            real = _resolve_facebook_share(url)
+            if not real:
+                raise forms.ValidationError(
+                    "Couldn't read this Facebook share link. Open it in your browser, then copy the "
+                    "full link from the address bar (it looks like facebook.com/reel/... or "
+                    "facebook.com/watch/?v=...) and paste that here."
+                )
+            return real
+        return url
 
     def clean_show_on_home(self):
         show_on_home = self.cleaned_data.get('show_on_home')

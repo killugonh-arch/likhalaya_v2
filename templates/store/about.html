@@ -154,7 +154,7 @@
       <div class="video-card">
         <div class="video-frame">
           {% if video.video_url %}
-          <iframe src="{{ video.embed_url }}" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+          <iframe src="{{ video.embed_url }}" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
           {% elif video.video_file %}
           <video autoplay muted loop playsinline {% if video.thumbnail %}poster="{{ video.thumbnail.url }}"{% endif %}>
             <source src="{{ video.video_file.url }}" type="video/mp4">

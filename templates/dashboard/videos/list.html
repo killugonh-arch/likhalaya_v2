@@ -18,9 +18,13 @@
   </div>
   {% endif %}
 </div>
+<style>
+.vid-table th, .vid-table td { text-align: center; vertical-align: middle; }
+.vid-table .action-btns { justify-content: center; }
+</style>
 <div class="card border-0 shadow-sm">
   <div class="table-responsive">
-    <table class="table dash-table mb-0">
+    <table class="table dash-table vid-table mb-0">
       <thead><tr><th>Order</th><th>Title</th><th>Source</th><th>Status</th><th>Home</th>{% if request.user.is_admin_user %}<th>Actions</th>{% endif %}</tr></thead>
       <tbody>
         {% for video in videos %}

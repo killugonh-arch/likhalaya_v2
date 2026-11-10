@@ -24,6 +24,10 @@ ALLOWED_HOSTS = [
 
 _LOCAL_INSECURE_TEST = os.environ.get('DJANGO_INSECURE_LOCAL', 'False') == 'True'
 
+# Django's default ('same-origin') hides the Referer from YouTube, which makes
+# embedded videos fail with "Error 153". This still protects full URLs.
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+
 if not DEBUG:
     if not _LOCAL_INSECURE_TEST:
         SECURE_SSL_REDIRECT = True

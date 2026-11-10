@@ -277,9 +277,11 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         ship_province = request.data.get('province', request.user.province)
         ship_city = request.data.get('city', request.user.city)
+        ship_barangay = (request.data.get('barangay')
+                         or getattr(request.user, 'barangay', '') or '')
         shipping_fee = get_shipping_quote(
             sum(q for _, _, q, _ in resolved_items), ship_province, ship_city,
-            request.data.get('barangay', getattr(request.user, 'barangay', '')),
+            ship_barangay,
         )['fee']
         order = Order.objects.create(
             user=request.user,
@@ -288,6 +290,7 @@ class OrderViewSet(viewsets.ModelViewSet):
             email=request.data.get('email', request.user.email),
             phone=request.data.get('phone', request.user.phone),
             address=request.data.get('address', request.user.address),
+            barangay=ship_barangay,
             city=request.data.get('city', request.user.city),
             province=request.data.get('province', request.user.province),
             zip_code=request.data.get('zip_code', request.user.zip_code),
@@ -306,6 +309,24 @@ class OrderViewSet(viewsets.ModelViewSet):
 
         serializer = self.get_serializer(order)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    @action(detail=False, methods=['get'], url_path='shipping_quote')
+    def shipping_quote(self, request):
+        """GET /api/orders/shipping_quote/?province=&city=&barangay=&quantity=
+        -> {fee, zone, free}. Same rules as order creation (admin
+        ShippingRate rows win over the built-in distance bands)."""
+        q = request.query_params
+        try:
+            qty = max(int(q.get('quantity', 1)), 1)
+        except ValueError:
+            qty = 1
+        quote = get_shipping_quote(
+            qty,
+            q.get('province') or request.user.province,
+            q.get('city') or request.user.city,
+            q.get('barangay') or getattr(request.user, 'barangay', '') or '',
+        )
+        return Response({'fee': str(quote['fee']), 'zone': quote['zone'], 'free': quote['free']})
 
     @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
@@ -326,7 +347,7 @@ class OrderViewSet(viewsets.ModelViewSet):
     @action(detail=True, methods=['post'])
     def upload_payment_proof(self, request, pk=None):
         """POST multipart /api/orders/{id}/upload_payment_proof/ with a
-        `payment_proof` file — mirrors orders.views.gcash_payment's upload
+        payment_proof file — mirrors orders.views.gcash_payment's upload
         step. Only the order's own customer may attach a receipt."""
         order = self.get_object()
         if order.user_id != request.user.pk:

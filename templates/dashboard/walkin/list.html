@@ -51,6 +51,10 @@ body.dark-mode .wk { --wk-blue: #63b3ed; --wk-blue-bg: rgba(99,179,237,.14); }
 }
 .wk-input:focus, .wk-select:focus { outline: none; border-color: var(--wk-green); box-shadow: 0 0 0 3px var(--wk-green-light); }
 body.dark-mode .wk-select, body.dark-mode .wk-input { color-scheme: dark; }
+/* New walk-in sale pop-up: black outline on the type bars */
+body:not(.dark-mode) .modal .wk-input, body:not(.dark-mode) .modal .wk-select { border: 1px solid #111; }
+body:not(.dark-mode) .modal .wk-input:focus, body:not(.dark-mode) .modal .wk-select:focus { border-color: var(--wk-green); }
+body:not(.dark-mode) .modal .wk-cell.is-hidden .wk-select { border-color: var(--wk-danger); }
 .wk-input[type=number]::-webkit-outer-spin-button,
 .wk-input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 .wk-input[type=number] { -moz-appearance: textfield; appearance: textfield; }
@@ -177,13 +181,23 @@ body.dark-mode .wk-btn-restore:hover { color: #0e1420; }
 .wk-filter .wk-input { height: 36px; font-size: 13px; width: auto; }
 .wk-table { width: 100%; border-collapse: collapse; }
 .wk-table thead th { background: var(--wk-subtle); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; color: var(--wk-muted); padding: 11px 14px; text-align: center; border-bottom: 1px solid var(--wk-border); white-space: nowrap; }
-.wk-table tbody td { padding: 12px 14px; font-size: 13px; color: var(--wk-text); border-bottom: 1px solid var(--wk-border); vertical-align: middle; text-align: center; }
+.wk-table tbody td { padding: 8px 14px; font-size: 13px; color: var(--wk-text); border-bottom: 1px solid var(--wk-border); vertical-align: middle; text-align: center; }
 .wk-table tbody tr:last-child td { border-bottom: none; }
 .wk-items { margin: 0; padding: 0; list-style: none; }
 .wk-items li { padding: 1px 0; }
-.wk-items small { display: block; margin-top: 3px; color: var(--wk-muted); font-size: 12.5px; }
+.wk-items small { display: inline; margin-left: 4px; color: var(--wk-muted); font-size: 12px; }
+.wk-items small::before { content: '\00b7\00a0'; }
 .wk-items strong { font-weight: 700; color: var(--wk-text); }
-.wk-items li + li { margin-top: 8px; }
+.wk-items li + li { margin-top: 3px; }
+.wk-it-title { font-weight: 700; color: var(--wk-text); }
+.wk-it-sub { margin-top: 2px; font-size: 11.5px; font-weight: 400; color: var(--wk-muted); }
+.wk-more { background: none; border: none; padding: 0; font: inherit; font-weight: 700; color: var(--wk-green); cursor: pointer; text-decoration: underline dotted; text-underline-offset: 3px; }
+.wk-more:hover, .wk-more:focus-visible { outline: none; opacity: .8; }
+.wk-pop { position: fixed; z-index: 2000; background: var(--wk-surface); border: 1px solid var(--wk-border); border-radius: 10px; box-shadow: 0 8px 24px rgba(16,24,20,.16); color: var(--wk-text); padding: 10px 14px; width: min(340px, calc(100vw - 16px)); max-height: 260px; overflow-y: auto; text-align: left; }
+.wk-pop-head { font-size: 12px; font-weight: 700; color: var(--wk-text); margin-bottom: 6px; }
+.wk-pop .wk-it-row { padding: 5px 0; font-size: 13px; border-top: 1px solid var(--wk-border); }
+.wk-pop .wk-it-row:first-of-type { border-top: none; }
+.wk-pop small { display: block; margin-top: 2px; color: var(--wk-muted); font-size: 12px; }
 .wk-badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; background: var(--wk-green-light); color: var(--wk-green); }
 .wk-badge.voided { background: var(--wk-danger-bg); color: var(--wk-danger); }
 .wk-voided td { opacity: .6; }
@@ -360,13 +374,13 @@ body.dark-mode .wk-btn-restore:hover { color: #0e1420; }
             <td>{{ o.created_at|date:"M d, Y" }}<br><small style="color:var(--wk-muted);">{{ o.created_at|date:"h:i A" }}</small></td>
             <td>{{ o.full_name }}{% if o.phone %}<br><small style="color:var(--wk-muted);">{{ o.phone }}</small>{% endif %}</td>
             <td>
-              <ul class="wk-items">
-                {% for it in o.items.all %}
-                <li><strong>{{ it.product_name }}</strong> <span class="wk-sum-qty">× {{ it.quantity }}</span>
-                  {% if it.size_display or it.design_name %}<small>{% if it.size_display %}Size: {{ it.size_display }}{% endif %}{% if it.size_display and it.design_name %} · {% endif %}{% if it.design_name %}Design: {{ it.design_name }}{% endif %}</small>{% endif %}
-                </li>
-                {% endfor %}
-              </ul>
+              {% with its=o.items.all %}
+              <div class="wk-it">
+                <div class="wk-it-title">{% for it in its|slice:":2" %}{% if forloop.last and not forloop.first %}{% if its|length == 2 %} and {% else %}, {% endif %}{% endif %}{{ it.product_name }}{% endfor %}{% if its|length > 2 %}{% with rest=its|length|add:"-2" %} and <button type="button" class="wk-more">{{ rest }} other{{ rest|pluralize }}</button>{% endwith %}{% endif %}</div>
+                <div class="wk-it-sub">{% if its|length == 1 %}{% for it in its %}&times; {{ it.quantity }}{% if it.size_display %} &middot; Size: {{ it.size_display }}{% endif %}{% if it.design_name %} &middot; Design: {{ it.design_name }}{% endif %}{% endfor %}{% else %}{{ its|length }} items{% endif %}</div>
+                <div class="wk-it-data" hidden>{% for it in its %}<div class="wk-it-row"><strong>{{ it.product_name }}</strong> <span class="wk-sum-qty">&times; {{ it.quantity }}</span>{% if it.size_display or it.design_name %}<small>{% if it.size_display %}Size: {{ it.size_display }}{% endif %}{% if it.size_display and it.design_name %} &middot; {% endif %}{% if it.design_name %}Design: {{ it.design_name }}{% endif %}</small>{% endif %}</div>{% endfor %}</div>
+              </div>
+              {% endwith %}
             </td>
             <td class="fw-semibold">₱{{ o.total|floatformat:2|intcomma }}</td>
             <td>{{ o.sold_by.get_full_name|default:o.sold_by.username|default:"—" }}</td>
@@ -885,6 +899,48 @@ body.dark-mode .wk-btn-restore:hover { color: #0e1420; }
   } else {
     addRow();
   }
+})();
+</script>
+<script>
+(function () {
+  var pop = document.createElement('div');
+  pop.className = 'wk-pop wk';  // 'wk' gives the popup the colour variables (it lives outside the page wrapper)
+  pop.hidden = true;
+  document.body.appendChild(pop);
+  var timer = null;
+
+  function show(btn) {
+    var cell = btn.closest('.wk-it');
+    var data = cell && cell.querySelector('.wk-it-data');
+    if (!data) return;
+    clearTimeout(timer);
+    var n = data.querySelectorAll('.wk-it-row').length;
+    pop.innerHTML = '<div class="wk-pop-head">' + n + ' items in this sale</div>' + data.innerHTML;
+    pop.hidden = false;
+    var r = btn.getBoundingClientRect();
+    var left = Math.min(Math.max(8, r.left), window.innerWidth - pop.offsetWidth - 8);
+    var top = r.bottom + 6;
+    if (top + pop.offsetHeight > window.innerHeight - 8) top = Math.max(8, r.top - pop.offsetHeight - 6);
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+  }
+  function hide(delay) {
+    clearTimeout(timer);
+    timer = setTimeout(function () { pop.hidden = true; }, delay || 0);
+  }
+
+  document.addEventListener('mouseover', function (e) { var b = e.target.closest('.wk-more'); if (b) show(b); });
+  document.addEventListener('mouseout', function (e) { if (e.target.closest('.wk-more')) hide(150); });
+  document.addEventListener('focusin', function (e) { var b = e.target.closest('.wk-more'); if (b) show(b); });
+  document.addEventListener('focusout', function (e) { if (e.target.closest('.wk-more')) hide(150); });
+  pop.addEventListener('mouseenter', function () { clearTimeout(timer); });
+  pop.addEventListener('mouseleave', function () { hide(150); });
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('.wk-more');
+    if (b) { show(b); return; }
+    if (!e.target.closest('.wk-pop')) hide(0);
+  });
+  window.addEventListener('scroll', function () { hide(0); }, true);
 })();
 </script>
 {% endblock %}

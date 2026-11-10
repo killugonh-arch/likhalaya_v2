@@ -571,7 +571,7 @@ body { background-color: #F7F5EE; }
         <div class="promo-card">
           <span class="promo-label">Featured Program</span>
           {% if featured_video.video_url %}
-          <iframe src="{{ featured_video.embed_url }}" style="width:100%;aspect-ratio:16/9;border:0;border-radius:10px;margin-bottom:14px;display:block;" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+          <iframe src="{{ featured_video.embed_url }}" style="width:100%;aspect-ratio:16/9;border:0;border-radius:10px;margin-bottom:14px;display:block;" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
           {% elif featured_video.video_file %}
           <video autoplay muted loop playsinline {% if featured_video.thumbnail %}poster="{{ featured_video.thumbnail.url }}"{% endif %}>
             <source src="{{ featured_video.video_file.url }}" type="video/mp4">
@@ -591,7 +591,7 @@ body { background-color: #F7F5EE; }
         <div class="promo-card">
           <span class="promo-label">Featured Program</span>
           {% if second_video.video_url %}
-          <iframe src="{{ second_video.embed_url }}" style="width:100%;aspect-ratio:16/9;border:0;border-radius:10px;margin-bottom:14px;display:block;" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
+          <iframe src="{{ second_video.embed_url }}" style="width:100%;aspect-ratio:16/9;border:0;border-radius:10px;margin-bottom:14px;display:block;" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; encrypted-media" allowfullscreen loading="lazy"></iframe>
           {% elif second_video.video_file %}
           <video autoplay muted loop playsinline {% if second_video.thumbnail %}poster="{{ second_video.thumbnail.url }}"{% endif %}>
             <source src="{{ second_video.video_file.url }}" type="video/mp4">

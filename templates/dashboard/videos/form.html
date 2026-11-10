@@ -243,7 +243,7 @@ body.dark-mode .form-control::placeholder { color: var(--dm-text-mute, #7a8699);
             <i class="fas fa-photo-film"></i>
             <span>No preview yet</span>
           </div>
-          <iframe id="preview-iframe" style="display:none;" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          <iframe id="preview-iframe" style="display:none;" referrerpolicy="strict-origin-when-cross-origin" allow="autoplay; encrypted-media" allowfullscreen></iframe>
           <video id="preview-video" style="display:none;" controls {% if video.video_file %}src="{{ video.video_file.url }}"{% endif %}></video>
           <img id="preview-img" alt="" style="display:none;" {% if video.thumbnail %}src="{{ video.thumbnail.url }}"{% endif %}>
         </div>
