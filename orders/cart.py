@@ -1,7 +1,9 @@
 from decimal import Decimal
 from django.conf import settings
 from django.db.models import Q
+from django.db import transaction
 from store.models import Product, ProductDesign
+from .models import CartItem
 
 # separate session key for buy now, never mixed with the cart
 BUY_NOW_SESSION_ID = 'buy_now_item'
@@ -28,12 +30,73 @@ def _max_purchasable(product, design):
 
 
 class Cart:
+    SEEDED_SESSION_KEY = 'cart_db_seeded'
+
     def __init__(self, request):
         self.session = request.session
+        user = getattr(request, 'user', None)
+        # Logged-in customers: the cart lives in the database (shared with the
+        # mobile app). Guests keep the old session-only cart.
+        self.user = user if (user is not None and user.is_authenticated) else None
         cart = self.session.get(settings.CART_SESSION_ID)
+        if self.user is not None:
+            cart = self._load_for_user(cart)
         if not cart:
             cart = self.session[settings.CART_SESSION_ID] = {}
         self.cart = cart
+
+    def _load_for_user(self, session_cart):
+        rows = list(CartItem.objects.filter(user=self.user).select_related('product', 'design'))
+        if not rows and session_cart and not self.session.get(self.SEEDED_SESSION_KEY):
+            # First visit after this feature went live: keep the existing
+            # session cart and store it in the database.
+            self.session[self.SEEDED_SESSION_KEY] = True
+            self.cart = session_cart
+            self._write_db()
+            return session_cart
+        if not self.session.get(self.SEEDED_SESSION_KEY):
+            self.session[self.SEEDED_SESSION_KEY] = True
+        cart = {}
+        for r in rows:
+            product = r.product
+            if product is None or not getattr(product, 'is_active', True):
+                continue
+            size = (r.size or '').upper()
+            price = product.get_price_for_size(size) if size else product.price_min
+            key = self.make_key(product.id, size or None, r.design_id)
+            cart[key] = {
+                'product_id': product.id,
+                'quantity': r.quantity,
+                'price': str(price),
+                'name': product.name,
+                'size': size,
+                'design_id': r.design_id,
+                'design_name': r.design.name if r.design else '',
+            }
+        if self.session.get(settings.CART_SESSION_ID) != cart:
+            self.session[settings.CART_SESSION_ID] = cart
+            self.session.modified = True
+        return cart
+
+    def _write_db(self):
+        """Mirror the current cart into the database for logged-in users."""
+        if self.user is None:
+            return
+        rows = []
+        for item in self.cart.values():
+            qty = int(item.get('quantity') or 0)
+            if qty <= 0:
+                continue
+            rows.append(CartItem(
+                user=self.user,
+                product_id=item['product_id'],
+                size=item.get('size') or '',
+                design_id=item.get('design_id'),
+                quantity=qty,
+            ))
+        with transaction.atomic():
+            CartItem.objects.filter(user=self.user).delete()
+            CartItem.objects.bulk_create(rows)
 
     @staticmethod
     def make_key(product_id, size=None, design_id=None):
@@ -69,6 +132,7 @@ class Cart:
 
     def save(self):
         self.session.modified = True
+        self._write_db()
 
     def remove(self, key):
         key = str(key)
@@ -136,9 +200,10 @@ class Cart:
             self.save()
 
     def clear(self):
+        self.cart = {}
         if settings.CART_SESSION_ID in self.session:
             del self.session[settings.CART_SESSION_ID]
-            self.save()
+        self.save()
 
     # buy now - completely separate from cart
 

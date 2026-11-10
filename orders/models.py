@@ -321,6 +321,25 @@ class OrderItem(models.Model):
         return dict(self.SIZE_CHOICES).get(self.size, '')
 
 
+class CartItem(models.Model):
+    """One line of a logged-in customer's shopping cart, stored on the server
+    so the website and the mobile app always show the same cart."""
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='cart_items')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='+')
+    size = models.CharField(max_length=1, blank=True)
+    design = models.ForeignKey(
+        'store.ProductDesign', on_delete=models.CASCADE, null=True, blank=True, related_name='+',
+    )
+    quantity = models.PositiveIntegerField(default=1)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['id']
+
+    def __str__(self):
+        return f"{self.user_id}: {self.quantity}x {self.product_id}"
+
+
 class Notification(models.Model):
     """A per-customer notification, e.g. 'Your order has been shipped.'"""
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='notifications')

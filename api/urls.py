@@ -7,6 +7,7 @@ from . import social_auth
 from . import chat_views
 from . import courier_views
 from . import staff_orders_api
+from . import cart_api
 
 router = DefaultRouter()
 router.register('categories', views.CategoryViewSet, basename='category')
@@ -41,6 +42,8 @@ urlpatterns = [
     path('staff/orders/', staff_orders_api.staff_orders, name='staff_orders'),
     path('staff/orders/<int:pk>/', staff_orders_api.staff_order_detail, name='staff_order_detail'),
     path('staff/orders/<int:pk>/action/', staff_orders_api.staff_order_action, name='staff_order_action'),
+
+    path('cart/', cart_api.cart, name='api_cart'),
 
     path('', include(router.urls)),
 ]
