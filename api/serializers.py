@@ -132,6 +132,10 @@ class ProductSerializer(serializers.ModelSerializer):
     has_designs = serializers.BooleanField(read_only=True)
     default_variant_image = serializers.CharField(read_only=True)
     variants = serializers.SerializerMethodField()
+    # Products with no sizes whose designs hang straight off the product
+    # (e.g. Parol). The web modal shows only the design picker for these.
+    has_direct_designs = serializers.BooleanField(read_only=True)
+    direct_designs = serializers.SerializerMethodField()
 
     class Meta:
         model = Product
@@ -139,7 +143,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'id', 'category', 'category_name', 'name', 'slug', 'description',
             'price_min', 'price_medium', 'price_max', 'price_display',
             'has_size_pricing', 'has_variants', 'has_designs', 'default_variant_image',
-            'variants', 'stock', 'in_stock', 'image', 'extra_images',
+            'variants', 'has_direct_designs', 'direct_designs', 'stock', 'in_stock', 'image', 'extra_images',
             'gcash_qr_code', 'is_active', 'artisan_name', 'created_at', 'updated_at',
         ]
         read_only_fields = ['id', 'slug', 'created_at', 'updated_at']
@@ -156,6 +160,25 @@ class ProductSerializer(serializers.ModelSerializer):
                          and request.user.is_admin_user())
         if self.instance is not None and not is_admin:
             self.fields['gcash_qr_code'].read_only = True
+
+    def get_direct_designs(self, obj):
+        """Designs attached straight to the product (no size tier)."""
+        if not obj.has_direct_designs:
+            return []
+        from store.models import ProductDesign
+        out = []
+        for d in ProductDesign.objects.filter(parent_product=obj, is_active=True).order_by('order', 'id'):
+            try:
+                stock = d.stock_for_size(None)
+            except Exception:
+                stock = d.stock
+            out.append({
+                'id': d.id,
+                'title': d.title,
+                'image': d.image.url if d.image else '',
+                'stock': stock,
+            })
+        return out
 
     def get_variants(self, obj):
         """Same Size -> Design tree as Product.variant_json, but returned as
@@ -216,9 +239,10 @@ class OrderSerializer(serializers.ModelSerializer):
             'courier_name', 'delivery_confirmed_at',
             'created_at', 'updated_at',
         ]
-        read_only_fields = ['id', 'user', 'subtotal', 'shipping_fee', 'total',
-                             'courier_name', 'delivery_confirmed_at',
-                             'created_at', 'updated_at']
+        # Read-only on purpose: orders are changed only through the
+        # dedicated actions (create, cancel, upload_payment_proof,
+        # set_status), never by a generic PATCH of these fields.
+        read_only_fields = fields
 
     def get_courier_name(self, obj):
         courier = obj.assigned_courier

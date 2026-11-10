@@ -832,23 +832,33 @@ def product_detail(request, pk):
     # Build the Size → Designs tree for the redesigned Variants section,
     # plus dynamic summary counts (sizes/designs/total stock). Nothing here
     # is hard-coded — it's all derived from this product's own rows.
-    size_rows = list(product.sizes.all().order_by('order', 'id'))
+    # Sizes are shown only while "This product has sizes" is ON (at least
+    # one active size). When it is OFF, old size rows are just switched off
+    # and must not appear here; the product's own designs are shown instead.
+    uses_sizes = product.has_variants
+    size_rows = list(product.sizes.all().order_by('order', 'id')) if uses_sizes else []
     total_designs = 0
     total_stock = 0
     for s in size_rows:
         designs = list(s.designs.all().order_by('order', 'id'))
         s.design_list = designs
         s.design_count = len(designs)
-        s.stock_total = sum(d.stock for d in designs)
-        total_designs += s.design_count
-        total_stock += s.stock_total
+        s.stock_total = sum(d.stock for d in designs if d.is_active)
+        # A switched-off size does not count in the totals
+        if s.is_active:
+            total_designs += sum(1 for d in designs if d.is_active)
+            total_stock += s.stock_total
     # Sizes with no designs are still listed, but not counted in the Sizes total
-    sizes_with_designs = sum(1 for s in size_rows if s.design_count > 0)
+    sizes_with_designs = sum(1 for s in size_rows if s.is_active and s.design_count > 0)
+    direct_designs = [] if uses_sizes else list(product.direct_designs.all().order_by('order', 'id'))
+    direct_stock = sum(d.stock for d in direct_designs if d.is_active)
 
     return render(request, 'dashboard/products/detail.html', {
         'product': product,
         'gallery_by_size': gallery_by_size,
         'size_rows': size_rows,
+        'direct_designs': direct_designs,
+        'direct_stock': direct_stock,
         'variant_summary': {
             'size_count': sizes_with_designs,
             'design_count': total_designs,

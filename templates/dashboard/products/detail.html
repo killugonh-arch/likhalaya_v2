@@ -300,6 +300,7 @@
               <div class="pd-size-left">
                 <span class="pd-size-name">{{ size.get_name_display }}</span>
                 <span class="pd-size-price">₱{{ size.price|floatformat:0 }}</span>
+                {% if not size.is_active %}<span class="pd-status-pill is-inactive" style="padding:3px 9px;"><span class="pd-status-dot"></span>Off</span>{% endif %}
               </div>
             </div>
             <div class="pd-size-body">
@@ -317,7 +318,7 @@
                   </div>
                   <div class="pd-design-stats">
                     <span class="pd-stock-badge {% if d.stock == 0 %}out{% elif d.stock <= 5 %}low{% endif %}">Stock: {{ d.stock }}</span>
-                    {% if d.is_active %}
+                    {% if d.is_active and size.is_active %}
                     <span class="pd-status-pill is-active" style="padding:3px 9px;"><span class="pd-status-dot"></span>Active</span>
                     {% else %}
                     <span class="pd-status-pill is-inactive" style="padding:3px 9px;"><span class="pd-status-dot"></span>Inactive</span>
@@ -332,6 +333,40 @@
           </div>
         </div>
         {% endfor %}
+      {% elif direct_designs %}
+        <div class="pd-size-block">
+          <div>
+            <div class="pd-size-summary">
+              <div class="pd-size-left">
+                <span class="pd-size-name">Designs</span>
+                <span class="pd-size-price">{{ product.price_display }}</span>
+              </div>
+            </div>
+            <div class="pd-size-body">
+              {% for d in direct_designs %}
+              <div class="pd-design-card">
+                {% if d.image %}
+                <img src="{{ d.image.url }}" alt="{{ d.title }}" class="pd-design-thumb">
+                {% else %}
+                <div class="pd-design-noimg"><i class="fas fa-image"></i></div>
+                {% endif %}
+                <div class="pd-design-info">
+                  <div class="pd-design-title">{{ d.title|default:"Untitled Design" }}</div>
+                  {% if d.color %}<div class="pd-design-tags">{{ d.color }}</div>{% endif %}
+                </div>
+                <div class="pd-design-stats">
+                  <span class="pd-stock-badge {% if d.stock == 0 %}out{% elif d.stock <= 5 %}low{% endif %}">Stock: {{ d.stock }}</span>
+                  {% if d.is_active %}
+                  <span class="pd-status-pill is-active" style="padding:3px 9px;"><span class="pd-status-dot"></span>Active</span>
+                  {% else %}
+                  <span class="pd-status-pill is-inactive" style="padding:3px 9px;"><span class="pd-status-dot"></span>Inactive</span>
+                  {% endif %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
       {% else %}
         <div class="pd-no-variants">
           <i class="fas fa-layer-group"></i>

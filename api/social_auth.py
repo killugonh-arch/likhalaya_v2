@@ -62,8 +62,11 @@ def _get_or_create_user(email, first_name, last_name):
                 status=status.HTTP_403_FORBIDDEN)
         if not user.is_active:
             # Registered but never confirmed the emailed code: Google has
-            # verified the email for us, so let them in.
-            if user.email_otps.filter(is_used=False).exists():
+            # verified the email for us, so let them in. Only when no code
+            # was ever used: a used code means the account was verified
+            # before, so being inactive now means an admin disabled it.
+            otps = user.email_otps
+            if otps.filter(is_used=False).exists() and not otps.filter(is_used=True).exists():
                 user.is_active = True
                 user.save(update_fields=['is_active'])
             else:
@@ -115,4 +118,9 @@ class GoogleLoginView(APIView):
             email, info.get('given_name', ''), info.get('family_name', ''))
         if error:
             return error
+        # Staff must be switched on for the mobile app (admins are exempt).
+        if user.role == 'staff' and not user.mobile_access:
+            return Response(
+                {'detail': 'Your staff account is not enabled for the mobile app. Please contact an administrator.'},
+                status=status.HTTP_403_FORBIDDEN)
         return _token_response(request, user)
