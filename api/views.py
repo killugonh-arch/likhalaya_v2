@@ -1,7 +1,7 @@
 from decimal import Decimal
 from django.utils import timezone
 from rest_framework import viewsets, generics, permissions, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -10,7 +10,7 @@ from accounts.models import CustomUser, EmailOTP
 from accounts.views import _send_otp_email
 from store.models import Category, Product, ContactMessage, MessageReply
 from store.views import _customer_reply_cooldown_remaining
-from orders.models import Order, OrderItem, Notification
+from orders.models import Order, OrderItem, Notification, GCashQRCode
 from orders.validators import validate_payment_proof
 from orders.shipping import get_shipping_quote
 from accounts.activity import log_activity
@@ -385,6 +385,60 @@ class OrderViewSet(viewsets.ModelViewSet):
             update_fields.append('delivery_confirmed_at')
         order.save(update_fields=update_fields)
         return Response(OrderSerializer(order).data)
+
+
+# ── GCash payment info (same QR image the website shows) ───────────
+
+def _mask_word(word):
+    w = word.upper()
+    n = len(w)
+    if n <= 2:
+        return w
+    if n == 3:
+        return w[0] + '*' + w[-1]
+    return w[:2] + '*' * (n - 3) + w[-1]
+
+
+def _mask_gcash_name(value):
+    """Same masking as the website: "Deniel Bryan Perea" -> "DE***L BR**N P."""
+    words = [w for w in (value or '').split() if w]
+    if not words:
+        return ''
+    if len(words) == 1:
+        return _mask_word(words[0])
+    return ' '.join([_mask_word(w) for w in words[:-1]] + [words[-1][0].upper() + '.'])
+
+
+@api_view(['GET'])
+@permission_classes([permissions.IsAuthenticated])
+def gcash_info(request):
+    """GET /api/gcash/?product_ids=1,2 -> {image_url, account_name, account_number}
+
+    Same image rules as the website's GCash step: if the order is for exactly
+    one distinct product that has its own GCash QR image (set by the admin),
+    that image is used; otherwise the site's active GCash QR."""
+    image = None
+    ids = {int(x) for x in request.query_params.get('product_ids', '').split(',') if x.strip().isdigit()}
+    if len(ids) == 1:
+        product = Product.objects.filter(pk=next(iter(ids))).first()
+        if product is not None and product.gcash_qr_code:
+            image = product.gcash_qr_code
+
+    active = GCashQRCode.objects.filter(
+        status=GCashQRCode.STATUS_ACTIVE_LOCKED).order_by('-created_at').first()
+    if image is None and active is not None and active.image:
+        image = active.image
+
+    url = ''
+    if image:
+        url = image.url
+        if url.startswith('/'):
+            url = request.build_absolute_uri(url)
+    return Response({
+        'image_url': url,
+        'account_name': _mask_gcash_name(active.account_name) if active else '',
+        'account_number': (active.account_number if active else '') or '',
+    })
 
 
 class NotificationViewSet(viewsets.ReadOnlyModelViewSet):

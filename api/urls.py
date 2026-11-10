@@ -44,6 +44,7 @@ urlpatterns = [
     path('staff/orders/<int:pk>/action/', staff_orders_api.staff_order_action, name='staff_order_action'),
 
     path('cart/', cart_api.cart, name='api_cart'),
+    path('gcash/', views.gcash_info, name='api_gcash'),
 
     path('', include(router.urls)),
 ]

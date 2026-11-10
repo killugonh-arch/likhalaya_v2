@@ -457,9 +457,6 @@
       </div>
     </div>
     <div class="od-actions no-print">
-      <button type="button" onclick="window.print()" class="od-btn od-btn-secondary">
-        <i class="fas fa-print"></i>Print Order
-      </button>
       <a href="{% url 'dashboard:order_list' %}" class="od-btn od-btn-secondary">
         <i class="fas fa-arrow-left"></i>Back to Orders
       </a>
@@ -640,9 +637,9 @@
               <div class="od-eta-box mb-2">
                 <div class="od-eta-label"><i class="fas fa-clock"></i>Estimated delivery time (customer will see this)</div>
                 <div class="od-eta-row">
-                  <input type="number" name="eta_days_min" class="form-control form-control-sm" min="1" max="60" value="0" required aria-label="From days">
+                  <input type="number" name="eta_days_min" class="form-control form-control-sm" min="1" max="60" placeholder="0" required aria-label="From days">
                   <span class="sep">to</span>
-                  <input type="number" name="eta_days_max" class="form-control form-control-sm" min="1" max="60" value="0" required aria-label="To days">
+                  <input type="number" name="eta_days_max" class="form-control form-control-sm" min="1" max="60" placeholder="0" required aria-label="To days">
                   <span class="sep">days</span>
                 </div>
               </div>
@@ -654,9 +651,9 @@
               {% csrf_token %}
               <div class="od-eta-label"><i class="fas fa-clock"></i>Estimated delivery time</div>
               <div class="od-eta-row">
-                <input type="number" name="eta_days_min" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_min|default_if_none:'0' }}" aria-label="From days">
+                <input type="number" name="eta_days_min" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_min|default_if_none:'' }}" placeholder="0" required aria-label="From days">
                 <span class="sep">to</span>
-                <input type="number" name="eta_days_max" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_max|default_if_none:'0' }}" aria-label="To days">
+                <input type="number" name="eta_days_max" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_max|default_if_none:'' }}" placeholder="0" required aria-label="To days">
                 <span class="sep">days</span>
                 <button type="submit" class="od-btn od-btn-secondary" style="white-space:nowrap;"><i class="fas fa-floppy-disk"></i>Update</button>
               </div>
@@ -671,9 +668,9 @@
               {% csrf_token %}
               <div class="od-eta-label"><i class="fas fa-clock"></i>Estimated delivery time</div>
               <div class="od-eta-row">
-                <input type="number" name="eta_days_min" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_min|default_if_none:'0' }}" aria-label="From days">
+                <input type="number" name="eta_days_min" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_min|default_if_none:'' }}" placeholder="0" required aria-label="From days">
                 <span class="sep">to</span>
-                <input type="number" name="eta_days_max" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_max|default_if_none:'0' }}" aria-label="To days">
+                <input type="number" name="eta_days_max" class="form-control form-control-sm" min="1" max="60" value="{{ order.eta_days_max|default_if_none:'' }}" placeholder="0" required aria-label="To days">
                 <span class="sep">days</span>
                 <button type="submit" class="od-btn od-btn-secondary" style="white-space:nowrap;"><i class="fas fa-floppy-disk"></i>Update</button>
               </div>

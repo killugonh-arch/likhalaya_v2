@@ -798,6 +798,7 @@ body:not(.dark-mode) :where(.form-control, .form-select, .ds-input, .lk-input, .
     </a>
     <a href="{% url 'reviews:dashboard_list' %}" class="sidebar-link {% block sb_reviews %}{% endblock %}">
       <i class="fas fa-star"></i><span>Reviews</span>
+      {% if new_reviews_count %}<span class="sidebar-badge">{{ new_reviews_count }}</span>{% endif %}
     </a>
 
     <div class="sidebar-section-label">Payments</div>

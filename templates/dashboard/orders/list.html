@@ -82,7 +82,6 @@
 .ds-table tbody tr:hover { background: var(--surface-subtle); }
 .ds-table tbody tr:last-child td { border-bottom: none; }
 .ds-table tbody tr.order-row { cursor: pointer; }
-.ds-table tbody tr.order-row:hover .order-number { color: var(--brand-green-hover); }
 
 .ds-empty-state { text-align: center; padding: var(--space-6) var(--space-4); color: var(--text-muted); }
 .ds-empty-state .icon { font-size: 36px; color: var(--border); margin-bottom: var(--space-3); }
@@ -107,6 +106,14 @@
   color: var(--text-secondary); font-size: 11px; font-weight: 600;
   padding: 3px 9px; border-radius: 20px; border: 1px solid var(--border);
 }
+
+/* Product thumbnails (same look as the customer "My Orders" page) */
+.order-thumbs { display: flex; align-items: center; justify-content: center; gap: 8px; }
+.order-thumb { width: 56px; height: 56px; object-fit: cover; border-radius: var(--radius-md); border: 1px solid var(--border); background: var(--surface-subtle); box-shadow: var(--shadow-sm); display: block; flex-shrink: 0; }
+.order-thumb-empty { display: flex; align-items: center; justify-content: center; color: var(--text-muted); font-size: 16px; }
+.order-items-names { font-weight: 600; font-size: 13.5px; color: var(--text-primary); }
+.order-items-more { margin-left: 0; display: inline-flex; align-items: center; margin-left: 6px; padding: 2px 8px; border-radius: 20px; background: var(--surface-subtle); border: 1px solid var(--border); color: var(--text-secondary); font-size: 11px; font-weight: 600; }
+.order-pay { font-weight: 600; font-size: 13.5px; color: var(--text-primary); }
 
 .dash-table-footer {
   display: flex; align-items: center; justify-content: space-between;
@@ -347,7 +354,7 @@ button.ds-page-btn:disabled { opacity: .4; cursor: not-allowed; }
         <label class="visually-hidden" for="order-payment">Payment method</label>
         <select id="order-payment" name="payment" class="lk-input">
           <option value="">All Payments</option>
-          {% for s, l in payment_choices %}{% if s != 'bank' %}
+          {% for s, l in payment_choices %}{% if s == 'cod' or s == 'gcash' %}
           <option value="{{ s }}" {% if s == payment_filter %}selected{% endif %}>{{ l }}</option>
           {% endif %}{% endfor %}
         </select>
@@ -365,20 +372,22 @@ button.ds-page-btn:disabled { opacity: .4; cursor: not-allowed; }
   <div class="table-responsive">
     <table class="ds-table mb-0">
       <thead><tr>
-        <th>Order #</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th>
+        <th>Product</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Date</th>
       </tr></thead>
       <tbody>
         {% for order in orders %}
         {% url 'dashboard:order_detail' order.pk as order_detail_url %}
-        <tr class="order-row" data-href="{{ order_detail_url }}">
-          <td class="fw-semibold order-number" style="color:var(--brand-green);">{{ order.order_number }}</td>
+        <tr class="order-row" data-href="{{ order_detail_url }}" aria-label="Order {{ order.order_number }}">
+          <td>
+            <div class="order-thumbs">{% for item in order.items.all|slice:":3" %}{% with img=item.product.default_variant_image %}{% if forloop.counter == 3 %}<span style="width:56px;height:56px;border-radius:12px;border:1px solid #e6e1d6;box-shadow:0 1px 4px rgba(0,0,0,.08);flex-shrink:0;position:relative;overflow:hidden;display:block;background:#dfe5e3;">{% if item.product and img %}<img src="{{ img }}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block;filter:blur(4px);transform:scale(1.2);">{% endif %}<span style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(20,30,28,.38);color:#fff;font-weight:800;font-size:16px;">+{{ order.items.all|length|add:"-2" }}</span></span>{% elif item.product and img %}<img src="{{ img }}" alt="{{ item.product_name }}" loading="lazy" style="width:56px;height:56px;border-radius:12px;border:1px solid #e6e1d6;box-shadow:0 1px 4px rgba(0,0,0,.08);flex-shrink:0;object-fit:cover;display:block;background:#f1f4f3;">{% else %}<span style="width:56px;height:56px;border-radius:12px;border:1px solid #e6e1d6;box-shadow:0 1px 4px rgba(0,0,0,.08);flex-shrink:0;background:#f1f4f3;display:flex;align-items:center;justify-content:center;color:#9aa5a2;"><i class="fas fa-image"></i></span>{% endif %}{% endwith %}{% empty %}<span style="width:56px;height:56px;border-radius:12px;border:1px solid #e6e1d6;box-shadow:0 1px 4px rgba(0,0,0,.08);flex-shrink:0;background:#f1f4f3;display:flex;align-items:center;justify-content:center;color:#9aa5a2;"><i class="fas fa-image"></i></span>{% endfor %}</div>
+          </td>
           <td>
             <div class="fw-semibold" style="font-size:13px;">{{ order.full_name }}</div>
             <div class="text-muted" style="font-size:11px;">{{ order.email }}</div>
           </td>
-          <td><span class="order-meta-chip">{{ order.items.count }}</span></td>
+          <td>{% for item in order.items.all|slice:":2" %}{{ item.product_name }}{% if not forloop.last %}, {% endif %}{% endfor %}{% if order.items.all|length > 2 %} <span class="order-items-more">+{{ order.items.all|length|add:"-2" }}</span>{% endif %}</td>
           <td class="fw-bold" style="color:var(--text-primary);">₱{{ order.total|floatformat:0|intcomma }}</td>
-          <td><span class="order-meta-chip">{{ order.get_payment_method_display }}</span></td>
+          <td class="order-pay">{% if order.payment_method == 'cod' %}COD{% elif order.payment_method == 'gcash' %}GCash{% else %}{{ order.get_payment_method_display }}{% endif %}</td>
           <td>
             <span class="ds-badge
               {% if order.status == 'pending' %}ds-badge-warning
@@ -390,7 +399,7 @@ button.ds-page-btn:disabled { opacity: .4; cursor: not-allowed; }
               {{ order.get_status_display }}
             </span>
           </td>
-          <td class="text-muted" style="font-size:12px;">{{ order.created_at|date:"M d, Y" }}</td>
+          <td class="text-muted" style="font-size:12px;">{{ order.created_at|date:"n/j/y" }}</td>
         </tr>
         {% empty %}
         <tr><td colspan="7">
