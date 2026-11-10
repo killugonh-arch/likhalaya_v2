@@ -401,6 +401,8 @@ def my_message_detail(request, pk):
     """Old per-thread URL (still used by notification links): everything now
     lives in the single combined conversation."""
     get_object_or_404(ContactMessage, pk=pk, customer=request.user)
+    # Opening the notification link counts as reading it (same as the app's mark_read)
+    request.user.notifications.filter(contact_message_id=pk, is_read=False).update(is_read=True)
     return redirect('store:my_messages')
 
 

@@ -1,6 +1,6 @@
 from django.urls import reverse
 from store.models import Category, ContactMessage
-from orders.models import Order
+from orders.models import Order, Notification
 from orders.cart import Cart
 
 
@@ -40,6 +40,14 @@ def global_context(request):
             })
         items.sort(key=lambda i: i['created_at'], reverse=True)
         notifications = items[:8]
+
+    # Customers: show the same Notification rows the mobile app shows
+    # (order status updates, message replies). Without this the website bell
+    # stayed empty because only the staff branch above filled it.
+    elif request.user.is_authenticated:
+        customer_qs = Notification.objects.filter(user=request.user).select_related('order')
+        notifications = list(customer_qs[:8])
+        notification_count = customer_qs.filter(is_read=False).count()
 
     # Deliveries badge — count of orders awaiting pickup/delivery this user
     # can act on: their own assigned deliveries, or (for admins) all of them.
