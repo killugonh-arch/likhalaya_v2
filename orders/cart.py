@@ -1,7 +1,7 @@
 from decimal import Decimal
 from django.conf import settings
 from django.db.models import Q
-from django.db import transaction
+from django.db import DatabaseError, transaction
 from store.models import Product, ProductDesign
 from .models import CartItem
 
@@ -46,7 +46,14 @@ class Cart:
         self.cart = cart
 
     def _load_for_user(self, session_cart):
-        rows = list(CartItem.objects.filter(user=self.user).select_related('product', 'design'))
+        try:
+            with transaction.atomic():
+                rows = list(CartItem.objects.filter(user=self.user).select_related('product', 'design'))
+        except DatabaseError:
+            # The cart table isn't migrated yet: behave like a guest cart
+            # (session only) instead of crashing every page.
+            self.user = None
+            return session_cart
         if not rows and session_cart and not self.session.get(self.SEEDED_SESSION_KEY):
             # First visit after this feature went live: keep the existing
             # session cart and store it in the database.
@@ -94,9 +101,12 @@ class Cart:
                 design_id=item.get('design_id'),
                 quantity=qty,
             ))
-        with transaction.atomic():
-            CartItem.objects.filter(user=self.user).delete()
-            CartItem.objects.bulk_create(rows)
+        try:
+            with transaction.atomic():
+                CartItem.objects.filter(user=self.user).delete()
+                CartItem.objects.bulk_create(rows)
+        except DatabaseError:
+            pass  # table missing (not migrated yet); session cart still works
 
     @staticmethod
     def make_key(product_id, size=None, design_id=None):
