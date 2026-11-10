@@ -284,14 +284,13 @@ body.dark-mode .pe-leave {
 
 <div class="pe">
 
-<a href="{% url 'dashboard:product_list' %}" class="pd-back-link"><i class="fas fa-arrow-left"></i> Back to Products</a>
-
 <div class="pd-header-top">
   <div class="pd-header-titles">
     <h1>{{ title }}</h1>
     <p>{% if product %}Update product information, photos, prices and stock for each size.{% else %}Add the product details, then set photos, price and stock for each size.{% endif %}</p>
   </div>
   <div class="pd-header-actions">
+    <a href="{% url 'dashboard:product_list' %}" class="pd-btn pd-btn-outline"><i class="fas fa-arrow-left"></i> Back to Products</a>
     {% if product and product.is_active %}
     <a class="pd-btn pd-btn-outline" href="{% url 'store:product_detail' product.slug %}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> View in Shop</a>
     {% endif %}

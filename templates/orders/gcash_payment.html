@@ -108,12 +108,12 @@
           <div class="qr-box mb-3">
             {% if active_qr %}
               <img src="{{ active_qr.image.url }}" alt="GCash QR Code">
-              <div class="small text-muted mt-2">Scan this QR in your GCash app</div>
-              {% if active_qr.account_name %}<div class="fw-bold" style="color:#0071CE;">{{ active_qr.account_name|mask_gcash_name }}</div>{% endif %}
-              {% if active_qr.account_number %}<div class="small text-muted">{{ active_qr.account_number|mask_gcash_number }}</div>{% endif %}
+              <div class="small text-muted mt-1" style="line-height:1.2;margin-bottom:2px;">Scan this QR in your GCash app</div>
+              {% if active_qr.account_name %}<div class="fw-bold" style="color:#0071CE;font-size:calc(1em + 2px);line-height:1.2;margin-bottom:2px;">{{ active_qr.account_name|mask_gcash_name }}</div>{% endif %}
+              {% if active_qr.account_number %}<div class="small text-muted" style="font-size:calc(.875em + 2px);line-height:1.2;margin:0;">{{ active_qr.account_number }}</div>{% endif %}
             {% elif qr_image_url %}
               <img src="{{ qr_image_url }}" alt="GCash QR Code">
-              <div class="small text-muted mt-2">Scan this QR in your GCash app</div>
+              <div class="small text-muted mt-1" style="line-height:1.2;margin-bottom:2px;">Scan this QR in your GCash app</div>
             {% else %}
               <i class="fas fa-qrcode" style="font-size:48px;color:#cfe6f8;"></i>
               <div class="fw-bold mt-2" style="color:#8b9490;">No QR code available right now</div>

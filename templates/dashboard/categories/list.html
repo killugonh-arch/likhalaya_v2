@@ -14,7 +14,7 @@
   </div>
   {% if request.user.is_admin_user %}
   <div class="pd-header-actions">
-    <a href="{% url 'dashboard:category_create' %}" class="pd-btn pd-btn-primary"><i class="fas fa-plus"></i> Add Category</a>
+    <button type="button" class="pd-btn pd-btn-primary" data-bs-toggle="modal" data-bs-target="#categoryModal" data-cat-open="create" data-action="{% url 'dashboard:category_create' %}"><i class="fas fa-plus"></i> Add Category</button>
   </div>
   {% endif %}
 </div>
@@ -39,7 +39,7 @@
           {% if request.user.is_staff_user %}
           <td>
             <div class="action-btns">
-              <a href="{% url 'dashboard:category_edit' cat.pk %}" class="btn-icon-action btn-icon-edit" title="Edit"><i class="fas fa-pencil-alt"></i></a>
+              <a href="{% url 'dashboard:category_edit' cat.pk %}" class="btn-icon-action btn-icon-edit" title="Edit" data-bs-toggle="modal" data-bs-target="#categoryModal" data-cat-open="edit" data-action="{% url 'dashboard:category_edit' cat.pk %}" data-name="{{ cat.name }}" data-description="{{ cat.description }}"><i class="fas fa-pencil-alt"></i></a>
               {% if request.user.is_admin_user %}
               {% if cat.name|lower != "others" %}<button type="button" class="btn-icon-action btn-icon-delete" title="Archive" data-bs-toggle="modal" data-bs-target="#delete-cat-{{ cat.pk }}"><i class="fas fa-trash"></i></button>{% endif %}
               {% endif %}
@@ -61,4 +61,70 @@
 {% include 'partials/confirm_delete_modal.html' with id_prefix="delete-cat-" obj_pk=cat.pk title='Archive Category' message_prefix='Move' item_name=cat.name message_suffix='to the Archive? Its products will be moved to Others, and an admin can restore the category anytime from the Archive page.' form_action=cat_delete_url submit_label='Archive' %}
 {% endfor %}
 {% endif %}
+
+<!-- Add / Edit category pop-up -->
+<div class="modal fade" id="categoryModal" tabindex="-1" aria-labelledby="categoryModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 border-0 shadow">
+      <form method="post" id="categoryModalForm" action="">
+        {% csrf_token %}
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold" id="categoryModalLabel">Add Category</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <p class="text-muted small mb-3" id="categoryModalHint">Create a new category to organize your products.</p>
+          <div class="mb-3">
+            <label class="form-label fw-semibold" for="catModalName">Name<span class="text-danger">*</span></label>
+            <input type="text" class="form-control" id="catModalName" name="name" maxlength="100" required>
+            <div class="text-end text-muted small mt-1"><span id="catModalNameCount">0</span>/100</div>
+          </div>
+          <div class="mb-1">
+            <label class="form-label fw-semibold" for="catModalDesc">Description</label>
+            <textarea class="form-control" id="catModalDesc" name="description" rows="3" maxlength="500"></textarea>
+            <div class="text-end text-muted small mt-1"><span id="catModalDescCount">0</span>/500</div>
+          </div>
+        </div>
+        <div class="modal-footer border-0 pt-0">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="pd-btn pd-btn-primary" id="categoryModalSubmit"><i class="fas fa-check"></i> <span>Create Category</span></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var modalEl = document.getElementById('categoryModal');
+  if (!modalEl) return;
+  var form = document.getElementById('categoryModalForm');
+  var title = document.getElementById('categoryModalLabel');
+  var hint = document.getElementById('categoryModalHint');
+  var submitText = document.querySelector('#categoryModalSubmit span');
+  var nameI = document.getElementById('catModalName');
+  var descI = document.getElementById('catModalDesc');
+  var nameC = document.getElementById('catModalNameCount');
+  var descC = document.getElementById('catModalDescCount');
+
+  function counts() { nameC.textContent = nameI.value.length; descC.textContent = descI.value.length; }
+  nameI.addEventListener('input', counts);
+  descI.addEventListener('input', counts);
+
+  // Bootstrap opens the modal from the data-bs-* attributes; we only fill it in.
+  modalEl.addEventListener('show.bs.modal', function (e) {
+    var t = e.relatedTarget;
+    if (!t || !t.getAttribute) return;
+    var edit = t.getAttribute('data-cat-open') === 'edit';
+    form.action = t.getAttribute('data-action') || '';
+    nameI.value = edit ? (t.getAttribute('data-name') || '') : '';
+    descI.value = edit ? (t.getAttribute('data-description') || '') : '';
+    title.textContent = edit ? 'Edit Category' : 'Add Category';
+    hint.textContent = edit ? "Update this category's name and description." : 'Create a new category to organize your products.';
+    submitText.textContent = edit ? 'Save Category' : 'Create Category';
+    counts();
+  });
+  modalEl.addEventListener('shown.bs.modal', function () { nameI.focus(); });
+})();
+</script>
 {% endblock %}

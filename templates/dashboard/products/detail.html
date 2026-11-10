@@ -116,24 +116,15 @@
   <span class="sep">/</span><span class="current">{{ product.name }}</span>
 </div>
 
-<a href="{% url 'dashboard:product_list' %}" class="pd-back-link"><i class="fas fa-arrow-left"></i> Back to Products</a>
-
 <div class="pd-header-top">
   <div class="pd-header-titles">
     <h1>Product Details</h1>
   </div>
   <div class="pd-header-actions">
-    <a href="{{ product.get_absolute_url }}" class="pd-btn pd-btn-outline" target="_blank" rel="noopener">
-      <i class="fas fa-external-link-alt"></i> View in Shop
-    </a>
+    <a href="{% url 'dashboard:product_list' %}" class="pd-btn pd-btn-outline"><i class="fas fa-arrow-left"></i> Back to Products</a>
     <a href="{% url 'dashboard:product_edit' product.pk %}" class="pd-btn pd-btn-primary">
       <i class="fas fa-pencil-alt"></i> Edit Product
     </a>
-    {% if request.user.is_admin_user %}
-    <button type="button" class="pd-btn pd-btn-danger" data-bs-toggle="modal" data-bs-target="#deleteProductModal">
-      <i class="fas fa-box-archive"></i> Archive
-    </button>
-    {% endif %}
   </div>
 </div>
 

@@ -122,15 +122,13 @@ input.form-control { height: 50px; }
   <span class="sep">/</span><span class="current">{{ title }}</span>
 </div>
 
-<a href="{% url 'dashboard:category_list' %}" class="pd-back-link"><i class="fas fa-arrow-left"></i> Back to Categories</a>
-
 <div class="pd-header-top">
   <div class="pd-header-titles">
     <h1>{{ title }}</h1>
     <p>{% if category %}Update this category's name and description.{% else %}Create a new category to organize your products.{% endif %}</p>
   </div>
   <div class="pd-header-actions">
-    <a href="{% url 'dashboard:category_list' %}" class="pd-btn pd-btn-outline">Cancel</a>
+    <a href="{% url 'dashboard:category_list' %}" class="pd-btn pd-btn-outline"><i class="fas fa-arrow-left"></i> Back to Categories</a>
     <button type="submit" form="categoryForm" class="pd-btn pd-btn-primary"><i class="fas fa-check"></i> {% if category %}Save Category{% else %}Create Category{% endif %}</button>
   </div>
 </div>
