@@ -7,9 +7,9 @@
 /* ============ Page background ============ */
 body { background: #F6F8FA; }
 
-/* ============ Content container — same width/rhythm as Shop's content area ============ */
-.profile-page-shell { max-width: 1300px; margin: 0 auto; padding: 40px 24px 64px; }
-.profile-page-grid { display: grid; grid-template-columns: 300px 1fr; gap: 28px; align-items: start; }
+/* ============ Content container ============ */
+.profile-page-shell { max-width: 900px; margin: 0 auto; padding: 40px 24px 64px; }
+.profile-page-grid { display: grid; grid-template-columns: 1fr; gap: 28px; align-items: start; }
 
 /* ============ Shared card style — matches Shop's filter panel / product cards:
    white bg, thin clean border, subtle shadow, moderate radius, no heavy effects ============ */
@@ -19,29 +19,6 @@ body { background: #F6F8FA; }
   border-radius: 16px;
   box-shadow: 0 2px 10px rgba(16,24,20,.05);
 }
-
-/* ============ Account nav card ============ */
-.pnav-card { padding: 20px; }
-.pnav-card-title {
-  font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .6px;
-  color: #8b9490; margin-bottom: 14px; padding: 0 6px;
-}
-.pnav { display: flex; flex-direction: column; gap: 4px; }
-.pnav-link {
-  display: flex; align-items: center; gap: 10px;
-  color: #435047; font-size: 14.5px; font-weight: 600;
-  border-radius: 10px; padding: 11px 14px;
-  text-decoration: none;
-  transition: background .15s ease, color .15s ease;
-}
-.pnav-link i { width: 16px; text-align: center; font-size: 13px; color: #8b9490; transition: color .15s ease; }
-.pnav-link:hover { background: #F2F6F4; color: var(--teal); }
-.pnav-link:hover i { color: var(--teal); }
-.pnav-link.active {
-  background: var(--teal);
-  color: #fff;
-}
-.pnav-link.active i { color: #fff; }
 
 /* ============ Profile summary card (compact — no oversized hero) ============ */
 .psummary-card { padding: 32px; display: flex; align-items: center; gap: 24px; margin-bottom: 24px; }
@@ -141,16 +118,8 @@ body { background: #F6F8FA; }
 .loc-suggest-empty { padding: 8px 14px; font-size: 13px; color: #999; }
 
 /* ============ Responsive ============ */
-@media (max-width: 992px) {
-  .profile-page-grid { grid-template-columns: 240px 1fr; gap: 20px; }
-}
 @media (max-width: 767px) {
   .profile-page-shell { padding: 28px 16px 48px; }
-  .profile-page-grid { grid-template-columns: 1fr; }
-  .pnav { flex-direction: row; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; -ms-overflow-style: none; }
-  .pnav::-webkit-scrollbar { display: none; }
-  .pnav-link { flex-shrink: 0; }
-  .pnav-card-title { display: none; }
   .psummary-card { flex-direction: column; text-align: center; }
   .psummary-meta { justify-content: center; }
   .pinfo-card-header { padding: 20px 20px 0; }
@@ -165,8 +134,6 @@ body { background: #F6F8FA; }
   .profile-page-shell { padding: 12px 10px 28px; }
   .profile-page-grid { gap: 12px; }
   .pcard { border-radius: 14px; }
-  .pnav-card { padding: 8px 10px; }
-  .pnav-link { padding: 8px 12px; font-size: 13px; }
   .psummary-card { padding: 14px; gap: 12px; margin-bottom: 12px; }
   .profile-avatar { width: 64px; height: 64px; font-size: 22px; border-width: 3px; }
 }
@@ -199,18 +166,7 @@ body { background: #F6F8FA; }
 <div class="profile-page-shell">
   <div class="profile-page-grid">
 
-    <!-- ============ Left: Account Navigation ============ -->
-    <div>
-      <div class="pcard pnav-card">
-        <div class="pnav-card-title">Account</div>
-        <nav class="pnav">
-          <a class="pnav-link active" href="javascript:void(0)" onclick="showEditProfile()"><i class="fas fa-user-edit"></i>Edit Profile</a>
-          <a class="pnav-link" href="{% url 'accounts:change_password' %}"><i class="fas fa-lock"></i>Change Password</a>
-        </nav>
-      </div>
-    </div>
-
-    <!-- ============ Right: Profile Content ============ -->
+    <!-- ============ Profile Content ============ -->
     <div class="tab-content">
       <div class="tab-pane fade show active" id="edit">
 

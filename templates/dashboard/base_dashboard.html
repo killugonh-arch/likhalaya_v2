@@ -705,6 +705,9 @@ body:not(.dark-mode) .dash-page .pagination .page-item.active .page-link { backg
 @media (min-width: 768px) {
   .dash-table thead th, .dash-table tbody td { text-align: center; }
   .dash-table .action-btns, .dash-table .d-flex.gap-1 { justify-content: center; }
+  /* right-aligned Actions columns and image + name boxes (archive, products, users...) */
+  .dash-table th.text-end, .dash-table td.text-end { text-align: center !important; }
+  .dash-table td > .d-flex { justify-content: center !important; }
   /* other table styles used around the dashboard (orders, couriers, activity log, shipping fees...) */
   body .ds-table thead th, body .ds-table tbody td,
   body .fl-table thead th, body .fl-table tbody td,
