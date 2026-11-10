@@ -284,13 +284,14 @@ body.dark-mode .pe-leave {
 
 <div class="pe">
 
+<a href="{% url 'dashboard:product_list' %}" class="pd-back-link"><i class="fas fa-arrow-left"></i> Back to Products</a>
+
 <div class="pd-header-top">
   <div class="pd-header-titles">
     <h1>{{ title }}</h1>
     <p>{% if product %}Update product information, photos, prices and stock for each size.{% else %}Add the product details, then set photos, price and stock for each size.{% endif %}</p>
   </div>
   <div class="pd-header-actions">
-    <a href="{% url 'dashboard:product_list' %}" class="pd-btn pd-btn-outline"><i class="fas fa-arrow-left"></i> Back to Products</a>
     {% if product and product.is_active %}
     <a class="pd-btn pd-btn-outline" href="{% url 'store:product_detail' product.slug %}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> View in Shop</a>
     {% endif %}
@@ -373,7 +374,7 @@ body.dark-mode .pe-leave {
               {% if form.name.errors %}<div class="err">{{ form.name.errors.0 }}</div>{% endif %}
             </div>
             <div>
-              <label class="pe-lbl" for="{{ form.category.id_for_label }}">Category<span class="req">*</span></label>
+              <label class="pe-lbl" for="{{ form.category.id_for_label }}">Category <span style="font-weight:500;opacity:.7;">(optional)</span></label>
               {{ form.category }}
               {% if form.category.errors %}<div class="err">{{ form.category.errors.0 }}</div>{% endif %}
             </div>
@@ -941,7 +942,11 @@ body.dark-mode .pe-leave {
     var errs = [];
     var name = $('#id_name'), cat = $('#id_category');
     if (name && !name.value.trim()) flag(name, 'Product name is required.', errs);
-    if (cat && !cat.value) flag(cat, 'Please choose a category.', errs);
+    // Category is optional: when left empty the product goes into "Others".
+    if (cat && !cat.value) {
+      var others = Array.prototype.filter.call(cat.options, function (o) { return o.value && o.textContent.trim().toLowerCase() === 'others'; })[0];
+      if (others) { cat.value = others.value; cat.classList.remove('is-empty'); }
+    }
 
     var s = priceInput('S'), m = priceInput('M'), l = priceInput('L');
     var sHead = $('.pe-size[data-code="S"] .pe-size-head'), mHead = $('.pe-size[data-code="M"] .pe-size-head'), lHead = $('.pe-size[data-code="L"] .pe-size-head');
@@ -1067,7 +1072,7 @@ body.dark-mode .pe-leave {
   $('#priceRange').addEventListener('click', function () { goToPrice('S'); });
   $$('[data-chip]').forEach(function (c) { c.addEventListener('click', function () { goToPrice(c.dataset.chip); }); });
   // hide the empty placeholder option from the dropdown list (it still shows in the closed box until a category is picked)
-  var emptyCat = $('#id_category option[value=""]'); if (emptyCat) emptyCat.hidden = true;
+  var emptyCat = $('#id_category option[value=""]'); if (emptyCat) { emptyCat.hidden = true; emptyCat.textContent = 'Others (if left empty)'; }
   var catSel = $('#id_category');
   function catTone() { if (catSel) catSel.classList.toggle('is-empty', !catSel.value); }
   if (catSel) catSel.addEventListener('change', catTone);
