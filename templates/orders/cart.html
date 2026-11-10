@@ -33,19 +33,31 @@
 .cart-card { border: none; border-radius: 20px; background: #fff; box-shadow: 0 6px 26px rgba(20,60,50,.07); overflow: hidden; }
 
 /* Select-all toolbar (only when 2+ items) */
-.cart-toolbar { background: var(--cart-green-soft); border-bottom: 1px solid #dcebe3; padding: 14px 22px; }
-.cart-toolbar .btn-select-all {
-  background: #fff; border: 1.5px solid #cfe0d3; color: var(--cart-green);
-  font-weight: 600; font-size: 12.5px; padding: 7px 16px; border-radius: 8px; transition: all .18s ease;
+.cart-toolbar {
+  display: flex; align-items: center; justify-content: space-between; gap: 18px;
+  background: var(--cart-green-soft); border-bottom: 1px solid #dcebe3; padding: 14px 24px;
 }
-.cart-toolbar .btn-select-all:hover { background: var(--cart-green); border-color: var(--cart-green); color: #fff; }
-.cart-toolbar .selected-count-text { color: #3f4a46; font-weight: 500; }
-.cart-toolbar .selected-count-text #selectedCount { font-weight: 700; color: var(--cart-green); }
+.select-all-label {
+  display: inline-flex; align-items: center; gap: 18px; margin: 0; cursor: pointer;
+  font-weight: 700; font-size: 14px; color: var(--cart-green); user-select: none;
+}
+.select-all-label .form-check-input { margin: 0; }
+.selected-count-pill {
+  background: #fff; border: 1px solid #cfe0d3; color: #3f4a46;
+  font-size: 12.5px; font-weight: 500; padding: 5px 14px; border-radius: 999px; white-space: nowrap;
+}
+.selected-count-pill #selectedCount { font-weight: 700; color: var(--cart-green); }
 
 /* ===== Line item ===== */
 .cart-line { display: flex; align-items: center; gap: 18px; padding: 22px 24px; }
 .cart-line + .cart-line { border-top: 1px solid #F0ECE2; }
 .cart-line-checkbox { width: 19px; height: 19px; flex-shrink: 0; cursor: pointer; accent-color: var(--cart-green); }
+
+/* Soft black checkboxes (item rows + select all) */
+.form-check-input.cart-line-checkbox { border: 1.5px solid #555; background-color: #fff; }
+.form-check-input.cart-line-checkbox:checked,
+.form-check-input.cart-line-checkbox:indeterminate { background-color: #555; border-color: #555; }
+.form-check-input.cart-line-checkbox:focus { border-color: #555; box-shadow: 0 0 0 3px rgba(85,85,85,.15); }
 
 .cart-line-img, .cart-line-img-placeholder { width: 92px; height: 92px; border-radius: 14px; flex-shrink: 0; }
 .cart-line-img { object-fit: cover; border: 1px solid #F0ECE2; }
@@ -146,8 +158,9 @@
   .cart-page-header p { font-size: 12.5px; }
   .cart-page-container .row { --bs-gutter-x: .5rem; --bs-gutter-y: .6rem; }
   .cart-card, .summary-card, .empty-cart-card { border-radius: 16px; }
-  .cart-toolbar { padding: 8px 12px; }
-  .cart-toolbar .btn-select-all { padding: 5px 12px; font-size: 12px; }
+  .cart-toolbar { padding: 10px 12px; gap: 10px; }
+  .select-all-label { gap: 10px; font-size: 13px; }
+  .selected-count-pill { font-size: 11.5px; padding: 4px 10px; }
   .cart-line { flex-wrap: wrap; padding: 10px 12px; gap: 8px 10px; align-items: flex-start; }
   .cart-line-checkbox { width: 18px; height: 18px; margin-top: 2px; }
   .cart-line-img, .cart-line-img-placeholder { width: 64px; height: 64px; border-radius: 12px; }
@@ -168,7 +181,7 @@
   .summary-row { font-size: 13px; margin-bottom: 7px; }
   .summary-divider { margin: 10px 0; }
   .summary-grand-total { font-size: 22px; }
-    .empty-cart-card { padding: 36px 16px; }
+  .empty-cart-card { padding: 36px 16px; }
   .empty-cart-title { font-size: 24px; }
   .empty-cart-text { font-size: 14px; }
   .empty-cart-card .btn { font-size: 18px; }
@@ -182,7 +195,7 @@
     <div class="cart-page-header">
       <a href="{% url 'store:shop' %}" class="back-pill"><i class="fas fa-arrow-left"></i>Continue Shopping</a>
       <h1>Shopping Cart</h1>
-      <p>Review your items and proceed to checkout when you're ready.</p>
+      <p>Review your items, tick the ones you want, then proceed to checkout.</p>
     </div>
 
     {% if cart %}
@@ -190,21 +203,18 @@
       <div class="col-lg-8">
         <div class="card cart-card">
           {% if cart_items|length > 1 %}
-          <div class="d-flex align-items-center flex-wrap gap-2 cart-toolbar">
-            <button type="button" id="selectAllBtn" class="btn btn-select-all">
-              <i class="fas fa-check-square me-1"></i><span id="selectAllLabel">Deselect All</span>
-            </button>
-            <span class="selected-count-text small ms-1"><span id="selectedCount">{{ cart_items|length }}</span> of {{ cart_items|length }} selected</span>
+          <div class="cart-toolbar">
+            <label class="select-all-label" for="selectAllCheckbox">
+              <input type="checkbox" id="selectAllCheckbox" class="form-check-input cart-line-checkbox" autocomplete="off">
+              <span>Select all</span>
+            </label>
+            <span class="selected-count-pill"><span id="selectedCount">0</span> of {{ cart_items|length }} selected</span>
           </div>
           {% endif %}
 
           {% for item in cart_items %}
           <div class="cart-line">
-            {% if cart_items|length > 1 %}
-            <input type="checkbox" class="form-check-input cart-item-checkbox cart-line-checkbox" data-item-key="{{ item.key }}" data-price="{{ item.total }}" data-qty="{{ item.quantity }}" checked>
-            {% else %}
-            <input type="checkbox" class="cart-item-checkbox d-none" data-item-key="{{ item.key }}" data-price="{{ item.total }}" data-qty="{{ item.quantity }}" checked>
-            {% endif %}
+            <input type="checkbox" class="form-check-input cart-item-checkbox cart-line-checkbox" autocomplete="off" data-item-key="{{ item.key }}" data-price="{{ item.total }}" data-qty="{{ item.quantity }}" aria-label="Select {{ item.product.name }}">
 
             {% if item.design.image %}
             <img src="{{ item.design.image.url }}" class="cart-line-img" alt="{{ item.design.title }}">
@@ -263,26 +273,24 @@
 
               <div class="summary-row">
                 <span class="label">Subtotal</span>
-                <span class="value" id="summarySubtotal">₱{{ cart_total|floatformat:0|intcomma }}</span>
+                <span class="value" id="summarySubtotal">₱0</span>
               </div>
               <div class="summary-row">
                 <span class="label">Shipping</span>
-                <span class="value {% if shipping_fee == 0 %}shipping-free{% endif %}" id="summaryShipping"
+                <span class="value" id="summaryShipping"
                       data-base="{{ shipping_quote.base_fee|floatformat:0 }}"
                       data-per-item="{{ shipping_quote.per_item|floatformat:0 }}"
-                      data-max-item="{{ shipping_quote.max_item_fee|floatformat:0 }}">
-                  {% if shipping_fee == 0 %}FREE{% else %}₱{{ shipping_fee|floatformat:0 }}{% endif %}
-                </span>
+                      data-max-item="{{ shipping_quote.max_item_fee|floatformat:0 }}">—</span>
               </div>
 
               <hr class="summary-divider">
 
               <div class="summary-grand-total-row">
                 <span class="summary-grand-total-label">Grand Total</span>
-                <span class="summary-grand-total" id="summaryGrandTotal">₱{{ cart_total|add:shipping_fee|floatformat:0|intcomma }}</span>
+                <span class="summary-grand-total" id="summaryGrandTotal">₱0</span>
               </div>
 
-              <button type="submit" class="btn-checkout" id="checkoutSubmitBtn">
+              <button type="submit" class="btn-checkout" id="checkoutSubmitBtn" disabled>
                 <i class="fas fa-lock"></i>Proceed to Checkout<i class="fas fa-arrow-right"></i>
               </button>
             </div>
@@ -296,9 +304,9 @@
     <div class="cart-mobile-bar d-lg-none">
       <div>
         <div class="bar-label">Grand Total</div>
-        <div class="bar-total" id="stickyGrandTotal">₱{{ cart_total|add:shipping_fee|floatformat:0|intcomma }}</div>
+        <div class="bar-total" id="stickyGrandTotal">₱0</div>
       </div>
-      <button type="submit" form="checkoutSelectForm" class="btn-checkout" id="stickyCheckoutBtn">
+      <button type="submit" form="checkoutSelectForm" class="btn-checkout" id="stickyCheckoutBtn" disabled>
         <i class="fas fa-lock"></i>Checkout<i class="fas fa-arrow-right"></i>
       </button>
     </div>
@@ -316,8 +324,7 @@
 <script>
 (function () {
   const checkboxes = Array.from(document.querySelectorAll('.cart-item-checkbox'));
-  const selectAllBtn = document.getElementById('selectAllBtn');
-  const selectAllLabel = document.getElementById('selectAllLabel');
+  const selectAllBox = document.getElementById('selectAllCheckbox');
   const selectedCountEl = document.getElementById('selectedCount');
   const inputsContainer = document.getElementById('selectedItemsInputs');
   const checkoutForm = document.getElementById('checkoutSelectForm');
@@ -330,6 +337,24 @@
   const grandTotalEl = document.getElementById('summaryGrandTotal');
 
   const peso = (n) => '₱' + Math.round(n).toLocaleString('en-US');
+
+  // Remember what the user ticked, since +/- and remove reload the page.
+  const STORE_KEY = 'likhalayaCartSelected';
+
+  function saveSelection() {
+    try {
+      const keys = checkboxes.filter(function (cb) { return cb.checked; })
+                             .map(function (cb) { return cb.dataset.itemKey; });
+      sessionStorage.setItem(STORE_KEY, JSON.stringify(keys));
+    } catch (e) {}
+  }
+
+  function restoreSelection() {
+    try {
+      const saved = JSON.parse(sessionStorage.getItem(STORE_KEY) || '[]');
+      checkboxes.forEach(function (cb) { cb.checked = saved.includes(cb.dataset.itemKey); });
+    } catch (e) {}
+  }
 
   function recalc() {
     let subtotal = 0;
@@ -350,7 +375,10 @@
     const grandTotal = subtotal + shipping;
 
     subtotalEl.textContent = peso(subtotal);
-    if (selectedCount > 0 && shipping === 0) {
+    if (selectedCount === 0) {
+      shippingEl.textContent = '—';
+      shippingEl.classList.remove('shipping-free');
+    } else if (shipping === 0) {
       shippingEl.textContent = 'FREE';
       shippingEl.classList.add('shipping-free');
     } else {
@@ -368,25 +396,31 @@
       stickyBtn.classList.toggle('disabled', selectedCount === 0);
     }
 
-    if (selectAllLabel) {
-      selectAllLabel.textContent = selectedCount === checkboxes.length ? 'Deselect All' : 'Select All';
+    if (selectAllBox) {
+      selectAllBox.checked = selectedCount === checkboxes.length;
+      selectAllBox.indeterminate = selectedCount > 0 && selectedCount < checkboxes.length;
     }
   }
 
   checkboxes.forEach(function (cb) {
-    cb.addEventListener('change', recalc);
+    cb.addEventListener('change', function () {
+      saveSelection();
+      recalc();
+    });
   });
 
-  if (selectAllBtn) {
-    selectAllBtn.addEventListener('click', function () {
-      const shouldSelectAll = selectAllLabel.textContent === 'Select All';
+  if (selectAllBox) {
+    selectAllBox.addEventListener('change', function () {
+      const shouldSelectAll = selectAllBox.checked;
       checkboxes.forEach(function (cb) { cb.checked = shouldSelectAll; });
+      saveSelection();
       recalc();
     });
   }
 
-  checkoutForm.addEventListener('submit', function () {
+  checkoutForm.addEventListener('submit', function (e) {
     inputsContainer.innerHTML = '';
+    let count = 0;
     checkboxes.forEach(function (cb) {
       if (cb.checked) {
         const input = document.createElement('input');
@@ -394,10 +428,13 @@
         input.name = 'selected_items';
         input.value = cb.dataset.itemKey;
         inputsContainer.appendChild(input);
+        count += 1;
       }
     });
+    if (count === 0) e.preventDefault();
   });
 
+  restoreSelection();
   recalc();
 })();
 </script>
