@@ -3,7 +3,7 @@ import os
 from datetime import timedelta
 import dj_database_url
 
-BASE_DIR = Path(globals()[chr(95) * 2 + 'file' + chr(95) * 2]).resolve().parent.parent
+BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = os.environ.get(
     'DJANGO_SECRET_KEY',
@@ -17,17 +17,21 @@ if not DEBUG and not os.environ.get('DJANGO_SECRET_KEY'):
     raise ImproperlyConfigured('DJANGO_SECRET_KEY must be set when DEBUG is off.')
 
 ALLOWED_HOSTS = [
-    '127.0.0.1', 'localhost',
+    '10.178.80.208', '127.0.0.1', 'localhost',
+    '192.168.1.7', '192.168.254.139', '192.168.254.160',
     '.onrender.com',  # render deployment
 ]
-if DEBUG:
-    # Home / school network addresses are only for local testing.
-    ALLOWED_HOSTS += ['10.178.80.208', '192.168.1.7', '192.168.254.139', '192.168.254.160']
-# Anything else (e.g. a custom domain) can be added on Render without code changes:
-#   DJANGO_ALLOWED_HOSTS=likhalaya.example.com,www.likhalaya.example.com
-ALLOWED_HOSTS += [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if h.strip()]
+
+# True on Render (it sets RENDER=true automatically) or when forced by env var.
+# Needed so Django reads X-Forwarded-For / X-Forwarded-Proto from Render's proxy.
+BEHIND_PROXY = (os.environ.get('DJANGO_BEHIND_PROXY', 'False') == 'True'
+                or os.environ.get('RENDER') == 'true')
 
 _LOCAL_INSECURE_TEST = os.environ.get('DJANGO_INSECURE_LOCAL', 'False') == 'True'
+
+# Django's default ('same-origin') hides the Referer from YouTube, which makes
+# embedded videos fail with "Error 153". This still protects full URLs.
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 if not DEBUG:
     if not _LOCAL_INSECURE_TEST:
@@ -44,7 +48,7 @@ if not DEBUG:
     CSRF_COOKIE_HTTPONLY = True
     # Render terminates TLS at its proxy; without this Django never sees the
     # request as secure and SECURE_SSL_REDIRECT loops forever.
-    if os.environ.get('DJANGO_BEHIND_PROXY', 'False') == 'True':
+    if BEHIND_PROXY:
         SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 INSTALLED_APPS = [
@@ -185,7 +189,7 @@ AXES_WHITELIST_CALLABLE = 'accounts.axes_utils.axes_whitelist'
 AXES_HTTP_RESPONSE_CODE = 429
 AXES_LOCKOUT_TEMPLATE = 'accounts/locked.html'
 
-if os.environ.get('DJANGO_BEHIND_PROXY', 'False') == 'True':
+if BEHIND_PROXY:
     AXES_IPWARE_META_PRECEDENCE_ORDER = ['HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR']
     AXES_IPWARE_PROXY_COUNT = int(os.environ.get('DJANGO_PROXY_COUNT', '1'))
 else:
@@ -290,7 +294,7 @@ CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if 
 # REQUIRED. Local dev: a random key is generated once and kept in the
 # git-ignored .dev_message_key file, so no key is ever committed.
 # MESSAGE_ENCRYPTION_KEY_OLD (comma-separated) lets previous keys still decrypt
-# while you rotate - see python manage.py rotate_message_key.
+# while you rotate - see `python manage.py rotate_message_key`.
 def _load_message_key():
     key = os.environ.get('MESSAGE_ENCRYPTION_KEY', '').strip()
     if key:
@@ -313,6 +317,6 @@ MESSAGE_ENCRYPTION_KEY_OLD = [
 ]
 
 
-# Google sign-in (mobile app): the OAuth Web application client ID from
+# Google sign-in (mobile app): the OAuth *Web application* client ID from
 # Google Cloud Console (same value as googleWebClientId in the Flutter config.dart).
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '337900067754-ksbit1gj5dpecgfrkq0c4l97us4b6rj2.apps.googleusercontent.com')
