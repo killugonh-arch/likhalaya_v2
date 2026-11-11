@@ -9,10 +9,27 @@
 <style>
 .rv-page { --g: #0F6B4F; --g-hover: #0C5940; --g-light: #E6F4EF; --surface: #fff; --subtle: #F9FAF9; --bd: #E4E7E4; --tx: #1A1D1B; --tx2: #5B615D; --mut: #9AA09C; --danger: #C0362C; --danger-bg: #FBEAE8; --star: #E0A82E; }
 .rv-page .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 18px; }
-.rv-page .stat { background: var(--surface); border: 1px solid var(--bd); border-radius: 12px; padding: 14px 16px; box-shadow: 0 1px 2px rgba(16,24,20,.06); }
-.rv-page .stat .n { font-size: 24px; font-weight: 800; color: var(--tx); line-height: 1.1; }
-.rv-page .stat .l { font-size: 12px; color: var(--mut); margin-top: 2px; }
-.rv-page .stat .n .fa-star { color: var(--star); font-size: 18px; }
+
+/* Stat cards (same look as the dashboard home cards) */
+.rv-page .stat {
+  background: var(--surface); border-radius: 14px; padding: 22px 24px;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  box-shadow: 0 1px 3px rgba(20,20,40,.06);
+}
+.rv-page .stat .l {
+  font-size: 12px; font-weight: 700; color: var(--mut); text-transform: uppercase;
+  letter-spacing: .6px; margin: 0 0 6px;
+}
+.rv-page .stat .n { font-size: 30px; font-weight: 800; color: var(--tx); line-height: 1.1; }
+.rv-page .stat .ic {
+  width: 50px; height: 50px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.rv-page .stat .ic-blue  { background: #e6eefb; color: #2b6cb0; }
+.rv-page .stat .ic-amber { background: #fbf0dc; color: #b9791a; }
+.rv-page .stat .ic-red   { background: #fbe6e4; color: #c0392b; }
+.rv-page .stat .ic-teal  { background: #e3f1ee; color: #0d7a70; }
+
 .rv-page .toolbar { background: var(--surface); border: 1px solid var(--bd); border-radius: 12px; padding: 14px; margin-bottom: 14px; box-shadow: 0 1px 2px rgba(16,24,20,.06); }
 .rv-page .btn-g { background: var(--g); color: #fff; border: none; border-radius: 6px; padding: 9px 16px; font-size: 13px; font-weight: 600; }
 .rv-page .btn-g:hover { background: var(--g-hover); color: #fff; }
@@ -49,6 +66,9 @@ body.dark-mode .rv-page .act, body.dark-mode .rv-page .btn-o { background: var(-
 
 @media (max-width: 767.98px) {
   .rv-page .stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .rv-page .stat { padding: 16px; }
+  .rv-page .stat .n { font-size: 24px; }
+  .rv-page .stat .ic { width: 40px; height: 40px; font-size: 15px; }
   .rv-page .row-item { flex-wrap: wrap; padding: 14px; }
   .rv-page .actions { width: 100%; justify-content: flex-end; }
 }
@@ -68,10 +88,22 @@ body.dark-mode .rv-page .act, body.dark-mode .rv-page .btn-o { background: var(-
   </div>
 
   <div class="stat-grid">
-    <div class="stat"><div class="n">{{ overall.total }}</div><div class="l">Total reviews</div></div>
-    <div class="stat"><div class="n">{{ overall.avg }} <i class="fas fa-star"></i></div><div class="l">Average rating (visible)</div></div>
-    <div class="stat"><div class="n">{{ overall.unreplied }}</div><div class="l">Without a reply</div></div>
-    <div class="stat"><div class="n">{{ overall.hidden }}</div><div class="l">Hidden</div></div>
+    <div class="stat">
+      <div><div class="l">Total reviews</div><div class="n">{{ overall.total }}</div></div>
+      <div class="ic ic-blue"><i class="fas fa-comments"></i></div>
+    </div>
+    <div class="stat">
+      <div><div class="l">Average rating (visible)</div><div class="n">{{ overall.avg }}</div></div>
+      <div class="ic ic-amber"><i class="fas fa-star"></i></div>
+    </div>
+    <div class="stat">
+      <div><div class="l">Without a reply</div><div class="n">{{ overall.unreplied }}</div></div>
+      <div class="ic ic-red"><i class="fas fa-reply"></i></div>
+    </div>
+    <div class="stat">
+      <div><div class="l">Hidden</div><div class="n">{{ overall.hidden }}</div></div>
+      <div class="ic ic-teal"><i class="fas fa-eye-slash"></i></div>
+    </div>
   </div>
 
   <div class="toolbar">

@@ -120,15 +120,13 @@
   <span class="sep">/</span><span class="current">Add Staff</span>
 </div>
 
-<a href="{% url 'dashboard:user_list' %}" class="pd-back-link"><i class="fas fa-arrow-left"></i> Back to Users</a>
-
 <div class="pd-header-top">
   <div class="pd-header-titles">
     <h1>Add Staff Account</h1>
     <p>Create a login for a staff member. They can sign in immediately with the password you set below.</p>
   </div>
   <div class="pd-header-actions">
-    <a href="{% url 'dashboard:user_list' %}" class="pd-btn pd-btn-outline">Cancel</a>
+    <a href="{% url 'dashboard:user_list' %}" class="pd-btn pd-btn-outline"><i class="fas fa-arrow-left"></i> Back to Users</a>
     <button type="submit" form="staffForm" class="pd-btn pd-btn-primary"><i class="fas fa-check"></i> Create Staff Account</button>
   </div>
 </div>

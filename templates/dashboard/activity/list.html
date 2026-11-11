@@ -41,6 +41,29 @@
 body.dark-mode .session-username-link { color: #6fd6c9; }
 .session-card.session-clickable { cursor: pointer; transition: box-shadow .15s ease; }
 .session-card.session-clickable:hover { box-shadow: 0 .5rem 1rem rgba(0,0,0,.1) !important; }
+
+/* ── Summary stat cards (same look as the dashboard home cards) ── */
+.al-stat {
+  background: #fff; border-radius: 14px; padding: 22px 24px;
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 12px;
+  box-shadow: 0 1px 3px rgba(20,20,40,.06); height: 100%;
+}
+.al-stat-label {
+  font-size: 12px; font-weight: 700; color: #9a9a9a; text-transform: uppercase;
+  letter-spacing: .6px; margin-bottom: 6px;
+}
+.al-stat-value { font-size: 30px; font-weight: 800; color: #1a1a1a; line-height: 1.1; }
+.al-stat-icon {
+  width: 50px; height: 50px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.al-stat-icon.ic-teal  { background: #e3f1ee; color: #0d7a70; }
+.al-stat-icon.ic-amber { background: #fbf0dc; color: #b9791a; }
+.al-stat-icon.ic-green { background: #e3f4ea; color: #27ae60; }
+.al-stat-icon.ic-red   { background: #fbe6e4; color: #c0392b; }
+body.dark-mode .al-stat { background: var(--dm-surface); }
+body.dark-mode .al-stat-value { color: var(--dm-text); }
+body.dark-mode .al-stat-label { color: var(--dm-text-mute); }
 </style>
 
 <div class="dash-breadcrumb">
@@ -58,27 +81,39 @@ body.dark-mode .session-username-link { color: #6fd6c9; }
 <!-- Summary Cards -->
 <div class="row g-3 mb-4">
   <div class="col-6 col-md-3">
-    <div class="card border-0 shadow-sm p-3 text-center">
-      <div class="text-muted small mb-1">Total Sessions</div>
-      <div class="fw-bold" style="font-size:24px;color:var(--teal);">{{ stats.total_sessions }}</div>
+    <div class="al-stat">
+      <div>
+        <div class="al-stat-label">Total Sessions</div>
+        <div class="al-stat-value">{{ stats.total_sessions }}</div>
+      </div>
+      <div class="al-stat-icon ic-teal"><i class="fas fa-clock-rotate-left"></i></div>
     </div>
   </div>
   <div class="col-6 col-md-3">
-    <div class="card border-0 shadow-sm p-3 text-center">
-      <div class="text-muted small mb-1">Sessions Today</div>
-      <div class="fw-bold" style="font-size:24px;color:var(--gold);">{{ stats.sessions_today }}</div>
+    <div class="al-stat">
+      <div>
+        <div class="al-stat-label">Sessions Today</div>
+        <div class="al-stat-value">{{ stats.sessions_today }}</div>
+      </div>
+      <div class="al-stat-icon ic-amber"><i class="fas fa-calendar-day"></i></div>
     </div>
   </div>
   <div class="col-6 col-md-3">
-    <div class="card border-0 shadow-sm p-3 text-center">
-      <div class="text-muted small mb-1">Active Now</div>
-      <div class="fw-bold" style="font-size:24px;color:#27ae60;">{{ stats.active_now }}</div>
+    <div class="al-stat">
+      <div>
+        <div class="al-stat-label">Active Now</div>
+        <div class="al-stat-value">{{ stats.active_now }}</div>
+      </div>
+      <div class="al-stat-icon ic-green"><i class="fas fa-circle-check"></i></div>
     </div>
   </div>
   <div class="col-6 col-md-3">
-    <div class="card border-0 shadow-sm p-3 text-center">
-      <div class="text-muted small mb-1">Failed Logins Today</div>
-      <div class="fw-bold" style="font-size:24px;color:#e74c3c;">{{ stats.failed_today }}</div>
+    <div class="al-stat">
+      <div>
+        <div class="al-stat-label">Failed Logins Today</div>
+        <div class="al-stat-value">{{ stats.failed_today }}</div>
+      </div>
+      <div class="al-stat-icon ic-red"><i class="fas fa-triangle-exclamation"></i></div>
     </div>
   </div>
 </div>

@@ -6,6 +6,18 @@
 {% block extra_css %}
 {{ block.super }}
 {% include 'dashboard/_filter_styles.html' %}
+<style>
+/* User column: keep avatar + name/email aligned to the left side */
+.dash-table thead th:first-child,
+.dash-table tbody td:first-child { text-align: left; }
+.dash-table tbody td:first-child > .d-flex {
+  justify-content: flex-start !important;
+  align-items: center;
+  text-align: left;
+}
+.dash-table tbody td:first-child > .d-flex > div:last-child { text-align: left; min-width: 0; }
+.dash-table tbody td:first-child .text-muted { word-break: break-word; }
+</style>
 {% endblock %}
 
 {% block dash_content %}
@@ -60,7 +72,7 @@
         {% url 'dashboard:user_detail' u.pk as user_detail_url %}
         <tr class="user-row" style="cursor:pointer;" data-href="{{ user_detail_url }}">
           <td>
-            <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center justify-content-start gap-3">
               <div style="width:38px;height:38px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex-shrink:0;">
                 {{ u.first_name|first|upper }}{{ u.last_name|first|upper }}
               </div>

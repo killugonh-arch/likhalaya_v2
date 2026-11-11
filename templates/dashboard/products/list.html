@@ -7,6 +7,17 @@
 {% block extra_css %}
 {{ block.super }}
 {% include 'dashboard/_filter_styles.html' %}
+<style>
+/* Product column: keep image + name aligned to the left side */
+#productsListView .dash-table thead th:first-child,
+#productsListView .dash-table tbody td:first-child { text-align: left; }
+#productsListView .dash-table tbody td:first-child > .d-flex {
+  justify-content: flex-start !important;
+  align-items: center;
+  text-align: left;
+}
+#productsListView .dash-table tbody td:first-child > .d-flex > div:last-child { text-align: left; min-width: 0; }
+</style>
 {% endblock %}
 
 {% block dash_content %}
@@ -78,11 +89,11 @@
         {% for product in products %}
         <tr class="product-row" style="cursor:pointer;" data-href="{% url 'dashboard:product_detail' product.pk %}">
           <td>
-            <div class="d-flex align-items-center gap-3">
+            <div class="d-flex align-items-center justify-content-start gap-3">
               {% if product.image %}
-              <img src="{{ product.image.url }}" style="width:42px;height:42px;object-fit:cover;border-radius:8px;" alt="{{ product.name }}">
+              <img src="{{ product.image.url }}" style="width:42px;height:42px;object-fit:cover;border-radius:8px;flex-shrink:0;" alt="{{ product.name }}">
               {% else %}
-              <div style="width:42px;height:42px;border-radius:8px;background:var(--sand);display:flex;align-items:center;justify-content:center;font-size:18px;">🎨</div>
+              <div style="width:42px;height:42px;border-radius:8px;background:var(--sand);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🎨</div>
               {% endif %}
               <div>
                 <div class="fw-semibold" style="font-size:13px;">{{ product.name }}</div>

@@ -7,6 +7,13 @@
 <style>
 .form-control::placeholder { color: #a8a396; opacity: 1; }
 body.dark-mode .form-control::placeholder { color: var(--dm-text-mute, #7a8699); opacity: 1; }
+
+/* Top bar: Back and Save both on the right */
+.pd-topbar {
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 12px; flex-wrap: wrap; margin-bottom: 14px;
+}
+
 .pform-header {
   display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px;
   margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid #e8e3db;
@@ -127,16 +134,15 @@ body.dark-mode .form-control::placeholder { color: var(--dm-text-mute, #7a8699);
   <span class="sep">/</span><span class="current">{{ title }}</span>
 </div>
 
-<a href="{% url 'dashboard:video_list' %}" class="pd-back-link"><i class="fas fa-arrow-left"></i> Back to Livelihood Videos</a>
+<div class="pd-topbar">
+  <a href="{% url 'dashboard:video_list' %}" class="pd-btn pd-btn-outline"><i class="fas fa-arrow-left"></i> Back to Livelihood Videos</a>
+  <button type="submit" form="video-form" class="pd-btn pd-btn-primary"><i class="fas fa-check"></i> Save Video</button>
+</div>
 
 <div class="pd-header-top">
   <div class="pd-header-titles">
     <h1>{{ title }}</h1>
     <p>Videos appear on the About page (and Home, if featured). Use a YouTube/Facebook link, or upload a file if you don't have one.</p>
-  </div>
-  <div class="pd-header-actions">
-    <a href="{% url 'dashboard:video_list' %}" class="pd-btn pd-btn-outline">Cancel</a>
-    <button type="submit" form="video-form" class="pd-btn pd-btn-primary"><i class="fas fa-check"></i> Save Video</button>
   </div>
 </div>
 
