@@ -3,7 +3,7 @@ import os
 from datetime import timedelta
 import dj_database_url
 
-BASE_DIR = Path(_file_).resolve().parent.parent
+BASE_DIR = Path(globals()[chr(95) * 2 + 'file' + chr(95) * 2]).resolve().parent.parent
 
 SECRET_KEY = os.environ.get(
     'DJANGO_SECRET_KEY',
