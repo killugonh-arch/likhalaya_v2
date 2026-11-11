@@ -3,7 +3,7 @@ import os
 from datetime import timedelta
 import dj_database_url
 
-BASE_DIR = Path(__file__).resolve().parent.parent
+BASE_DIR = Path(_file_).resolve().parent.parent
 
 SECRET_KEY = os.environ.get(
     'DJANGO_SECRET_KEY',
@@ -17,16 +17,17 @@ if not DEBUG and not os.environ.get('DJANGO_SECRET_KEY'):
     raise ImproperlyConfigured('DJANGO_SECRET_KEY must be set when DEBUG is off.')
 
 ALLOWED_HOSTS = [
-    '10.178.80.208', '127.0.0.1', 'localhost',
-    '192.168.1.7', '192.168.254.139', '192.168.254.160',
+    '127.0.0.1', 'localhost',
     '.onrender.com',  # render deployment
 ]
+if DEBUG:
+    # Home / school network addresses are only for local testing.
+    ALLOWED_HOSTS += ['10.178.80.208', '192.168.1.7', '192.168.254.139', '192.168.254.160']
+# Anything else (e.g. a custom domain) can be added on Render without code changes:
+#   DJANGO_ALLOWED_HOSTS=likhalaya.example.com,www.likhalaya.example.com
+ALLOWED_HOSTS += [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', '').split(',') if h.strip()]
 
 _LOCAL_INSECURE_TEST = os.environ.get('DJANGO_INSECURE_LOCAL', 'False') == 'True'
-
-# Django's default ('same-origin') hides the Referer from YouTube, which makes
-# embedded videos fail with "Error 153". This still protects full URLs.
-SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
 
 if not DEBUG:
     if not _LOCAL_INSECURE_TEST:
@@ -289,7 +290,7 @@ CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',') if 
 # REQUIRED. Local dev: a random key is generated once and kept in the
 # git-ignored .dev_message_key file, so no key is ever committed.
 # MESSAGE_ENCRYPTION_KEY_OLD (comma-separated) lets previous keys still decrypt
-# while you rotate - see `python manage.py rotate_message_key`.
+# while you rotate - see python manage.py rotate_message_key.
 def _load_message_key():
     key = os.environ.get('MESSAGE_ENCRYPTION_KEY', '').strip()
     if key:
@@ -312,6 +313,6 @@ MESSAGE_ENCRYPTION_KEY_OLD = [
 ]
 
 
-# Google sign-in (mobile app): the OAuth *Web application* client ID from
+# Google sign-in (mobile app): the OAuth Web application client ID from
 # Google Cloud Console (same value as googleWebClientId in the Flutter config.dart).
 GOOGLE_CLIENT_ID = os.environ.get('GOOGLE_CLIENT_ID', '337900067754-ksbit1gj5dpecgfrkq0c4l97us4b6rj2.apps.googleusercontent.com')
