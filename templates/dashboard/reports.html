@@ -118,6 +118,9 @@
 .view-switch a:hover { color: var(--text-primary); }
 .view-switch a.active { background: var(--brand-green); color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,.15); }
 body.dark-mode .view-switch { background: rgba(255,255,255,.06); }
+body.dark-mode .view-switch a { color: var(--dm-text-mute); }
+body.dark-mode .view-switch a:hover { color: var(--dm-text); }
+body.dark-mode .view-switch a.active, body.dark-mode .view-switch a.active:hover { background: #1f7a72; color: #fff !important; box-shadow: none; }
 .reports-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
 .data-note { display: flex; align-items: flex-start; gap: 10px; background: var(--warning-bg); border: 1px solid rgba(183,121,31,.25); color: var(--warning); border-radius: var(--radius-md); padding: 12px 16px; font-size: 12.5px; margin-bottom: var(--space-4); }

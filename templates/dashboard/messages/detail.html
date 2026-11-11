@@ -211,6 +211,10 @@ body.dark-mode .inbox-search-wrap input, body.dark-mode .inbox-filter select, bo
 body.dark-mode .inbox-row:hover, body.dark-mode .chat-messages, body.dark-mode .inbox-count { background: var(--dm-surface-2); }
 body.dark-mode .chat-row.from-customer .chat-bubble { background: var(--dm-surface-2); color: var(--dm-text); border-color: var(--dm-border); }
 body.dark-mode .chat-bubble-text + .chat-details { border-color: var(--dm-border); }
+body.dark-mode .chat-row.from-staff .chat-bubble, body.dark-mode .chat-row.from-staff .chat-bubble * { color: #0e1420; }
+body.dark-mode .chat-row.from-staff .chat-bubble a { color: #0e1420; text-decoration: underline; }
+body.dark-mode .chat-row.from-staff .chat-quote { border-left-color: rgba(14,20,32,.55); background: rgba(14,20,32,.12); }
+body.dark-mode .chat-row.from-staff .chat-quote-label, body.dark-mode .chat-row.from-staff .chat-quote-time { opacity: .8; }
 body.dark-mode .chat-input-bar { background: var(--dm-surface); }
 </style>
 {% endblock %}

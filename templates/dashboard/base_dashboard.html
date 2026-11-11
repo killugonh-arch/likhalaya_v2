@@ -212,6 +212,11 @@ body { background: #f0ede8; }
 body.dark-mode .pd-header-titles h1 { color: var(--dm-text); }
 body.dark-mode .pd-header-titles p, body.dark-mode .pd-back-link { color: var(--dm-text-mute); }
 body.dark-mode .pd-btn-outline { background: var(--dm-surface); color: var(--dm-text); border-color: var(--dm-border); }
+/* dark mode: deeper teal so the white label stays readable */
+body.dark-mode .pd-btn-primary { background: #1f7a72; color: #fff; }
+body.dark-mode .pd-btn-primary:hover { background: #26938a; color: #fff; }
+/* links styled as buttons: beat the generic "dark-mode a" teal link color */
+body.dark-mode a.pd-btn-primary, body.dark-mode a.pd-btn-primary:hover { color: #fff !important; }
 @media (max-width: 767px) {
   .pd-header-actions { width:100%; }
   .pd-header-actions .pd-btn { flex:1; justify-content:center; }
@@ -613,6 +618,42 @@ body:not(.dark-mode) .dash-page .pagination .page-item.active .page-link { backg
 .dash-topbar .dropdown-item .text-muted { font-size: 10px !important; line-height: 1.25; }
 .dash-topbar .dropdown-menu .text-center.py-3 { padding-top: .5rem !important; padding-bottom: .5rem !important; font-size: 11.5px; }
 
+/* ── Notification dropdown items ── */
+.nf-ico { width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.nf-ico-order { background: #fde8e8; color: #dc3545; }
+.nf-ico-msg { background: #e3f6ef; color: #1f9d6b; }
+body.dark-mode .nf-ico-order { background: rgba(255,107,107,.16); color: var(--dm-danger); }
+body.dark-mode .nf-ico-msg { background: rgba(62,207,142,.16); color: var(--dm-success); }
+.dash-topbar .dropdown-item .nf-title { font-size: 12.5px !important; }
+.dash-topbar .dropdown-item .nf-sub { font-size: 11px !important; }
+body.dark-mode .dash-topbar .dropdown-menu .dropdown-header { color: var(--dm-text); font-weight: 700; }
+body.dark-mode .nf-title { color: var(--dm-text); }
+body.dark-mode .nf-sub, body.dark-mode .dash-topbar .dropdown-menu .text-muted { color: var(--dm-text-dim) !important; }
+.dash-topbar .dropdown-menu[style*="min-width:300px"] { width: min(270px, calc(100vw - 24px)); }
+
+.nf-ico-rev { background: #fdf3dc; color: #c9841a; }
+body.dark-mode .nf-ico-rev { background: rgba(208,136,78,.16); color: var(--dm-gold); }
+.nf-menu { width: min(340px, calc(100vw - 24px)) !important; max-height: 70vh; overflow-y: auto; padding: 6px 0 !important; }
+.nf-section { border-top: 1px solid var(--border, #eee); margin-top: 4px; }
+.nf-section:first-of-type { border-top: 0; margin-top: 0; }
+.nf-section-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: var(--text-muted, #8a8f8c); text-decoration: none; }
+.nf-section-head:hover .nf-viewall { text-decoration: underline; }
+.nf-count { background: var(--danger, #dc3545); color: #fff; border-radius: 10px; padding: 0 6px; font-size: 10px; margin-left: 4px; }
+.nf-viewall { text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--brand-green, #0F6B4F); font-size: 11px; }
+body.dark-mode .nf-section-head { color: var(--dm-text-mute); }
+body.dark-mode .nf-viewall { color: var(--dm-teal); }
+.dash-topbar .dropdown-item.nf-item { display: flex !important; align-items: center; gap: 12px; white-space: normal; padding: 8px 16px !important; }
+.nf-ico, .nf-item .nf-ico { display: flex !important; align-items: center; justify-content: center; text-align: center; }
+.nf-item .nf-ico { width: 34px; height: 34px; border-radius: 10px; padding: 0 !important; }
+.nf-ico, .nf-item .nf-ico { position: relative; flex: 0 0 34px; }
+.nf-ico i, .nf-item .nf-ico i { position: absolute !important; top: 50%; left: 50%; transform: translate(-50%, -50%); display: block; margin: 0 !important; padding: 0 !important; width: auto !important; height: auto; line-height: 1; font-size: 14px; vertical-align: 0; }
+.nf-body { flex: 1; min-width: 0; }
+.nf-item .nf-title { font-size: 12.5px; font-weight: 600; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nf-item .nf-sub { font-size: 11px; line-height: 1.25; color: var(--text-muted, #8a8f8c); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nf-time { font-size: 10.5px; font-weight: 600; color: var(--text-muted, #8a8f8c); flex-shrink: 0; background: var(--surface-subtle, #f4f1ea); border-radius: 8px; padding: 2px 8px; }
+body.dark-mode .nf-time { background: var(--dm-surface-3); }
+body.dark-mode .nf-item .nf-sub, body.dark-mode .nf-time { color: var(--dm-text-dim); }
+
 /* ── Compact filter / search bars on phones (Orders, Products, Users, Activity…) ── */
 @media (max-width: 767.98px) {
   .dash-page form.row.g-2 { --bs-gutter-x: .5rem; --bs-gutter-y: .4rem; }
@@ -865,41 +906,75 @@ body:not(.dark-mode) :where(.form-control, .form-select, .ds-input, .lk-input, .
       <div class="dropdown">
         <button class="btn btn-sm border-0 position-relative" data-bs-toggle="dropdown" style="color:#666;">
           <i class="fas fa-bell fa-lg"></i>
-          {% if new_orders_count or new_messages_count %}
+          {% if new_orders_count or new_messages_count or new_reviews_count %}
           <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:9px;">
-            {{ new_orders_count|add:new_messages_count }}
+            {{ new_orders_count|add:new_messages_count|add:new_reviews_count }}
           </span>
           {% endif %}
         </button>
-        <ul class="dropdown-menu dropdown-menu-end shadow border-0" style="min-width:300px;">
+        <ul class="dropdown-menu dropdown-menu-end shadow border-0 nf-menu" style="min-width:300px;">
           <li><h6 class="dropdown-header fw-bold">Notifications</h6></li>
           {% if new_orders_count %}
-          <li>
-            <a class="dropdown-item py-2" href="{% url 'dashboard:order_list' %}?status=pending">
-              <div class="d-flex gap-2 align-items-start">
-                <span style="background:#fee;padding:6px;border-radius:8px;"><i class="fas fa-shopping-bag text-danger fa-sm"></i></span>
-                <div>
-                  <div class="fw-semibold" style="font-size:12px;">{{ new_orders_count }} pending order{{ new_orders_count|pluralize }}</div>
-                  <div class="text-muted" style="font-size:11px;">Needs your attention</div>
-                </div>
-              </div>
+          <li class="nf-section">
+            <a class="nf-section-head" href="{% url 'dashboard:order_list' %}?status=pending">
+              <span><i class="fas fa-shopping-bag me-1"></i>Orders <span class="nf-count">{{ new_orders_count }}</span></span>
+              <span class="nf-viewall">View all <i class="fas fa-chevron-right"></i></span>
             </a>
           </li>
+          {% for n in notif_orders %}
+          <li>
+            <a class="dropdown-item nf-item" href="{{ n.url }}">
+              <span class="nf-ico nf-ico-order"><i class="fas fa-shopping-bag fa-sm"></i></span>
+              <div class="nf-body">
+                <div class="nf-title">{{ n.title }}</div>
+                <div class="nf-sub">{{ n.sub }}</div>
+              </div>
+              <span class="nf-time">{{ n.ago }}</span>
+            </a>
+          </li>
+          {% endfor %}
           {% endif %}
           {% if new_messages_count %}
-          <li>
-            <a class="dropdown-item py-2" href="{% url 'dashboard:message_list' %}?read=false">
-              <div class="d-flex gap-2 align-items-start">
-                <span style="background:#e8f8f5;padding:6px;border-radius:8px;"><i class="fas fa-envelope text-success fa-sm"></i></span>
-                <div>
-                  <div class="fw-semibold" style="font-size:12px;">{{ new_messages_count }} unread message{{ new_messages_count|pluralize }}</div>
-                  <div class="text-muted" style="font-size:11px;">From customers</div>
-                </div>
-              </div>
+          <li class="nf-section">
+            <a class="nf-section-head" href="{% url 'dashboard:message_list' %}?read=false">
+              <span><i class="fas fa-envelope me-1"></i>Messages <span class="nf-count">{{ new_messages_count }}</span></span>
+              <span class="nf-viewall">View all <i class="fas fa-chevron-right"></i></span>
             </a>
           </li>
+          {% for n in notif_messages %}
+          <li>
+            <a class="dropdown-item nf-item" href="{{ n.url }}">
+              <span class="nf-ico nf-ico-msg"><i class="fas fa-envelope fa-sm"></i></span>
+              <div class="nf-body">
+                <div class="nf-title">{{ n.title }}</div>
+                <div class="nf-sub">{{ n.sub }}</div>
+              </div>
+              <span class="nf-time">{{ n.ago }}</span>
+            </a>
+          </li>
+          {% endfor %}
           {% endif %}
-          {% if not new_orders_count and not new_messages_count %}
+          {% if new_reviews_count %}
+          <li class="nf-section">
+            <a class="nf-section-head" href="{% url 'reviews:dashboard_list' %}">
+              <span><i class="fas fa-star me-1"></i>Reviews <span class="nf-count">{{ new_reviews_count }}</span></span>
+              <span class="nf-viewall">View all <i class="fas fa-chevron-right"></i></span>
+            </a>
+          </li>
+          {% for n in notif_reviews %}
+          <li>
+            <a class="dropdown-item nf-item" href="{{ n.url }}">
+              <span class="nf-ico nf-ico-rev"><i class="fas fa-star fa-sm"></i></span>
+              <div class="nf-body">
+                <div class="nf-title">{{ n.title }}</div>
+                <div class="nf-sub">{{ n.sub }}</div>
+              </div>
+              <span class="nf-time">{{ n.ago }}</span>
+            </a>
+          </li>
+          {% endfor %}
+          {% endif %}
+          {% if not new_orders_count and not new_messages_count and not new_reviews_count %}
           <li><div class="text-center py-3 text-muted small"><i class="fas fa-check-circle text-success me-1"></i>All caught up!</div></li>
           {% endif %}
         </ul>
@@ -976,6 +1051,12 @@ body.dark-mode .modal.lk-confirm .modal-content { background: var(--dm-surface);
 .lk-confirm-ico { width: 54px; height: 54px; border-radius: 50%; margin: 0 auto 14px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
 .lk-confirm-ico.danger { color: #dc3545; background: rgba(220,53,69,.12); }
 .lk-confirm-ico.warn { color: #c9841a; background: rgba(201,132,26,.14); }
+.lk-confirm-ico.suspend { color: #D0884E; background: rgba(208,136,78,.16); }
+.lk-confirm-ico.activate { color: #3ecf8e; background: rgba(62,207,142,.16); }
+.modal.lk-suspend .modal-footer .btn-danger { background: #D0884E; border-color: #D0884E; color: #fff; }
+.modal.lk-suspend .modal-footer .btn-danger:hover { background: #c07a43; border-color: #c07a43; color: #fff; }
+.modal.lk-activate .modal-footer .btn-danger { background: #1f9d6b; border-color: #1f9d6b; color: #fff; }
+.modal.lk-activate .modal-footer .btn-danger:hover { background: #1a8559; border-color: #1a8559; color: #fff; }
 .modal.lk-confirm .modal-header { border: 0 !important; padding: 0 !important; margin: 0 !important; min-height: 0 !important; justify-content: center; }
 .modal.lk-confirm .modal-header .btn-close { display: none; }
 .modal.lk-confirm .modal-title { font-size: 18px; font-weight: 700; line-height: 1.3; color: inherit !important; margin: 0 0 6px !important; padding: 0 !important; }
@@ -1119,9 +1200,13 @@ document.querySelectorAll('.modal').forEach(m => {
   }
   box.classList.remove('rounded-4', 'border-0', 'shadow');
   const archive = /archive/i.test(title.textContent);
+  const suspend = /^suspend/i.test(title.textContent.trim());
+  const activate = /^activate/i.test(title.textContent.trim());
+  if (suspend) m.classList.add('lk-suspend');
+  if (activate) m.classList.add('lk-activate');
   const ico = document.createElement('div');
-  ico.className = 'lk-confirm-ico ' + (archive ? 'warn' : 'danger');
-  ico.innerHTML = '<i class="fas ' + (archive ? 'fa-box-archive' : 'fa-trash') + '"></i>';
+  ico.className = 'lk-confirm-ico ' + (suspend ? 'suspend' : activate ? 'activate' : archive ? 'warn' : 'danger');
+  ico.innerHTML = '<i class="fas ' + (suspend ? 'fa-ban' : activate ? 'fa-check' : archive ? 'fa-box-archive' : 'fa-trash') + '"></i>';
   box.insertBefore(ico, box.querySelector('.modal-header'));
 });
 

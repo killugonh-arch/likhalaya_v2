@@ -106,6 +106,47 @@
   .pd-header-actions .pd-btn { flex:1; justify-content:center; }
   .pd-quick-grid { grid-template-columns:repeat(2,1fr); }
 }
+/* ── Dark mode ── */
+body.dark-mode .pd-card { background:var(--dm-surface); border-color:var(--dm-border); box-shadow:0 2px 10px rgba(0,0,0,.35); }
+body.dark-mode .pd-card-title,
+body.dark-mode .pd-info-label,
+body.dark-mode .pd-quick-value,
+body.dark-mode .pd-variants-header h2,
+body.dark-mode .pd-size-name,
+body.dark-mode .pd-design-title { color:var(--dm-text); }
+body.dark-mode .pd-info-value,
+body.dark-mode .pd-desc-block,
+body.dark-mode .pd-status-sub { color:var(--dm-text-dim); }
+body.dark-mode .pd-info-label i,
+body.dark-mode .pd-quick-label,
+body.dark-mode .pd-chip { color:var(--dm-teal); }
+body.dark-mode .pd-info-row,
+body.dark-mode .pd-variants-header,
+body.dark-mode .pd-size-block { border-color:var(--dm-border); }
+body.dark-mode .pd-main-image-wrap { background:var(--dm-surface-2); border-color:var(--dm-border); }
+body.dark-mode .pd-quick-item,
+body.dark-mode .pd-chip,
+body.dark-mode .pd-design-noimg { background:var(--dm-surface-2); }
+body.dark-mode .pd-design-card { background:var(--dm-surface-2); border-color:var(--dm-border); }
+body.dark-mode .pd-design-thumb { background:var(--dm-surface-3); }
+body.dark-mode .pd-design-tags,
+body.dark-mode .pd-size-meta,
+body.dark-mode .pd-variants-header .subtitle,
+body.dark-mode .pd-empty-size,
+body.dark-mode .pd-no-variants,
+body.dark-mode .pd-noimg,
+body.dark-mode .pd-design-noimg { color:var(--dm-text-mute); }
+body.dark-mode .pd-size-price { color:var(--dm-gold); }
+body.dark-mode .pd-mini-btn { background:var(--dm-surface-3); border-color:var(--dm-border); color:var(--dm-text-dim); }
+body.dark-mode .pd-mini-btn:hover { border-color:var(--dm-teal); color:var(--dm-teal); }
+body.dark-mode .pd-status-pill.is-active { background:rgba(62,207,142,.15); color:var(--dm-success); }
+body.dark-mode .pd-status-pill.is-active .pd-status-dot { background:var(--dm-success); }
+body.dark-mode .pd-status-pill.is-inactive { background:var(--dm-surface-3); color:var(--dm-text-mute); }
+body.dark-mode .pd-stock-badge { background:rgba(62,207,142,.15); color:var(--dm-success); }
+body.dark-mode .pd-stock-badge.low { background:rgba(208,136,78,.18); color:var(--dm-gold); }
+body.dark-mode .pd-stock-badge.out { background:rgba(255,107,107,.15); color:var(--dm-danger); }
+body.dark-mode .pd-btn-danger { background:var(--dm-surface-2); border-color:rgba(255,107,107,.4); color:var(--dm-danger); }
+body.dark-mode .pd-btn-danger:hover { background:rgba(255,107,107,.12); }
 </style>
 {% endblock %}
 

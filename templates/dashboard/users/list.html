@@ -100,12 +100,9 @@
             {% if user.is_admin_user %}
             <div class="user-toggle-form d-flex gap-1">
               {% if u.role != 'admin' %}
-              <form method="post" action="{% url 'dashboard:user_toggle' u.pk %}" class="d-inline">
-                {% csrf_token %}
-                <button type="submit" class="btn-icon-action {% if u.is_active %}btn-icon-suspend{% else %}btn-icon-activate{% endif %}" title="{% if u.is_active %}Suspend{% else %}Activate{% endif %}">
-                  {% if u.is_active %}<i class="fas fa-ban"></i>{% else %}<i class="fas fa-check"></i>{% endif %}
-                </button>
-              </form>
+              <button type="button" class="btn-icon-action {% if u.is_active %}btn-icon-suspend{% else %}btn-icon-activate{% endif %}" title="{% if u.is_active %}Suspend{% else %}Activate{% endif %}" data-bs-toggle="modal" data-bs-target="#toggle-user-{{ u.pk }}">
+                {% if u.is_active %}<i class="fas fa-ban"></i>{% else %}<i class="fas fa-check"></i>{% endif %}
+              </button>
               {% endif %}
               {% if u.pk != user.pk and u.role != 'staff' %}
               <button type="button" class="btn-icon-action btn-icon-delete" title="Archive" data-bs-toggle="modal" data-bs-target="#delete-user-{{ u.pk }}"><i class="fas fa-box-archive"></i></button>
@@ -137,6 +134,14 @@
 
 {% if user.is_admin_user %}
 {% for u in users %}
+{% if u.role != 'admin' %}
+{% url 'dashboard:user_toggle' u.pk as u_toggle_url %}
+{% if u.is_active %}
+{% include 'partials/confirm_delete_modal.html' with id_prefix="toggle-user-" obj_pk=u.pk title='Suspend Account' message_prefix='Are you sure you want to suspend' item_name=u.get_full_name|default:u.username message_suffix="'s account? They won't be able to log in until you activate it again." form_action=u_toggle_url submit_label='Suspend' %}
+{% else %}
+{% include 'partials/confirm_delete_modal.html' with id_prefix="toggle-user-" obj_pk=u.pk title='Activate Account' message_prefix='Are you sure you want to activate' item_name=u.get_full_name|default:u.username message_suffix="'s account? They will be able to log in again." form_action=u_toggle_url submit_label='Activate' %}
+{% endif %}
+{% endif %}
 {% if u.pk != user.pk and u.role != 'staff' %}
 {% url 'dashboard:user_delete' u.pk as u_delete_url %}
 {% include 'partials/confirm_delete_modal.html' with id_prefix="delete-user-" obj_pk=u.pk title='Archive Account' message_prefix='Move' item_name=u.get_full_name|default:u.username message_suffix="'s account to the Archive? They'll be signed out and won't be able to log in until an admin restores the account from the Archive page." form_action=u_delete_url submit_label='Archive' %}

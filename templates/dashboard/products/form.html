@@ -284,8 +284,6 @@ body.dark-mode .pe-leave {
 
 <div class="pe">
 
-<a href="{% url 'dashboard:product_list' %}" class="pd-back-link"><i class="fas fa-arrow-left"></i> Back to Products</a>
-
 <div class="pd-header-top">
   <div class="pd-header-titles">
     <h1>{{ title }}</h1>
@@ -295,7 +293,8 @@ body.dark-mode .pe-leave {
     {% if product and product.is_active %}
     <a class="pd-btn pd-btn-outline" href="{% url 'store:product_detail' product.slug %}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> View in Shop</a>
     {% endif %}
-    <button type="submit" form="productForm" class="pd-btn pd-btn-primary"><i class="fas fa-floppy-disk"></i> {% if product %}Save Changes{% else %}Save Product{% endif %}</button>
+    <a href="{% url 'dashboard:product_list' %}" class="pd-btn pd-btn-outline"><i class="fas fa-arrow-left"></i> Back to Products</a>
+    <button type="submit" form="productForm" class="pd-btn pd-btn-primary"><i class="fas fa-check"></i> {% if product %}Save Changes{% else %}Save Product{% endif %}</button>
   </div>
 </div>
 
@@ -383,7 +382,7 @@ body.dark-mode .pe-leave {
           <div class="pe-row2 pe-field">
             <div>
               <label class="pe-lbl">Price Range</label>
-              <input type="text" class="form-control pe-readonly" id="priceRange" value="" readonly tabindex="-1">
+              <input type="text" class="form-control pe-readonly" id="priceRange" value="" readonly tabindex="-1" style="max-width:180px;height:36px;padding-top:4px;padding-bottom:4px;font-size:14px;">
             </div>
             <div>
               <label class="pe-lbl">Sizes &amp; Pricing</label>
