@@ -2645,11 +2645,12 @@ def reports(request):
         _delivered_qs = financials['orders_qs']
 
     # Every status is listed (in workflow order), even when it has 0 orders this month.
+    # Order Value = product subtotal only (shipping fees are not included).
     # Walk-in (in-store) sales get their own row, so the status rows below
     # count website orders only.
     _status_rows = {r['status']: r for r in orders_created_qs
                     .exclude(sales_channel=Order.CHANNEL_WALK_IN)
-                    .values('status').annotate(count=Count('id'), revenue=Sum('total'))}
+                    .values('status').annotate(count=Count('id'), revenue=Sum('subtotal'))}
     sales_by_status = [
         {'status': key, 'label': label,
          'count': _status_rows.get(key, {}).get('count', 0),
@@ -2660,11 +2661,11 @@ def reports(request):
     # (website orders only; walk-ins are shown in their own row).
     for r in sales_by_status:
         if r['status'] == 'delivered':
-            d = _delivered_qs.exclude(sales_channel=Order.CHANNEL_WALK_IN).aggregate(c=Count('id'), v=Sum('total'))
+            d = _delivered_qs.exclude(sales_channel=Order.CHANNEL_WALK_IN).aggregate(c=Count('id'), v=Sum('subtotal'))
             r['count'] = d['c'] or 0
             r['revenue'] = d['v'] or 0
     # Walk-in row, placed right after Delivered (counted by sale date, voided ones excluded).
-    _walkin = _delivered_qs.filter(sales_channel=Order.CHANNEL_WALK_IN).aggregate(c=Count('id'), v=Sum('total'))
+    _walkin = _delivered_qs.filter(sales_channel=Order.CHANNEL_WALK_IN).aggregate(c=Count('id'), v=Sum('subtotal'))
     _delivered_pos = next((i for i, r in enumerate(sales_by_status) if r['status'] == 'delivered'),
                           len(sales_by_status) - 1)
     sales_by_status.insert(_delivered_pos + 1, {

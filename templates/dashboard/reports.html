@@ -360,6 +360,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
   <thead><tr><th colspan="2">Summary</th></tr></thead>
   <tbody>
     <tr><td>Product Sales (PDL basis)</td><td>₱{{ kpi.product_income|floatformat:2|intcomma }}</td></tr>
+    <tr><td>Shipping Fees</td><td>₱{{ kpi.shipping_income|floatformat:2|intcomma }}</td></tr>
     <tr><td>GCash Sales</td><td>₱{{ kpi.gcash_income|default:0|floatformat:2|intcomma }}</td></tr>
     <tr><td>COD Sales</td><td>₱{{ kpi.cod_income|default:0|floatformat:2|intcomma }}</td></tr>
     <tr><td>Website Sales (product)</td><td>₱{{ kpi.website_income|default:0|floatformat:2|intcomma }}</td></tr>
@@ -474,6 +475,15 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
   <div class="col-6 col-lg-4 col-xl">
     <div class="ds-kpi-card">
       <div class="kpi-top">
+        <div class="kpi-label">Shipping Fees</div>
+        <div class="dash-kpi-icon icon-shipping"><i class="fas fa-truck"></i></div>
+      </div>
+      <div class="kpi-value">₱{{ kpi.shipping_income|floatformat:2|intcomma }}</div>
+    </div>
+  </div>
+  <div class="col-6 col-lg-4 col-xl">
+    <div class="ds-kpi-card">
+      <div class="kpi-top">
         <div class="kpi-label">GCash Sales</div>
         <div class="dash-kpi-icon icon-gcash"><i class="fas fa-mobile-screen-button"></i></div>
       </div>
@@ -508,7 +518,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
   </div>
   <div class="table-responsive">
     <table class="ds-table no-stack tbl-center mb-0">
-      <thead><tr><th>Channel</th><th>Orders</th><th>Product Sales</th></tr></thead>
+      <thead><tr><th>Channel</th><th>Orders</th><th>Product Sales</th><th>Shipping Fees</th><th>Total</th></tr></thead>
       <tbody>
         {% for row in channel_rows %}
         <tr>
@@ -521,6 +531,8 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
           </td>
           <td>{{ row.orders }}</td>
           <td>₱{{ row.product_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ row.shipping_income|floatformat:2|intcomma }}</td>
+          <td class="fw-semibold" style="color:var(--brand-green);">₱{{ row.total|floatformat:2|intcomma }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -529,6 +541,8 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
           <td>TOTAL</td>
           <td>{{ channel_totals.orders }}</td>
           <td>₱{{ channel_totals.product_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ channel_totals.shipping_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ channel_totals.total|floatformat:2|intcomma }}</td>
         </tr>
       </tfoot>
     </table>
@@ -546,6 +560,14 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         <div class="financial-row">
           <span class="fr-label">Product Revenue</span>
           <span class="fr-value">₱{{ kpi.product_income|floatformat:2|intcomma }}</span>
+        </div>
+        <div class="financial-row">
+          <span class="fr-label">Shipping Fee Income</span>
+          <span class="fr-value">₱{{ kpi.shipping_income|floatformat:2|intcomma }}</span>
+        </div>
+        <div class="financial-row fr-total">
+          <span class="fr-label">Gross Order Value</span>
+          <span class="fr-value">₱{{ kpi.gross_total|floatformat:2|intcomma }}</span>
         </div>
         <div class="financial-divider"></div>
         <div class="financial-row">
@@ -622,7 +644,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
   </div>
   <div class="table-responsive">
     <table class="ds-table no-stack tbl-center mb-0">
-      <thead><tr><th>Week</th><th>Dates</th><th>Orders</th><th>Product Sales</th></tr></thead>
+      <thead><tr><th>Week</th><th>Dates</th><th>Orders</th><th>Product Sales</th><th>Shipping Fees</th><th>Total</th></tr></thead>
       <tbody>
         {% for w in weekly_rows %}
         <tr>
@@ -630,6 +652,8 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
           <td>{{ w.range_label }}</td>
           <td>{{ w.order_count }}</td>
           <td>₱{{ w.product_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ w.shipping_income|floatformat:2|intcomma }}</td>
+          <td class="fw-semibold" style="color:var(--brand-green);">₱{{ w.gross_total|floatformat:2|intcomma }}</td>
         </tr>
         {% endfor %}
       </tbody>
@@ -638,6 +662,8 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
           <td colspan="2">TOTAL</td>
           <td>{{ kpi.order_count }}</td>
           <td>₱{{ kpi.product_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ kpi.shipping_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ kpi.gross_total|floatformat:2|intcomma }}</td>
         </tr>
       </tfoot>
     </table>
@@ -649,16 +675,18 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
   <div class="dash-panel-header"><h6>Income by Payment Method</h6></div>
   <div class="table-responsive">
     <table class="ds-table no-stack tbl-center mb-0">
-      <thead><tr><th>Payment Method</th><th>Product Sales</th><th>Orders</th></tr></thead>
+      <thead><tr><th>Payment Method</th><th>Product Sales</th><th>Shipping Fees</th><th>Total</th><th>Orders</th></tr></thead>
       <tbody>
         {% for row in financials.payment_breakdown %}
         <tr>
           <td class="fw-semibold">{{ row.payment_method_label }}</td>
           <td>₱{{ row.product_income|default:0|floatformat:2|intcomma }}</td>
+          <td>₱{{ row.shipping_income|default:0|floatformat:2|intcomma }}</td>
+          <td class="fw-semibold" style="color:var(--brand-green);">₱{{ row.total|default:0|floatformat:2|intcomma }}</td>
           <td>{{ row.orders }}</td>
         </tr>
         {% empty %}
-        <tr><td colspan="3">
+        <tr><td colspan="5">
           <div class="ds-empty-state">
             <i class="fas fa-receipt icon"></i>
             <div class="title">No delivered orders in {{ period_label }}</div>
@@ -671,6 +699,8 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         <tr class="row-total">
           <td>TOTAL</td>
           <td>₱{{ financials.product_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ financials.shipping_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ financials.gross_total|floatformat:2|intcomma }}</td>
           <td>{{ financials.order_count }}</td>
         </tr>
       </tfoot>
@@ -755,7 +785,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
     <table class="ds-table no-stack sticky-first tbl-center mb-0">
       <thead>
         <tr>
-          <th>Month</th><th>Product Income</th><th>GCash</th><th>COD</th><th>Walk-in</th>
+          <th>Month</th><th>Product Income</th><th>Shipping Fees</th><th>GCash</th><th>COD</th><th>Walk-in</th>
           <th>Expenses</th><th>Net Product Income</th><th>Finalized</th>
         </tr>
       </thead>
@@ -768,6 +798,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
             </a>
           </td>
           <td>₱{{ row.product_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ row.shipping_income|floatformat:2|intcomma }}</td>
           <td>₱{{ row.gcash_income|floatformat:2|intcomma }}</td>
           <td>₱{{ row.cod_income|floatformat:2|intcomma }}</td>
           <td>₱{{ row.walkin_income|floatformat:2|intcomma }}</td>
@@ -787,6 +818,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         <tr class="row-total">
           <td>TOTAL</td>
           <td>₱{{ kpi.product_income|floatformat:2|intcomma }}</td>
+          <td>₱{{ kpi.shipping_income|floatformat:2|intcomma }}</td>
           <td>₱{{ kpi.gcash_income|floatformat:2|intcomma }}</td>
           <td>₱{{ kpi.cod_income|floatformat:2|intcomma }}</td>
           <td>₱{{ kpi.walkin_income|floatformat:2|intcomma }}</td>
@@ -998,13 +1030,14 @@ const mhSelected = {{ selected_month|default:0 }};
 const mhYear = {{ selected_year }};
 const mhData = {
   product:  [{% for row in monthly_history %}{{ row.product_income|stringformat:"f" }},{% endfor %}],
+  shipping: [{% for row in monthly_history %}{{ row.shipping_income|stringformat:"f" }},{% endfor %}],
   gcash:    [{% for row in monthly_history %}{{ row.gcash_income|stringformat:"f" }},{% endfor %}],
   cod:      [{% for row in monthly_history %}{{ row.cod_income|stringformat:"f" }},{% endfor %}],
   expenses: [{% for row in monthly_history %}{{ row.approved_expenses|stringformat:"f" }},{% endfor %}],
   net:      [{% for row in monthly_history %}{{ row.net_product_income|stringformat:"f" }},{% endfor %}]
 };
-// Overall income = product income
-mhData.overall = mhData.product.slice();
+// Overall income = product income + shipping fees collected
+mhData.overall = mhData.product.map((v, i) => Math.round((v + mhData.shipping[i]) * 100) / 100);
 const statusLabels   = [{% for row in sales_by_status %}"{{ row.label }}",{% endfor %}];
 const statusCounts   = [{% for row in sales_by_status %}{{ row.count }},{% endfor %}];
 const statusKeys     = [{% for row in sales_by_status %}"{{ row.status }}",{% endfor %}];
@@ -1106,7 +1139,7 @@ if (typeof Chart === 'undefined') {
       data: {
         labels: mhLabels,
         datasets: [
-          bar('Product Income', mhData.overall, '#0F6B4F')
+          bar('Overall Income', mhData.overall, '#0F6B4F')
         ]
       },
       options: {
@@ -1226,7 +1259,7 @@ if (typeof Chart === 'undefined') {
   if (!ranked.length) return;
   const best = ranked[0];
   let html = '<strong>Best month: ' + mhFull[best.i] + ' ' + mhYear + '</strong> — ' + money(best.v) +
-             ' product income.';
+             ' overall income (' + money(mhData.product[best.i]) + ' product + ' + money(mhData.shipping[best.i]) + ' shipping).';
   document.getElementById('mhBestText').innerHTML = html;
   document.getElementById('mhBest').hidden = false;
   const row = document.querySelectorAll('#mhTable tbody tr')[best.i];
