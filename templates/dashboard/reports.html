@@ -56,6 +56,8 @@
 .ds-btn-secondary:hover { background: var(--surface-subtle); color: var(--text-primary); }
 .ds-btn-danger { background: var(--danger-bg); color: var(--danger); border: 1px solid rgba(192,54,44,.25); }
 .ds-btn-danger:hover { background: var(--danger); color: #fff; }
+.ds-btn-danger-solid { background: var(--danger); color: #fff; }
+.ds-btn-danger-solid:hover { background: #a02c24; color: #fff; box-shadow: var(--shadow-sm); }
 .ds-btn-sm { padding: 6px 12px; font-size: 12.5px; }
 .ds-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -212,6 +214,49 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
 .reports-tab-panel.active { display: block; }
 .reports-section-intro { font-size: 12.5px; color: var(--text-muted); margin: -8px 0 var(--space-4); max-width: 640px; }
 
+/* =========================================================
+   Confirm pop-up (replaces the browser's native confirm())
+   ========================================================= */
+.ds-confirm-backdrop {
+  position: fixed; inset: 0; z-index: 2000;
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-3);
+  background: rgba(16,24,20,.5);
+  backdrop-filter: blur(2px);
+  opacity: 0; visibility: hidden;
+  transition: opacity 160ms ease, visibility 160ms ease;
+}
+.ds-confirm-backdrop.show { opacity: 1; visibility: visible; }
+.ds-confirm {
+  width: 100%; max-width: 400px;
+  background: var(--surface-white);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-4);
+  text-align: center;
+  transform: translateY(12px) scale(.97);
+  transition: transform 160ms ease;
+}
+.ds-confirm-backdrop.show .ds-confirm { transform: translateY(0) scale(1); }
+.ds-confirm-icon {
+  width: 56px; height: 56px; margin: 0 auto var(--space-3);
+  border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  font-size: 22px;
+  background: var(--danger-bg); color: var(--danger);
+}
+.ds-confirm-icon.is-primary { background: var(--brand-green-light); color: var(--brand-green); }
+.ds-confirm-title { font-size: 17px; font-weight: 700; color: var(--text-primary); margin: 0 0 6px; }
+.ds-confirm-message { font-size: 13.5px; line-height: 1.5; color: var(--text-secondary); margin: 0 0 var(--space-4); }
+.ds-confirm-actions { display: flex; gap: 10px; justify-content: center; }
+.ds-confirm-actions .ds-btn { flex: 1 1 0; justify-content: center; padding: 10px 16px; }
+.ds-confirm-actions .ds-btn:focus-visible { outline: 2px solid var(--brand-green); outline-offset: 2px; }
+body.dark-mode .ds-confirm { background: var(--dm-surface); border-color: var(--dm-border); }
+body.dark-mode .ds-confirm-title { color: var(--dm-text); }
+body.dark-mode .ds-confirm-message { color: var(--dm-text-mute); }
+body.dark-mode .ds-confirm-icon { background: rgba(231,76,60,.16); color: #ef7a6e; }
+body.dark-mode .ds-confirm-icon.is-primary { background: rgba(26,188,156,.16); color: #4fd1c5; }
+
 /* Print-only letterhead, footer, summary table & chart images — hidden on screen */
 .print-letterhead, .print-footer, .print-summary-table, .print-chart-img { display: none; }
 
@@ -229,7 +274,7 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
   .dash-sidebar, .dash-topbar, .reports-actions, .ds-breadcrumb,
   .expense-row-actions, .reports-filter-form, .reports-tabs,
   .dash-greeting-title, .dash-greeting-sub, .reports-toolbar,
-  .status-pill, .ds-btn, .modal { display: none !important; }
+  .status-pill, .ds-btn, .modal, .ds-confirm-backdrop { display: none !important; }
 
   /* Reclaim the space the sidebar left behind */
   .dash-main { margin-left: 0 !important; }
@@ -613,14 +658,26 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
         {% if request.user.is_admin_user %}
         <div class="d-flex gap-2 mt-3">
           {% if pdl.is_locked %}
-          <form method="post" action="{% url 'dashboard:reports_reopen_month' %}" onsubmit="return confirm('Reopen {{ period_label }}? Its locked figures stay recorded until you finalize again.');">
+          <form method="post" action="{% url 'dashboard:reports_reopen_month' %}"
+                data-confirm
+                data-confirm-title="Reopen {{ period_label }}?"
+                data-confirm-message="Its locked figures stay recorded until you finalize again."
+                data-confirm-label="Reopen Month"
+                data-confirm-variant="primary"
+                data-confirm-icon="fa-lock-open">
             {% csrf_token %}
             <input type="hidden" name="year" value="{{ selected_year }}">
             <input type="hidden" name="month" value="{{ selected_month }}">
             <button type="submit" class="ds-btn ds-btn-secondary ds-btn-sm"><i class="fas fa-lock-open me-2"></i>Reopen Month</button>
           </form>
           {% else %}
-          <form method="post" action="{% url 'dashboard:reports_finalize_month' %}" onsubmit="return confirm('Finalize {{ period_label }}? This locks the Product Income, Expenses and Net Income for this month.');">
+          <form method="post" action="{% url 'dashboard:reports_finalize_month' %}"
+                data-confirm
+                data-confirm-title="Finalize {{ period_label }}?"
+                data-confirm-message="This locks the Product Income, Expenses and Net Income for this month."
+                data-confirm-label="Finalize Month"
+                data-confirm-variant="primary"
+                data-confirm-icon="fa-lock">
             {% csrf_token %}
             <input type="hidden" name="year" value="{{ selected_year }}">
             <input type="hidden" name="month" value="{{ selected_month }}">
@@ -746,7 +803,13 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
                   <button type="submit" class="ds-btn ds-btn-secondary ds-btn-sm" title="Approve"><i class="fas fa-check"></i></button>
                 </form>
                 {% endif %}
-                <form method="post" action="{% url 'dashboard:reports_expense_delete' exp.pk %}" onsubmit="return confirm('Delete this expense?');">
+                <form method="post" action="{% url 'dashboard:reports_expense_delete' exp.pk %}"
+                      data-confirm
+                      data-confirm-title="Delete this expense?"
+                      data-confirm-message="“{{ exp.description }}” (₱{{ exp.amount|floatformat:2|intcomma }}) will be removed from {{ period_label }}. This can't be undone."
+                      data-confirm-label="Delete"
+                      data-confirm-variant="danger"
+                      data-confirm-icon="fa-trash">
                   {% csrf_token %}
                   <button type="submit" class="ds-btn ds-btn-danger ds-btn-sm" title="Delete"><i class="fas fa-trash"></i></button>
                 </form>
@@ -989,8 +1052,85 @@ body.dark-mode .reports-tab-btn.active { color: var(--dm-teal); border-bottom-co
 </div>
 {% endif %}
 
+<!-- Confirm pop-up (shared by every form with a data-confirm attribute) -->
+<div class="ds-confirm-backdrop" id="dsConfirm" aria-hidden="true">
+  <div class="ds-confirm" role="alertdialog" aria-modal="true" aria-labelledby="dsConfirmTitle" aria-describedby="dsConfirmMsg">
+    <div class="ds-confirm-icon" id="dsConfirmIcon"><i class="fas fa-trash" id="dsConfirmIconGlyph"></i></div>
+    <h5 class="ds-confirm-title" id="dsConfirmTitle">Are you sure?</h5>
+    <p class="ds-confirm-message" id="dsConfirmMsg"></p>
+    <div class="ds-confirm-actions">
+      <button type="button" class="ds-btn ds-btn-secondary" id="dsConfirmCancel">Cancel</button>
+      <button type="button" class="ds-btn ds-btn-danger-solid" id="dsConfirmOk">Confirm</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
+// ── Confirm pop-up: any <form data-confirm ...> opens this instead of the browser's confirm() ──
+(function () {
+  const backdrop = document.getElementById('dsConfirm');
+  if (!backdrop) return;
+  const titleEl = document.getElementById('dsConfirmTitle');
+  const msgEl   = document.getElementById('dsConfirmMsg');
+  const iconBox = document.getElementById('dsConfirmIcon');
+  const iconEl  = document.getElementById('dsConfirmIconGlyph');
+  const okBtn   = document.getElementById('dsConfirmOk');
+  const cancelBtn = document.getElementById('dsConfirmCancel');
+  let pendingForm = null;
+  let lastFocus = null;
+
+  function open(form) {
+    pendingForm = form;
+    lastFocus = document.activeElement;
+    const d = form.dataset;
+    const isDanger = (d.confirmVariant || 'danger') === 'danger';
+    titleEl.textContent = d.confirmTitle || 'Are you sure?';
+    msgEl.textContent = d.confirmMessage || '';
+    msgEl.style.display = d.confirmMessage ? '' : 'none';
+    okBtn.textContent = d.confirmLabel || 'Confirm';
+    okBtn.className = 'ds-btn ' + (isDanger ? 'ds-btn-danger-solid' : 'ds-btn-primary');
+    iconBox.className = 'ds-confirm-icon' + (isDanger ? '' : ' is-primary');
+    iconEl.className = 'fas ' + (d.confirmIcon || (isDanger ? 'fa-trash' : 'fa-circle-question'));
+    backdrop.classList.add('show');
+    backdrop.setAttribute('aria-hidden', 'false');
+    setTimeout(() => cancelBtn.focus(), 30); // default focus on the safe choice
+  }
+  function close() {
+    backdrop.classList.remove('show');
+    backdrop.setAttribute('aria-hidden', 'true');
+    pendingForm = null;
+    if (lastFocus && lastFocus.focus) lastFocus.focus();
+  }
+
+  document.addEventListener('submit', function (e) {
+    const form = e.target;
+    if (!form.matches || !form.matches('form[data-confirm]')) return;
+    e.preventDefault();
+    open(form);
+  });
+
+  okBtn.addEventListener('click', function () {
+    const form = pendingForm;
+    if (!form) return;
+    okBtn.disabled = true;
+    backdrop.classList.remove('show');
+    form.submit(); // native submit — does not re-trigger the submit listener above
+  });
+  cancelBtn.addEventListener('click', close);
+  backdrop.addEventListener('click', (e) => { if (e.target === backdrop) close(); });
+  document.addEventListener('keydown', function (e) {
+    if (!backdrop.classList.contains('show')) return;
+    if (e.key === 'Escape') { e.preventDefault(); close(); }
+    if (e.key === 'Tab') { // keep focus inside the pop-up
+      const els = [cancelBtn, okBtn];
+      const i = els.indexOf(document.activeElement);
+      e.preventDefault();
+      els[(i + (e.shiftKey ? els.length - 1 : 1)) % els.length].focus();
+    }
+  });
+})();
+
 // ── Section tabs (remembered, so changing the month doesn't kick you back to the first tab) ──
 const __fromReports = document.referrer.indexOf('/dashboard/reports') !== -1;
 const TAB_KEY = 'reportsTab';
